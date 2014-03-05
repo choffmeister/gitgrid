@@ -1,0 +1,25 @@
+akka {
+  loggers = ["akka.event.slf4j.Slf4jLogger"]
+  loglevel = "INFO" # ERROR, WARNING, INFO, DEBUG
+}
+
+spray.can.server {
+  idle-timeout = 60s
+  request-timeout = 30s
+  request-chunk-aggregation-limit = 256m
+}
+
+gitgrid {
+  http {
+    interface = "0.0.0.0"
+    port = 8080
+  }
+
+  repositoriesDir = "repositories"
+}
+
+gitgrid.mongodb {
+  host = "localhost"
+  port = 27017
+  database = "gitgrid-production"
+}

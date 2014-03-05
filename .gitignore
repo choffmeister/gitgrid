@@ -1,0 +1,11 @@
+# Simple Build Tool
+target/
+
+# IDEA
+.idea/
+
+# Trash
+.cache
+.DS_Store
+._.DS_Store
+Thumbs.db
