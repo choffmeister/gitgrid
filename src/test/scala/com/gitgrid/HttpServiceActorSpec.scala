@@ -3,9 +3,9 @@ package com.gitgrid
 import akka.pattern._
 import akka.testkit._
 import org.specs2.mutable._
-import spray.http._
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
+import spray.http._
 
 class HttpServiceActorSpec extends Specification {
   "HttpServiceActorSpec" should {

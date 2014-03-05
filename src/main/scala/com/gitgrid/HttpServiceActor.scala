@@ -1,10 +1,8 @@
 package com.gitgrid
 
 import akka.actor._
-import akka.routing._
-import spray.http._
-import spray.http.HttpMethods._
 import spray.http.StatusCodes._
+import spray.http._
 
 class HttpServiceActor extends Actor with ActorLogging {
   def receive = {
