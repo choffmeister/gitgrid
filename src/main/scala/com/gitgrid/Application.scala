@@ -4,17 +4,19 @@ import akka.actor._
 import akka.io.IO
 import scala.concurrent.duration._
 import spray.can.Http
+import com.gitgrid.http.HttpServiceActor
 
 class Application extends Bootable {
   implicit val system = ActorSystem("gitgrid")
+  implicit val env = Environment(Config.mongoDbServers, Config.mongoDbDatabaseName)
 
-  def startup = {
-    val httpServiceActor = system.actorOf(Props[HttpServiceActor], "httpservice")
+  def startup() = {
+    val httpServiceActor = system.actorOf(Props(new HttpServiceActor), "httpservice")
 
     IO(Http) ! Http.Bind(httpServiceActor, interface = Config.httpInterface, port = Config.httpPort)
   }
 
-  def shutdown = {
+  def shutdown() = {
     system.shutdown()
     system.awaitTermination(1.seconds)
   }
@@ -31,5 +33,5 @@ trait Bootable {
   def startup(): Unit
   def shutdown(): Unit
 
-  sys.ShutdownHookThread(shutdown)
+  sys.ShutdownHookThread(shutdown())
 }
