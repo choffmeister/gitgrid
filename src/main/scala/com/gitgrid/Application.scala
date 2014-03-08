@@ -8,12 +8,12 @@ import com.gitgrid.http.HttpServiceActor
 
 class Application extends Bootable {
   implicit val system = ActorSystem("gitgrid")
-  implicit val env = Environment(Config.mongoDbServers, Config.mongoDbDatabaseName)
+  implicit val config = Config()
 
   def startup() = {
     val httpServiceActor = system.actorOf(Props(new HttpServiceActor), "httpservice")
 
-    IO(Http) ! Http.Bind(httpServiceActor, interface = Config.httpInterface, port = Config.httpPort)
+    IO(Http) ! Http.Bind(httpServiceActor, interface = config.httpInterface, port = config.httpPort)
   }
 
   def shutdown() = {

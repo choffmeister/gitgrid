@@ -33,7 +33,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest {
   }
 }
 
-trait TestApiHttpService extends TestActorSystem with TestEnvironment {
+trait TestApiHttpService extends TestActorSystem with TestConfig {
   val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor)
   val apiHttpService = apiHttpServiceRef.underlyingActor
 }

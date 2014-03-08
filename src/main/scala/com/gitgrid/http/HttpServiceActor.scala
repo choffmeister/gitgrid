@@ -4,9 +4,9 @@ import akka.actor._
 import akka.io.Tcp._
 import spray.http.StatusCodes._
 import spray.http._
-import com.gitgrid.Environment
+import com.gitgrid.Config
 
-class HttpServiceActor(implicit env: Environment) extends Actor with ActorLogging {
+class HttpServiceActor(implicit config: Config) extends Actor with ActorLogging {
   val apiHttpActor = context.actorOf(Props(new ApiHttpServiceActor))
 
   def receive = {

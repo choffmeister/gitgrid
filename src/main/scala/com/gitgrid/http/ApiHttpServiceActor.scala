@@ -2,9 +2,9 @@ package com.gitgrid.http
 
 import akka.actor._
 import spray.routing.HttpService
-import com.gitgrid.Environment
+import com.gitgrid.Config
 
-class ApiHttpServiceActor(implicit env: Environment) extends Actor with ActorLogging with HttpService {
+class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService {
   implicit def actorRefFactory = context
   def receive = runRoute(route)
 
