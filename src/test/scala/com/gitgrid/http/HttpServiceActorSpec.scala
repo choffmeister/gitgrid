@@ -6,9 +6,9 @@ import org.specs2.mutable._
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import com.gitgrid.{TestConfig, TestActorSystem}
+import com.gitgrid._
 
-class HttpServiceActorSpec extends Specification {
+class HttpServiceActorSpec extends Specification with AsyncUtils {
   "HttpServiceActorSpec" should {
     "return HTTP 404 not found on unknown route" in new TestActorSystem with TestConfig {
       val httpService = TestActorRef(new HttpServiceActor)
