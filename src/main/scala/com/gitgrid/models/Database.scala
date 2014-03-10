@@ -36,6 +36,7 @@ class Database(nodes: Seq[String], databaseName: String)(implicit ec: ExecutionC
   val database = connection(databaseName)
 
   lazy val users = new UserTable(this)
+  lazy val userPasswords = new UserPasswordTable(this)
   lazy val sessions = new SessionTable(this)
 }
 

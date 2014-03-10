@@ -29,6 +29,8 @@ class UserSpec extends Specification with AsyncUtils {
       await(db.users.update(u3.copy(userName = "user3-new")))
       await(db.users.find(u3.id.get)).get.userName === "user3-new"
 
+      await(db.users.findByUserName("user1")) === Some(u1)
+
       ok
     }
   }
