@@ -1,7 +1,7 @@
 package com.gitgrid.models
 
-import org.specs2.mutable._
 import com.gitgrid._
+import org.specs2.mutable._
 import reactivemongo.bson.BSONObjectID
 
 class UserSpec extends Specification with AsyncUtils {

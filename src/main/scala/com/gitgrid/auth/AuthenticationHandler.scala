@@ -1,8 +1,8 @@
 package com.gitgrid.auth
 
 import com.gitgrid.Config
-import scala.concurrent.{ExecutionContext, Future}
 import com.gitgrid.models.{Database, User}
+import scala.concurrent.{ExecutionContext, Future}
 
 class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
   val db = Database()

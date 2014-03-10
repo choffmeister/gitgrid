@@ -1,7 +1,7 @@
 package com.gitgrid
 
-import org.specs2.specification.Scope
 import java.util.UUID
+import org.specs2.specification.Scope
 
 trait TestConfig extends Scope {
   implicit val config = {

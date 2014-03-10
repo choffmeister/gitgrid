@@ -2,9 +2,9 @@ package com.gitgrid
 
 import akka.actor._
 import akka.io.IO
+import com.gitgrid.http.HttpServiceActor
 import scala.concurrent.duration._
 import spray.can.Http
-import com.gitgrid.http.HttpServiceActor
 
 class Application extends Bootable {
   implicit val system = ActorSystem("gitgrid")

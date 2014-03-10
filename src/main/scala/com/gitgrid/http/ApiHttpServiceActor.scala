@@ -1,10 +1,10 @@
 package com.gitgrid.http
 
 import akka.actor._
-import spray.routing.HttpService
 import com.gitgrid.Config
-import com.gitgrid.models.User
 import com.gitgrid.auth.AuthenticationHandler
+import com.gitgrid.models.User
+import spray.routing.HttpService
 
 case class AuthenticationRequest(userName: String, password: String)
 case class AuthenticationResponse(message: String, user: Option[User])

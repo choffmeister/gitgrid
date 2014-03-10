@@ -2,9 +2,9 @@ package com.gitgrid.http
 
 import akka.actor._
 import akka.io.Tcp._
+import com.gitgrid.Config
 import spray.http.StatusCodes._
 import spray.http._
-import com.gitgrid.Config
 
 class HttpServiceActor(implicit config: Config) extends Actor with ActorLogging {
   val apiHttpActor = context.actorOf(Props(new ApiHttpServiceActor))

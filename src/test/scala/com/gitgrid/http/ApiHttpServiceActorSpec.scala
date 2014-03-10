@@ -1,16 +1,18 @@
 package com.gitgrid.http
 
-import org.specs2.mutable._
-import spray.testkit._
-import com.gitgrid._
 import akka.testkit.TestActorRef
-import spray.http.StatusCodes._
+import com.gitgrid._
 import com.gitgrid.models._
+import org.specs2.mutable._
 import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
+import spray.http.StatusCodes._
+import spray.testkit._
 
 class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils {
+
   import JsonProtocol._
+
   override implicit val executor = ExecutionContext.Implicits.global
   def newId = BSONObjectID.generate
 

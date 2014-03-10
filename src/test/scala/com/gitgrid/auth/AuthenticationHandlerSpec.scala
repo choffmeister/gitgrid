@@ -1,10 +1,10 @@
 package com.gitgrid.auth
 
-import org.specs2.mutable.Specification
-import com.gitgrid.{TestConfig, AsyncUtils}
-import com.gitgrid.models._
-import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import com.gitgrid.models.User
+import com.gitgrid.models._
+import com.gitgrid.{TestConfig, AsyncUtils}
+import org.specs2.mutable.Specification
+import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import scala.Some
 
 class AuthenticationHandlerSpec extends Specification with AsyncUtils {

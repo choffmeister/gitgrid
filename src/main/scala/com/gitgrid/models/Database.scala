@@ -1,10 +1,10 @@
 package com.gitgrid.models
 
-import reactivemongo.api._
-import scala.concurrent._
-import reactivemongo.bson._
 import com.gitgrid.Config
+import reactivemongo.api._
 import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.bson._
+import scala.concurrent._
 
 abstract class BaseModel {
   val id: Option[BSONObjectID]
