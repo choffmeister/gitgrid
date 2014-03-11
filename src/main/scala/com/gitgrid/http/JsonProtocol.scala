@@ -28,4 +28,5 @@ object JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
   implicit val authenticationRequestFormat = jsonFormat2(AuthenticationRequest)
   implicit val authenticationResponseFormat = jsonFormat2(AuthenticationResponse)
+  implicit val authenticationStateFormat = jsonFormat1(AuthenticationState)
 }

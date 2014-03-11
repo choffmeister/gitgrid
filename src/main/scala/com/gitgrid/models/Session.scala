@@ -14,7 +14,7 @@ class SessionTable(database: Database)(implicit executor: ExecutionContext) exte
   implicit val reader = SessionBSONFormat.SessionBSONReader
   implicit val writer = SessionBSONFormat.SessionBSONWriter
 
-  def findBySessionId(sessionId: String) = queryOne(BSONDocument("sessionId" -> sessionId))
+  def findBySessionId(sessionId: String): Future[Option[Session]] = queryOne(BSONDocument("sessionId" -> sessionId))
   def deleteBySessionId(sessionId: String): Future[Unit] = collection.remove(BSONDocument("sessionId" -> sessionId)).map(_ => Unit)
 }
 

@@ -10,6 +10,7 @@ import spray.routing.HttpService
 
 case class AuthenticationRequest(userName: String, password: String)
 case class AuthenticationResponse(message: String, user: Option[User])
+case class AuthenticationState(user: Option[User])
 
 class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService with AuthenticationDirectives {
   import JsonProtocol._
@@ -38,12 +39,9 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
         entity(as[AuthenticationRequest]) { credentials =>
           val future = authenticationHandler
             .authenticate(credentials.userName, credentials.password)
-            .flatMap[Option[(User, Session)]] { user =>
-              user match {
-                case Some(user) =>
-                  sessionHandler.createSession(user.id.get).map(s => Some((user, s)))
-                case _ => Future.successful(None)
-              }
+            .flatMap[Option[(User, Session)]] {
+              case Some(user) => sessionHandler.createSession(user.id.get).map(s => Some((user, s)))
+              case _ => Future.successful(None)
             }
 
           onSuccess(future) {
@@ -60,16 +58,21 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
     path("logout") {
       post {
         removeSessionCookie() {
-          extractSessionId { (sessionId: Option[String]) =>
-            sessionId match {
-              case Some(sessionId) =>
-                onSuccess(sessionHandler.revokeSession(sessionId)) {
-                  case _ => complete("Logout")
-                }
-              case _ =>
-                complete("Logout")
-            }
+          extractSessionId {
+            case Some(sessionId) =>
+              onSuccess(sessionHandler.revokeSession(sessionId)) {
+                case _ => complete(AuthenticationState(None))
+              }
+            case _ =>
+              complete(AuthenticationState(None))
           }
+        }
+      }
+    } ~
+    path("state") {
+      get {
+        authenticateOption { user =>
+          complete(AuthenticationState(user))
         }
       }
     }

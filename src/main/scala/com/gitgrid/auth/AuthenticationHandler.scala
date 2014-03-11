@@ -2,6 +2,7 @@ package com.gitgrid.auth
 
 import com.gitgrid.Config
 import com.gitgrid.models.{Database, User}
+import reactivemongo.bson.BSONObjectID
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
@@ -25,4 +26,7 @@ class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
         Future.successful(None)
     }
   }
+
+  def findUser(id: BSONObjectID): Future[Option[User]] = db.users.find(id)
+  def findUser(userName: String): Future[Option[User]] = db.users.findByUserName(userName)
 }

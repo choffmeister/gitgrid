@@ -1,14 +1,18 @@
 package com.gitgrid.http.directives
 
-import com.gitgrid.models.Session
+import com.gitgrid.auth._
+import com.gitgrid.models._
 import reactivemongo.bson._
 import scala.concurrent._
 import spray.http._
+import spray.routing.AuthenticationFailedRejection.CredentialsRejected
 import spray.routing.Directives._
 import spray.routing._
 
 trait AuthenticationDirectives {
   implicit val executor: ExecutionContext
+  val authenticationHandler: AuthenticationHandler
+  val sessionHandler: SessionHandler
 
   val cookiePath = "/"
   val cookieName = "gitgrid-sid"
@@ -32,4 +36,25 @@ trait AuthenticationDirectives {
       case _ => None
     }
   }
+
+  def authenticateOption: Directive1[Option[User]] = {
+    extractSessionId.flatMap {
+      case Some(sessionId) =>
+        val future = sessionHandler
+          .findSession(sessionId)
+          .flatMap[Option[User]] {
+            case Some(session) => authenticationHandler.findUser(session.userId)
+            case _ => Future.successful(None)
+          }
+
+        onSuccess(future)
+      case _ => provide(None)
+    }
+  }
+
+  def authenticate: Directive1[User] =
+    authenticateOption.flatMap {
+      case Some(u) => provide(u)
+      case _ => reject(AuthenticationFailedRejection(CredentialsRejected, Nil))
+    }
 }
