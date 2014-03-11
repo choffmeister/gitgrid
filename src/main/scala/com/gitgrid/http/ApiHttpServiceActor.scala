@@ -2,19 +2,22 @@ package com.gitgrid.http
 
 import akka.actor._
 import com.gitgrid.Config
-import com.gitgrid.auth.AuthenticationHandler
-import com.gitgrid.models.User
+import com.gitgrid.auth.{SessionHandler, AuthenticationHandler}
+import com.gitgrid.http.directives._
+import com.gitgrid.models._
+import scala.concurrent.Future
 import spray.routing.HttpService
 
 case class AuthenticationRequest(userName: String, password: String)
 case class AuthenticationResponse(message: String, user: Option[User])
 
-class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService {
+class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService with AuthenticationDirectives {
   import JsonProtocol._
 
-  implicit def actorRefFactory = context
-  implicit def executor = context.dispatcher
+  implicit val actorRefFactory = context
+  implicit val executor = context.dispatcher
   val authenticationHandler = new AuthenticationHandler()
+  val sessionHandler = new SessionHandler()
 
   def receive = runRoute(route)
   lazy val route =
@@ -33,16 +36,41 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
     path("login") {
       post {
         entity(as[AuthenticationRequest]) { credentials =>
-          onSuccess(authenticationHandler.authenticate(credentials.userName, credentials.password)) {
-            case Some(user) => complete(AuthenticationResponse("Logged in", Some(user)))
-            case _ => complete(AuthenticationResponse("Invalid username or password", None))
+          val future = authenticationHandler
+            .authenticate(credentials.userName, credentials.password)
+            .flatMap[Option[(User, Session)]] { user =>
+              user match {
+                case Some(user) =>
+                  sessionHandler.createSession(user.id.get).map(s => Some((user, s)))
+                case _ => Future.successful(None)
+              }
+            }
+
+          onSuccess(future) {
+            case Some((user, session)) =>
+              createSessionCookie(session) {
+                complete(AuthenticationResponse("Logged in", Some(user)))
+              }
+            case _ =>
+              complete(AuthenticationResponse("Invalid username or password", None))
           }
         }
       }
     } ~
     path("logout") {
       post {
-        complete("Logout")
+        removeSessionCookie() {
+          extractSessionId { (sessionId: Option[String]) =>
+            sessionId match {
+              case Some(sessionId) =>
+                onSuccess(sessionHandler.revokeSession(sessionId)) {
+                  case _ => complete("Logout")
+                }
+              case _ =>
+                complete("Logout")
+            }
+          }
+        }
       }
     }
 }

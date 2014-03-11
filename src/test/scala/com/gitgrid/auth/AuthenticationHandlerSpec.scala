@@ -1,6 +1,5 @@
 package com.gitgrid.auth
 
-import com.gitgrid.models.User
 import com.gitgrid.models._
 import com.gitgrid.{TestConfig, AsyncUtils}
 import org.specs2.mutable.Specification

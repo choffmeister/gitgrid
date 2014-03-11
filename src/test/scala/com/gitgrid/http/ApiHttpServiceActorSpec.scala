@@ -2,11 +2,11 @@ package com.gitgrid.http
 
 import akka.testkit.TestActorRef
 import com.gitgrid._
-import com.gitgrid.models._
 import org.specs2.mutable._
-import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
+import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
+import spray.http._
 import spray.testkit._
 
 class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils {
@@ -14,7 +14,6 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   import JsonProtocol._
 
   override implicit val executor = ExecutionContext.Implicits.global
-  def newId = BSONObjectID.generate
 
   "ApiHttpServiceActorSpec" should {
     "respond to ping requests" in new TestApiHttpService {
@@ -26,23 +25,19 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActorSpec /auth" should {
-    "handle login requests" in new TestApiHttpService {
-      val db = Database()
-      val u1 = await(db.users.insert(User(id = Some(newId), userName = "user1")))
-      val p1 = await(db.userPasswords.insert(UserPassword(id = Some(newId), userId = u1.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass1", hashAlgorithm = "plain")))
-      val u2 = await(db.users.insert(User(id = Some(newId), userName = "user2")))
-      val p2 = await(db.userPasswords.insert(UserPassword(id = Some(newId), userId = u2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
-
+    "accept authentication request with valid credentials" in new TestApiHttpService {
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(u1)
+        responseAs[AuthenticationResponse].user === Some(user1)
       }
 
       Post("/api/auth/login", AuthenticationRequest("user2", "pass2")) ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(u2)
+        responseAs[AuthenticationResponse].user === Some(user2)
       }
+    }
 
+    "reject authentication request with invalid credentials" in new TestApiHttpService {
       Post("/api/auth/login", AuthenticationRequest("user1", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
@@ -59,6 +54,38 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
+    "set and unset session cookies" in new TestApiHttpService {
+      def getCookie(headers: List[HttpHeader]): Option[HttpCookie] = {
+        val header = headers.find(h => h.name.toLowerCase == "set-cookie")
+        header match {
+          case Some(header) => Some(header.asInstanceOf[`Set-Cookie`].cookie)
+          case _ => None
+        }
+      }
+
+      await(db.sessions.all) must haveSize(0)
+
+      val sessionId = Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
+        val cookie = getCookie(headers)
+        cookie must beSome
+        cookie.get.name === "gitgrid-sid"
+        cookie.get.expires must beNone
+        cookie.get.content
+      }
+
+      await(db.sessions.all) must haveSize(1)
+
+      Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
+        val cookie = getCookie(headers)
+        cookie must beSome
+        cookie.get.name === "gitgrid-sid"
+        cookie.get.expires must beSome
+        cookie.get.expires.get.clicks must beLessThan(System.currentTimeMillis)
+      }
+
+      await(db.sessions.all) must haveSize(0)
+    }
+
     "handle logout requests" in new TestApiHttpService {
       Post("/api/auth/logout") ~> route ~> check {
         status === OK
@@ -68,7 +95,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 }
 
-trait TestApiHttpService extends TestActorSystem with TestConfig {
+trait TestApiHttpService extends TestActorSystem with TestConfig with TestDatabase {
   val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor)
   val apiHttpService = apiHttpServiceRef.underlyingActor
 
