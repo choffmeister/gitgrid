@@ -8,6 +8,8 @@ scalaVersion := "2.10.3"
 
 scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 
+resolvers += "typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"
+
 libraryDependencies ++= {
   val akkaVersion = "2.2.3"
   val sprayVersion = "1.2.0"
