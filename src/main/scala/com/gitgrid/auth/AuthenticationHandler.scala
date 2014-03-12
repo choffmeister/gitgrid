@@ -13,19 +13,17 @@ class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
     db.users.findByUserName(userName).flatMap {
       case Some(u) =>
         db.userPasswords.findCurrentPassword(u.id.get).map {
-          case Some(pwd) =>
-            pwd.hashAlgorithm match {
-              case "plain" =>
-                if (pwd.hash == password) Some(u) else None
-              case _ =>
-                throw new Exception(s"Unsupported hash algorithm ${pwd.hashAlgorithm}")
-            }
-          case _ =>
-            None
+          case Some(pwd) => if (checkPassword(pwd, password)) Some(u) else None
+          case _ => None
         }
       case _ =>
         Future.successful(None)
     }
+  }
+
+  def checkPassword(userPassword: UserPassword, password: String): Boolean = userPassword.hashAlgorithm match {
+    case "plain" if userPassword.hash == password => true
+    case _ => false
   }
 
   def findUser(id: BSONObjectID): Future[Option[User]] = db.users.find(id)
