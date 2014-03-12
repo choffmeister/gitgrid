@@ -12,9 +12,7 @@ case class AuthenticationRequest(userName: String, password: String)
 case class AuthenticationResponse(message: String, user: Option[User])
 case class AuthenticationState(user: Option[User])
 
-class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService with AuthenticationDirectives {
-  import JsonProtocol._
-
+class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
   implicit val actorRefFactory = context
   implicit val executor = context.dispatcher
   val auth = new AuthenticationHandler()

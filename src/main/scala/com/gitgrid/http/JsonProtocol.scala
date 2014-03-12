@@ -5,7 +5,7 @@ import reactivemongo.bson._
 import spray.httpx._
 import spray.json._
 
-object JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
+trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
   implicit object BSONObjectIDFormat extends JsonFormat[BSONObjectID] {
     def write(id: BSONObjectID) = JsString(id.stringify)
     def read(value: JsValue) =

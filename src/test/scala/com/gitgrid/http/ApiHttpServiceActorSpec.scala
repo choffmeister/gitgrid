@@ -9,10 +9,7 @@ import spray.http.StatusCodes._
 import spray.http._
 import spray.testkit._
 
-class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils {
-
-  import JsonProtocol._
-
+class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils with JsonProtocol {
   override implicit val executor = ExecutionContext.Implicits.global
 
   "ApiHttpServiceActorSpec" should {
