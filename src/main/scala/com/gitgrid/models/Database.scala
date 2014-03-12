@@ -38,6 +38,7 @@ class Database(nodes: Seq[String], databaseName: String, collectionNamePrefix: S
   lazy val users = new UserTable(this, collectionNamePrefix + "users")
   lazy val userPasswords = new UserPasswordTable(this, collectionNamePrefix + "user-passwords")
   lazy val sessions = new SessionTable(this, collectionNamePrefix + "sessions")
+  lazy val projects = new ProjectTable(this, collectionNamePrefix + "projects")
 }
 
 object Database {
