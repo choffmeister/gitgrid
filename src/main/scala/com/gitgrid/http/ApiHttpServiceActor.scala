@@ -2,7 +2,7 @@ package com.gitgrid.http
 
 import akka.actor._
 import com.gitgrid.Config
-import com.gitgrid.auth.{SessionHandler, AuthenticationHandler}
+import com.gitgrid.auth.AuthenticationHandler
 import com.gitgrid.http.directives._
 import com.gitgrid.models._
 import scala.concurrent.Future
@@ -17,8 +17,7 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
 
   implicit val actorRefFactory = context
   implicit val executor = context.dispatcher
-  val authenticationHandler = new AuthenticationHandler()
-  val sessionHandler = new SessionHandler()
+  val auth = new AuthenticationHandler()
 
   def receive = runRoute(route)
   lazy val route =
@@ -35,10 +34,10 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
     path("login") {
       post {
         entity(as[AuthenticationRequest]) { credentials =>
-          val future = authenticationHandler
+          val future = auth
             .authenticate(credentials.userName, credentials.password)
             .flatMap[Option[(User, Session)]] {
-              case Some(user) => sessionHandler.createSession(user.id.get).map(s => Some((user, s)))
+              case Some(user) => auth.createSession(user.id.get).map(s => Some((user, s)))
               case _ => Future.successful(None)
             }
 
@@ -58,7 +57,7 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
         removeSessionCookie() {
           extractSessionId {
             case Some(sessionId) =>
-              onSuccess(sessionHandler.revokeSession(sessionId)) {
+              onSuccess(auth.revokeSession(sessionId)) {
                 case _ => complete(AuthenticationState(None))
               }
             case _ =>

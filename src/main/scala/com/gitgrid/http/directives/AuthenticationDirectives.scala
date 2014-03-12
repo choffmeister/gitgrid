@@ -11,8 +11,7 @@ import spray.routing._
 
 trait AuthenticationDirectives {
   implicit val executor: ExecutionContext
-  val authenticationHandler: AuthenticationHandler
-  val sessionHandler: SessionHandler
+  val auth: AuthenticationHandler
 
   val cookiePath = "/"
   val cookieName = "gitgrid-sid"
@@ -40,10 +39,10 @@ trait AuthenticationDirectives {
   def authenticateOption: Directive1[Option[User]] = {
     extractSessionId.flatMap {
       case Some(sessionId) =>
-        val future = sessionHandler
+        val future = auth
           .findSession(sessionId)
           .flatMap[Option[User]] {
-            case Some(session) => authenticationHandler.findUser(session.userId)
+            case Some(session) => auth.findUser(session.userId)
             case _ => Future.successful(None)
           }
 
