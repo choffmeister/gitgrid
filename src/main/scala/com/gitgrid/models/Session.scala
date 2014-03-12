@@ -10,7 +10,7 @@ case class Session(
   expires: Option[BSONDateTime] = None
 ) extends BaseModel
 
-class SessionTable(database: Database)(implicit executor: ExecutionContext) extends Table[Session](database, "sessions") {
+class SessionTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[Session](database, collectionName) {
   implicit val reader = SessionBSONFormat.SessionBSONReader
   implicit val writer = SessionBSONFormat.SessionBSONWriter
 

@@ -30,18 +30,18 @@ abstract class Table[M <: BaseModel](database: Database, collectionName: String)
   private def byId(e: M): BSONDocument = byId(e.id.get)
 }
 
-class Database(nodes: Seq[String], databaseName: String)(implicit ec: ExecutionContext) {
+class Database(nodes: Seq[String], databaseName: String, collectionNamePrefix: String)(implicit ec: ExecutionContext) {
   val driver = Database.driver
   val connection = driver.connection(nodes)
   val database = connection(databaseName)
 
-  lazy val users = new UserTable(this)
-  lazy val userPasswords = new UserPasswordTable(this)
-  lazy val sessions = new SessionTable(this)
+  lazy val users = new UserTable(this, collectionNamePrefix + "users")
+  lazy val userPasswords = new UserPasswordTable(this, collectionNamePrefix + "user-passwords")
+  lazy val sessions = new SessionTable(this, collectionNamePrefix + "sessions")
 }
 
 object Database {
   lazy val driver = new MongoDriver()
 
-  def apply()(implicit config: Config, ec: ExecutionContext): Database = new Database(config.mongoDbServers, config.mongoDbDatabaseName)
+  def apply()(implicit config: Config, ec: ExecutionContext): Database = new Database(config.mongoDbServers, config.mongoDbDatabaseName, config.mongoDbCollectionNamePrefix)
 }

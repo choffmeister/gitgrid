@@ -8,7 +8,7 @@ case class User(
   userName: String = ""
 ) extends BaseModel
 
-class UserTable(database: Database)(implicit executor: ExecutionContext) extends Table[User](database, "users") {
+class UserTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[User](database, collectionName) {
   implicit val reader = UserBSONFormat.UserBSONReader
   implicit val writer = UserBSONFormat.UserBSONWriter
 

@@ -8,7 +8,8 @@ case class Config(
   httpPort: Int,
   repositoriesDir: File,
   mongoDbServers: List[String],
-  mongoDbDatabaseName: String
+  mongoDbDatabaseName: String,
+  mongoDbCollectionNamePrefix: String
 )
 
 object Config {
@@ -20,7 +21,8 @@ object Config {
       httpPort = raw.getInt("gitgrid.http.port"),
       repositoriesDir = new File(raw.getString("gitgrid.repositoriesDir")),
       mongoDbServers = List(raw.getString("gitgrid.mongodb.host") + ":" + raw.getInt("gitgrid.mongodb.port")),
-      mongoDbDatabaseName = raw.getString("gitgrid.mongodb.database")
+      mongoDbDatabaseName = raw.getString("gitgrid.mongodb.database"),
+      mongoDbCollectionNamePrefix = raw.getString("gitgrid.mongodb.collectionprefix")
     )
   }
 }

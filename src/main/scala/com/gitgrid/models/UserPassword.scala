@@ -12,7 +12,7 @@ case class UserPassword(
   hashAlgorithm: String = ""
 ) extends BaseModel
 
-class UserPasswordTable(database: Database)(implicit executor: ExecutionContext) extends Table[UserPassword](database, "user-passwords") {
+class UserPasswordTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collectionName) {
   implicit val reader = UserPasswordBSONFormat.UserPasswordBSONReader
   implicit val writer = UserPasswordBSONFormat.UserPasswordBSONWriter
 
