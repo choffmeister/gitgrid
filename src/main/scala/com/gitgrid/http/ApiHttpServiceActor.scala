@@ -27,9 +27,7 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
         authRoute
       } ~
       path("ping") {
-        post {
-          complete("pong")
-        }
+        complete("pong")
       }
     }
 
