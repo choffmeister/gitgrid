@@ -27,5 +27,19 @@ class AuthenticationHandlerSpec extends Specification with AsyncUtils {
       await(ah.authenticate("user1", "pass1-new")) === Some(u1)
       await(ah.authenticate("user2", "pass2-new")) === Some(u2)
     }
+
+    "set password" in new TestConfig {
+      val db = Database()
+      val ah = AuthenticationHandler()
+
+      val u1 = await(db.users.insert(User(userName = "user1")))
+      val p1 = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id.get, hash = "pass1-old", hashAlgorithm = "plain")))
+
+      await(ah.authenticate("user1", "pass1-old")) must beSome(u1)
+      await(ah.authenticate("user1", "pass2-new")) must beNone
+      await(ah.setPassword(u1, "pass2-new"))
+      await(ah.authenticate("user1", "pass1-old")) must beNone
+      await(ah.authenticate("user1", "pass2-new")) must beSome(u1)
+    }
   }
 }

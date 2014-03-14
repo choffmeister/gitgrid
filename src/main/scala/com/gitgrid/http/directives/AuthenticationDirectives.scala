@@ -11,6 +11,7 @@ import spray.routing._
 
 trait AuthenticationDirectives {
   implicit val executor: ExecutionContext
+  val db: Database
   val auth: AuthenticationHandler
 
   val cookiePath = "/"
@@ -42,7 +43,7 @@ trait AuthenticationDirectives {
         val future = auth
           .findSession(sessionId)
           .flatMap[Option[User]] {
-            case Some(session) => auth.findUser(session.userId)
+            case Some(session) => db.users.find(session.userId)
             case _ => Future.successful(None)
           }
 
