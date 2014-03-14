@@ -2,7 +2,7 @@ package com.gitgrid.models
 
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
-import scala.concurrent.ExecutionContext
+import scala.concurrent._
 
 case class Project(
   id: Option[BSONObjectID] = Some(BSONObjectID.generate),
@@ -13,6 +13,13 @@ case class Project(
 class ProjectTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[Project](database, collectionName) {
   implicit val reader = ProjectBSONFormat.ProjectBSONReader
   implicit val writer = ProjectBSONFormat.ProjectBSONWriter
+
+  def findByFullQualifiedName(userName: String, canonicalName: String): Future[Option[Project]] = {
+    database.users.findByUserName(userName).flatMap {
+      case Some(user) => queryOne(BSONDocument("userId" -> user.id.get, "canonicalName" -> canonicalName))
+      case _ => future(None)
+    }
+  }
 
   collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "canonicalName" -> IndexType.Ascending), unique = true))
 }
