@@ -2,7 +2,7 @@ package com.gitgrid.models
 
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
-import scala.concurrent.ExecutionContext
+import scala.concurrent._
 
 case class UserPassword(
   id: Option[BSONObjectID] = Some(BSONObjectID.generate),
@@ -17,7 +17,7 @@ class UserPasswordTable(database: Database, collectionName: String)(implicit exe
   implicit val reader = UserPasswordBSONFormat.UserPasswordBSONReader
   implicit val writer = UserPasswordBSONFormat.UserPasswordBSONWriter
 
-  def findCurrentPassword(userId: BSONObjectID) = queryOne(BSONDocument(
+  def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(
     "$query" -> BSONDocument(
       "userId" -> userId
     ),
