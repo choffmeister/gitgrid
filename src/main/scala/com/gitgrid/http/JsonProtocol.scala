@@ -25,6 +25,7 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
   }
 
   implicit val userFormat = jsonFormat2(User)
+  implicit val projectFormat = jsonFormat3(Project)
 
   implicit val authenticationRequestFormat = jsonFormat2(AuthenticationRequest)
   implicit val authenticationResponseFormat = jsonFormat2(AuthenticationResponse)
