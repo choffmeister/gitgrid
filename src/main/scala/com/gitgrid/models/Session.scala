@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent._
 
@@ -16,6 +17,8 @@ class SessionTable(database: Database, collectionName: String)(implicit executor
 
   def findBySessionId(sessionId: String): Future[Option[Session]] = queryOne(BSONDocument("sessionId" -> sessionId))
   def deleteBySessionId(sessionId: String): Future[Unit] = collection.remove(BSONDocument("sessionId" -> sessionId)).map(_ => Unit)
+
+  collection.indexesManager.ensure(Index(List("sessionId" -> IndexType.Ascending), unique = true))
 }
 
 object SessionBSONFormat {

@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
 
@@ -24,6 +25,8 @@ class UserPasswordTable(database: Database, collectionName: String)(implicit exe
       "createdAt" -> -1
     )
   ))
+
+  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "createdAt" -> IndexType.Descending)))
 }
 
 object UserPasswordBSONFormat {

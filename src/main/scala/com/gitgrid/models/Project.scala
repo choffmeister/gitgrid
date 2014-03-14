@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
 
@@ -12,6 +13,8 @@ case class Project(
 class ProjectTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[Project](database, collectionName) {
   implicit val reader = ProjectBSONFormat.ProjectBSONReader
   implicit val writer = ProjectBSONFormat.ProjectBSONWriter
+
+  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "canonicalName" -> IndexType.Ascending), unique = true))
 }
 
 object ProjectBSONFormat {

@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
 
@@ -13,6 +14,8 @@ class UserTable(database: Database, collectionName: String)(implicit executor: E
   implicit val writer = UserBSONFormat.UserBSONWriter
 
   def findByUserName(userName: String) = queryOne(BSONDocument("userName" -> userName))
+
+  collection.indexesManager.ensure(Index(List("userName" -> IndexType.Ascending), unique = true))
 }
 
 object UserBSONFormat {
