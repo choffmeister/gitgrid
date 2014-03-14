@@ -67,7 +67,7 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
     } ~
     path("state") {
       get {
-        authenticateOption { user =>
+        authenticateUserOption { user =>
           complete(AuthenticationState(user))
         }
       }

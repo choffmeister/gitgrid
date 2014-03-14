@@ -37,7 +37,7 @@ trait AuthenticationDirectives {
     }
   }
 
-  def authenticateOption: Directive1[Option[User]] = {
+  def authenticateUserOption: Directive1[Option[User]] = {
     extractSessionId.flatMap {
       case Some(sessionId) =>
         val future = auth
@@ -52,8 +52,8 @@ trait AuthenticationDirectives {
     }
   }
 
-  def authenticate: Directive1[User] =
-    authenticateOption.flatMap {
+  def authenticateUser: Directive1[User] =
+    authenticateUserOption.flatMap {
       case Some(u) => provide(u)
       case _ => reject(AuthenticationFailedRejection(CredentialsRejected, Nil))
     }
