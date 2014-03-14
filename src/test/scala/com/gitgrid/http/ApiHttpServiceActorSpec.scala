@@ -2,6 +2,7 @@ package com.gitgrid.http
 
 import akka.testkit.TestActorRef
 import com.gitgrid._
+import com.gitgrid.models.User
 import org.specs2.mutable._
 import scala.concurrent.ExecutionContext
 import spray.http.HttpHeaders._
@@ -52,14 +53,6 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "set and unset session cookies" in new TestApiHttpService {
-      def getCookie(headers: List[HttpHeader]): Option[HttpCookie] = {
-        val header = headers.find(h => h.name.toLowerCase == "set-cookie")
-        header match {
-          case Some(header) => Some(header.asInstanceOf[`Set-Cookie`].cookie)
-          case _ => None
-        }
-      }
-
       await(db.sessions.all) must haveSize(0)
       Get("/api/auth/state") ~> route ~> check {
         status === OK
@@ -100,6 +93,33 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         status === OK
         responseAs[AuthenticationState].user must beNone
       }
+    }
+
+    "allow registration" in new TestApiHttpService {
+      await(db.users.all) must haveSize(2)
+
+      Post("/api/auth/register", AuthenticationRequest("user3", "pass3")) ~> route ~> check {
+        status === OK
+        val res = responseAs[User]
+        res.id must beSome
+        res.userName === "user3"
+      }
+
+      await(db.users.all) must haveSize(3)
+
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
+        val cookie = getCookie(headers)
+        cookie must beSome
+        cookie.get.name === "gitgrid-sid"
+      }
+    }
+  }
+
+  def getCookie(headers: List[HttpHeader]): Option[HttpCookie] = {
+    val header = headers.find(h => h.name.toLowerCase == "set-cookie")
+    header match {
+      case Some(header) => Some(header.asInstanceOf[`Set-Cookie`].cookie)
+      case _ => None
     }
   }
 }
