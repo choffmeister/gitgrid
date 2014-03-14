@@ -6,9 +6,7 @@ import com.gitgrid.utils.NonceGenerator
 import reactivemongo.bson.BSONObjectID
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
-  val db = Database()
-
+class AuthenticationHandler(db: Database)(implicit ec: ExecutionContext) {
   def authenticate(userName: String, password: String): Future[Option[User]] = {
     db.users.findByUserName(userName).flatMap {
       case Some(u) =>
@@ -41,4 +39,8 @@ class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
   def findSession(sessionId: String): Future[Option[Session]] = {
     db.sessions.findBySessionId(sessionId)
   }
+}
+
+object AuthenticationHandler {
+  def apply()(implicit config: Config, ec: ExecutionContext): AuthenticationHandler = new AuthenticationHandler(Database())
 }

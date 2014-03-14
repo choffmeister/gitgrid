@@ -15,7 +15,8 @@ case class AuthenticationState(user: Option[User])
 class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
   implicit val actorRefFactory = context
   implicit val executor = context.dispatcher
-  val auth = new AuthenticationHandler()
+  val db = Database()
+  val auth = AuthenticationHandler()
 
   def receive = runRoute(route)
   lazy val route =
@@ -34,9 +35,9 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
         entity(as[AuthenticationRequest]) { credentials =>
           val future = auth
             .authenticate(credentials.userName, credentials.password)
-            .flatMap[Option[(User, Session)]] {
+            .flatMap {
               case Some(user) => auth.createSession(user.id.get).map(s => Some((user, s)))
-              case _ => Future.successful(None)
+              case _ => Future.successful(Option.empty[(User, Session)])
             }
 
           onSuccess(future) {

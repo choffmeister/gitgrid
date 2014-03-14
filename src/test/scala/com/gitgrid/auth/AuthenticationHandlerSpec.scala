@@ -15,7 +15,7 @@ class AuthenticationHandlerSpec extends Specification with AsyncUtils {
   "AuthenticationHandlerSpec" should {
     "authenticate by credentials" in new TestConfig {
       val db = Database()
-      val ah = new AuthenticationHandler()
+      val ah = AuthenticationHandler()
 
       val u1 = await(db.users.insert(User(userName = "user1")))
       val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id.get, hash = "pass1-old", hashAlgorithm = "plain")))
