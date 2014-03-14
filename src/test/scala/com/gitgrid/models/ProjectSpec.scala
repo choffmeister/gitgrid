@@ -10,9 +10,9 @@ class ProjectSpec extends Specification with AsyncUtils {
   "User" should {
     "work" in new TestConfig {
       val db = Database()
-      val p1 = Project(id = Some(newId), userId = newId, canonicalName = "p1")
-      val p2 = Project(id = Some(newId), userId = newId, canonicalName = "p2")
-      val p3 = Project(id = Some(newId), userId = newId, canonicalName = "p3")
+      val p1 = Project(userId = newId, canonicalName = "p1")
+      val p2 = Project(userId = newId, canonicalName = "p2")
+      val p3 = Project(userId = newId, canonicalName = "p3")
 
       await(db.projects.all) must haveSize(0)
       await(db.projects.insert(p1))

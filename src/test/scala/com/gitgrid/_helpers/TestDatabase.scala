@@ -8,8 +8,8 @@ trait TestDatabase extends TestConfig with AsyncUtils {
 
   val db = Database()
 
-  val user1 = await(db.users.insert(User(id = Some(newId), userName = "user1")))
-  val password1 = await(db.userPasswords.insert(UserPassword(id = Some(newId), userId = user1.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass1", hashAlgorithm = "plain")))
-  val user2 = await(db.users.insert(User(id = Some(newId), userName = "user2")))
-  val password2 = await(db.userPasswords.insert(UserPassword(id = Some(newId), userId = user2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
+  val user1 = await(db.users.insert(User(userName = "user1")))
+  val password1 = await(db.userPasswords.insert(UserPassword(userId = user1.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass1", hashAlgorithm = "plain")))
+  val user2 = await(db.users.insert(User(userName = "user2")))
+  val password2 = await(db.userPasswords.insert(UserPassword(userId = user2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
 }

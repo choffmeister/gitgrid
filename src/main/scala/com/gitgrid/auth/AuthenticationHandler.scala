@@ -31,7 +31,7 @@ class AuthenticationHandler(implicit config: Config, ec: ExecutionContext) {
 
   def createSession(userId: BSONObjectID): Future[Session] = {
     val sessionId = NonceGenerator.generateString(16)
-    db.sessions.insert(new Session(id = Some(BSONObjectID.generate), userId = userId, sessionId = sessionId, expires = None))
+    db.sessions.insert(new Session(userId = userId, sessionId = sessionId, expires = None))
   }
 
   def revokeSession(sessionId: String): Future[Unit] = {

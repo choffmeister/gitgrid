@@ -4,7 +4,7 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class Session(
-  id: Option[BSONObjectID],
+  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
   userId: BSONObjectID,
   sessionId: String,
   expires: Option[BSONDateTime] = None

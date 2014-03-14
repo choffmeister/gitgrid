@@ -10,9 +10,9 @@ class UserPasswordSpec extends Specification with AsyncUtils {
   "UserPassword" should {
     "work" in new TestConfig {
       val db = Database()
-      val up1 = UserPassword(id = Some(newId), userId = newId, createdAt = BSONDateTime(0))
-      val up2 = UserPassword(id = Some(newId), userId = newId, createdAt = BSONDateTime(1))
-      val up3 = UserPassword(id = Some(newId), userId = newId, createdAt = BSONDateTime(2))
+      val up1 = UserPassword(userId = newId, createdAt = BSONDateTime(0))
+      val up2 = UserPassword(userId = newId, createdAt = BSONDateTime(1))
+      val up3 = UserPassword(userId = newId, createdAt = BSONDateTime(2))
 
       await(db.userPasswords.all) must haveSize(0)
       await(db.userPasswords.insert(up1))

@@ -4,7 +4,7 @@ import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
 
 case class UserPassword(
-  id: Option[BSONObjectID] = None,
+  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
   userId: BSONObjectID,
   createdAt: BSONDateTime,
   hash: String = "",

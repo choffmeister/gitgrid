@@ -4,7 +4,7 @@ import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
 
 case class User(
-  id: Option[BSONObjectID] = None,
+  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
   userName: String = ""
 ) extends BaseModel
 
