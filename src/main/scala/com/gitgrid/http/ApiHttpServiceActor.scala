@@ -71,5 +71,17 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
           complete(AuthenticationState(user))
         }
       }
+    } ~
+    path("register") {
+      post {
+        entity(as[AuthenticationRequest]) { credentials =>
+          val future = for {
+            user <- db.users.insert(User(userName = credentials.userName))
+            password <- auth.setPassword(user, credentials.password)
+          } yield user
+
+          onSuccess(future) { user => complete(user) }
+        }
+      }
     }
 }

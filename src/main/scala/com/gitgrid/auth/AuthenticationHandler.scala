@@ -19,9 +19,9 @@ class AuthenticationHandler(db: Database)(implicit ec: ExecutionContext) {
     }
   }
 
-  def setPassword(user: User, newPassword: String): Future[Unit] = {
+  def setPassword(user: User, newPassword: String): Future[UserPassword] = {
     val now = BSONDateTime(System.currentTimeMillis)
-    db.userPasswords.insert(UserPassword(userId = user.id.get, createdAt = now, hash = newPassword, hashAlgorithm = "plain")).map(_ => Unit)
+    db.userPasswords.insert(UserPassword(userId = user.id.get, createdAt = now, hash = newPassword, hashAlgorithm = "plain"))
   }
 
   def checkPassword(user: User, password: String): Future[Boolean] = {
