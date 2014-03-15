@@ -4,6 +4,7 @@ import com.gitgrid.auth._
 import com.gitgrid.models._
 import reactivemongo.bson._
 import scala.concurrent._
+import shapeless.HNil
 import spray.http._
 import spray.routing.AuthenticationFailedRejection.CredentialsRejected
 import spray.routing.Directives._
@@ -57,4 +58,14 @@ trait AuthenticationDirectives {
       case Some(u) => provide(u)
       case _ => reject(AuthenticationFailedRejection(CredentialsRejected, Nil))
     }
+
+  def authorizeDetached(check: => Future[Boolean]): Directive0 = onSuccess(check).flatMap[HNil] {
+    res => authorize(res)
+  }
+
+  def authorizeDetached(check: RequestContext => Future[Boolean]): Directive0 = extract(check).flatMap { future =>
+    onSuccess(future).flatMap[HNil] {
+      res => authorize(res)
+    }
+  }
 }
