@@ -5,8 +5,8 @@ import org.specs2.mutable._
 
 class UserSpec extends Specification with AsyncUtils {
   "User" should {
-    "work" in new TestConfig {
-      val db = TestDatabase.create(config)
+    "work" in {
+      val db = TestDatabase.create()
       val u1 = User(userName = "user1")
       val u2 = User(userName = "user2")
       val u3 = User(userName = "user3")

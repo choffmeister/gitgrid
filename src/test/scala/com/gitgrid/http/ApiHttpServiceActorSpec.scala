@@ -127,7 +127,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 }
 
-trait TestApiHttpService extends TestActorSystem with TestConfig with TestDatabase {
+trait TestApiHttpService extends TestActorSystem with TestDatabase {
   val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor(db))
   val apiHttpService = apiHttpServiceRef.underlyingActor
 

@@ -8,8 +8,8 @@ class SessionSpec extends Specification with AsyncUtils {
   def newId = BSONObjectID.generate
 
   "Session" should {
-    "work" in new TestConfig {
-      val db = TestDatabase.create(config)
+    "work" in {
+      val db = TestDatabase.create()
       val s1 = Session(userId = newId, sessionId = "session1")
       val s2 = Session(userId = newId, sessionId = "session2")
       val s3 = Session(userId = newId, sessionId = "session3")

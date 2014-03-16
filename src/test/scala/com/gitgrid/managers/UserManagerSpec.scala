@@ -15,8 +15,8 @@ class UserManagerSpec extends Specification with AsyncUtils {
   val tomorrow = BSONDateTime(System.currentTimeMillis + 24 * 60 * 60 * 1000)
 
   "UserManager" should {
-    "set password" in new TestConfig {
-      val db = TestDatabase.create(config)
+    "set password" in {
+      val db = TestDatabase.create()
       val um = new UserManager(db)
       val upa = new GitGridUserPassAuthenticator(db)
 

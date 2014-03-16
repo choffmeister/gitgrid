@@ -38,8 +38,8 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
       upa.checkPassword("abc", "", "plain", "abC") === false
     }
 
-    "only accept most recent password" in new TestConfig {
-      val db = TestDatabase.create(config)
+    "only accept most recent password" in {
+      val db = TestDatabase.create()
       val upa = new GitGridUserPassAuthenticator(db)
 
       val u1 = await(db.users.insert(User(userName = "user1")))

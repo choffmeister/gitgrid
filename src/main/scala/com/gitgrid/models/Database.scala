@@ -40,8 +40,8 @@ class Database(connection: MongoConnection, databaseName: String, collectionName
 object Database {
   lazy val driver = new MongoDriver()
 
-  def apply(config: Config)(implicit ec: ExecutionContext): Database = {
-    val connection = driver.connection(config.mongoDbServers)
-    new Database(connection, config.mongoDbDatabaseName, config.mongoDbCollectionNamePrefix)
+  def apply()(implicit ec: ExecutionContext): Database = {
+    val connection = driver.connection(Config.mongoDbServers)
+    new Database(connection, Config.mongoDbDatabaseName)
   }
 }

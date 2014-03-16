@@ -10,7 +10,7 @@ import spray.http._
 
 class HttpServiceActorSpec extends Specification with AsyncUtils {
   "HttpServiceActorSpec" should {
-    "return HTTP 404 not found on unknown route" in new TestActorSystem with TestConfig with TestDatabase {
+    "return HTTP 404 not found on unknown route" in new TestActorSystem with TestDatabase {
       val httpService = TestActorRef(new HttpServiceActor(db))
 
       val req1 = HttpRequest(method = GET, uri = Uri("/"))
