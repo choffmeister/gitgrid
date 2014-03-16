@@ -14,7 +14,8 @@ case class AuthenticationState(user: Option[User])
 class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
   implicit val actorRefFactory = context
   implicit val executor = context.dispatcher
-  val auth = new GitGridHttpAuthenticator(db)
+  val authenticator = new GitGridHttpAuthenticator(db)
+  val authorizer = new GitGridAuthorizer(db)
 
   def receive = runRoute(route)
   lazy val route =
@@ -30,7 +31,7 @@ class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with Htt
   lazy val authRoute =
     path("login") {
       post {
-        formsLogin(auth) {
+        formsLogin(authenticator) {
           case Some(user) => complete(AuthenticationResponse("Logged in", Some(user)))
           case _ => complete(AuthenticationResponse("Invalid username or password", None))
         }
@@ -38,14 +39,14 @@ class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with Htt
     } ~
     path("logout") {
       post {
-        formsLogout(auth) {
+        formsLogout(authenticator) {
           complete(AuthenticationResponse("Logged out", None))
         }
       }
     } ~
     path("state") {
       get {
-        authenticateOption(auth) { user =>
+        authenticateOption() { user =>
           complete(AuthenticationState(user))
         }
       }
@@ -58,4 +59,9 @@ class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with Htt
         }
       }
     }
+
+  def authenticate(): Directive1[User] = authenticate(authenticator)
+  def authenticateOption(): Directive1[Option[User]] = authenticateOption(authenticator)
+  def authorize(user: Option[User], action: => Any): Directive0 = authorizeDetached(authorizer.authorize(user, action))
+  def authorize(user: User, action: => Any): Directive0 = authorizeDetached(authorizer.authorize(Some(user), action))
 }
