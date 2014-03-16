@@ -1,10 +1,13 @@
 package com.gitgrid.http
 
 import akka.actor._
+import com.gitgrid.Config
 import com.gitgrid.auth._
+import com.gitgrid.git.GitRepository
 import com.gitgrid.http.directives._
 import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
+import java.io.File
 import spray.routing._
 import spray.routing.authentication.UserPass
 
@@ -25,6 +28,24 @@ class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with Htt
       } ~
       path("ping") {
         complete("pong")
+      } ~
+      pathPrefix("projects") {
+        projectRoute
+      }
+    }
+
+  lazy val projectRoute =
+    pathEnd {
+      post {
+        authenticate() { user =>
+          entity(as[Project]) { project =>
+            onSuccess(db.projects.insert(project.copy(id = Some(reactivemongo.bson.BSONObjectID.generate), userId = user.id.get))) { project =>
+              val dir = new File(Config.repositoriesDir, project.id.get.stringify)
+              GitRepository.init(dir, bare = true)
+              complete(project)
+            }
+          }
+        }
       }
     }
 
