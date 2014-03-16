@@ -1,7 +1,6 @@
 package com.gitgrid.http
 
 import akka.actor._
-import com.gitgrid.Config
 import com.gitgrid.auth._
 import com.gitgrid.http.directives._
 import com.gitgrid.managers.UserManager
@@ -12,10 +11,9 @@ import spray.routing.authentication.UserPass
 case class AuthenticationResponse(message: String, user: Option[User])
 case class AuthenticationState(user: Option[User])
 
-class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
+class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
   implicit val actorRefFactory = context
   implicit val executor = context.dispatcher
-  val db = Database()
   val auth = new GitGridHttpAuthenticator(db)
 
   def receive = runRoute(route)
