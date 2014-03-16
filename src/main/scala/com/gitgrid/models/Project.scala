@@ -8,21 +8,21 @@ import scala.concurrent._
 case class Project(
   id: Option[BSONObjectID] = Some(BSONObjectID.generate),
   userId: BSONObjectID,
-  canonicalName: String = ""
+  name: String = ""
 ) extends BaseModel
 
 class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
   implicit val reader = ProjectBSONFormat.ProjectBSONReader
   implicit val writer = ProjectBSONFormat.ProjectBSONWriter
 
-  def findByFullQualifiedName(userName: String, canonicalName: String): Future[Option[Project]] = {
-    database.users.findByUserName(userName).flatMap {
-      case Some(user) => queryOne(BSONDocument("userId" -> user.id.get, "canonicalName" -> canonicalName))
+  def findByFullQualifiedName(ownerName: String, projectName: String): Future[Option[Project]] = {
+    database.users.findByUserName(ownerName).flatMap {
+      case Some(user) => queryOne(BSONDocument("userId" -> user.id.get, "name" -> projectName))
       case _ => future(None)
     }
   }
 
-  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "canonicalName" -> IndexType.Ascending), unique = true))
+  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "name" -> IndexType.Ascending), unique = true))
 }
 
 object ProjectBSONFormat {
@@ -30,7 +30,7 @@ object ProjectBSONFormat {
     def read(doc: BSONDocument) = Project(
       id = doc.getAs[BSONObjectID]("_id"),
       userId = doc.getAs[BSONObjectID]("userId").get,
-      canonicalName = doc.getAs[String]("canonicalName").get
+      name = doc.getAs[String]("name").get
     )
   }
 
@@ -38,7 +38,7 @@ object ProjectBSONFormat {
     def write(obj: Project): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
-      "canonicalName" -> obj.canonicalName
+      "name" -> obj.name
     )
   }
 }
