@@ -16,6 +16,9 @@ trait TestDatabase extends Scope with AsyncUtils {
   val password1 = await(db.userPasswords.insert(UserPassword(userId = user1.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass1", hashAlgorithm = "plain")))
   val user2 = await(db.users.insert(User(userName = "user2")))
   val password2 = await(db.userPasswords.insert(UserPassword(userId = user2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
+
+  val project1 = await(db.projects.insert(Project(userId = user1.id.get, name = "project1")))
+  val project2 = await(db.projects.insert(Project(userId = user2.id.get, name = "project2")))
 }
 
 object TestDatabase {

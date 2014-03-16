@@ -14,7 +14,7 @@ import spray.routing.authentication.UserPass
 case class AuthenticationResponse(message: String, user: Option[User])
 case class AuthenticationState(user: Option[User])
 
-class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
+class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with ExtractionDirectives with JsonProtocol {
   implicit val actorRefFactory = context
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(db)
@@ -29,12 +29,23 @@ class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with Htt
       path("ping") {
         complete("pong")
       } ~
+      pathPrefix("users") {
+        usersRoute
+      } ~
       pathPrefix("projects") {
-        projectRoute
+        projectsRoute
       }
     }
 
-  lazy val projectRoute =
+  lazy val usersRoute =
+    userPathPrefix { user =>
+      complete(user)
+    }
+
+  lazy val projectsRoute =
+    projectPathPrefix { project =>
+      complete(project)
+    } ~
     pathEnd {
       post {
         authenticate() { user =>
