@@ -1,17 +1,20 @@
 package com.gitgrid.http
 
-import akka.testkit.TestActorRef
+import akka.testkit._
 import com.gitgrid._
 import com.gitgrid.models.User
 import org.specs2.mutable._
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{duration, ExecutionContext}
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
 import spray.http._
+import spray.routing.authentication.UserPass
 import spray.testkit._
 
 class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils with JsonProtocol {
   override implicit val executor = ExecutionContext.Implicits.global
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5000, duration.MILLISECONDS))
 
   "ApiHttpServiceActorSpec" should {
     "respond to ping requests" in new TestApiHttpService {
@@ -24,29 +27,29 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActorSpec /auth" should {
     "accept authentication request with valid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user1", "pass1")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user === Some(user1)
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass2")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user2", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user === Some(user2)
       }
     }
 
     "reject authentication request with invalid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass2")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user1", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user2", "pass1")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user", "pass")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user", "pass")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
@@ -59,7 +62,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         responseAs[AuthenticationState].user must beNone
       }
 
-      val sessionId = Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
+      val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
         val cookie = getCookie(headers)
         cookie must beSome
         cookie.get.name === "gitgrid-sid"
@@ -98,7 +101,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     "allow registration" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
 
-      Post("/api/auth/register", AuthenticationRequest("user3", "pass3")) ~> route ~> check {
+      Post("/api/auth/register", UserPass("user3", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
         res.id must beSome
@@ -107,7 +110,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
       await(db.users.all) must haveSize(3)
 
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
+      Post("/api/auth/login", UserPass("user3", "pass3")) ~> route ~> check {
         val cookie = getCookie(headers)
         cookie must beSome
         cookie.get.name === "gitgrid-sid"
