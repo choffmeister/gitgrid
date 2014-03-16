@@ -1,5 +1,6 @@
 package com.gitgrid.auth
 
+import com.gitgrid.managers.SessionManager
 import com.gitgrid.models._
 import scala.concurrent._
 import spray.routing.AuthenticationFailedRejection._
@@ -13,7 +14,7 @@ class GitGridHttpAuthenticator(db: Database)(implicit ec: ExecutionContext) exte
 
   val userPassAuthenticator = new GitGridUserPassAuthenticator(db)
   val basicAuthenticator = new BasicHttpAuthenticator[User](realm, userPassAuthenticator)
-  val sessionHandler = new SessionHandler(db, cookieName, cookiePath)
+  val sessionHandler = new SessionManager(db, cookieName, cookiePath)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = {
     authenticateByBasicHttp(ctx).flatMap {
