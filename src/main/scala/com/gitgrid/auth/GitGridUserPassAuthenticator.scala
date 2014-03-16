@@ -1,8 +1,6 @@
 package com.gitgrid.auth
 
-import com.gitgrid.Config
 import com.gitgrid.models._
-import scala.Some
 import scala.concurrent._
 import spray.routing.authentication._
 
@@ -33,8 +31,4 @@ class GitGridUserPassAuthenticator(db: Database)(implicit ec: ExecutionContext) 
     case "plain" if hash == password => true
     case _ => false
   }
-}
-
-object GitGridUserPassAuthenticator {
-  def apply()(implicit config: Config, ec: ExecutionContext): GitGridUserPassAuthenticator = new GitGridUserPassAuthenticator(Database())
 }
