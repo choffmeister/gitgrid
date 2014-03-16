@@ -12,9 +12,8 @@ import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.encoding._
 
-class GitHttpServiceActor(implicit config: Config) extends Actor with ActorLogging {
+class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
   implicit val executor = context.dispatcher
-  val db = Database()
 
   def receive = {
     case _: Http.Connected =>
@@ -57,7 +56,7 @@ class GitHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
 
   private def openRepository(userName: String, canonicalName: String, sender: ActorRef)(inner: GitRepository => HttpResponse) = {
     db.projects.findByFullQualifiedName(userName, canonicalName).map {
-      case Some(project) => GitRepository(new File(config.repositoriesDir, project.id.get.stringify))(inner)
+      case Some(project) => GitRepository(new File(Config.repositoriesDir, project.id.get.stringify))(inner)
       case _ => HttpResponse(NotFound)
     }.onComplete {
       case scala.util.Success(res: HttpResponse) =>

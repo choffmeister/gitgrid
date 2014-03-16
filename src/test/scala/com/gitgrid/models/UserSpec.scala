@@ -2,12 +2,11 @@ package com.gitgrid.models
 
 import com.gitgrid._
 import org.specs2.mutable._
-import reactivemongo.bson.BSONObjectID
 
 class UserSpec extends Specification with AsyncUtils {
   "User" should {
-    "work" in new TestConfig {
-      val db = Database()
+    "work" in {
+      val db = TestDatabase.create()
       val u1 = User(userName = "user1")
       val u2 = User(userName = "user2")
       val u3 = User(userName = "user3")

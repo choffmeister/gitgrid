@@ -4,6 +4,7 @@ import com.gitgrid.models._
 import reactivemongo.bson._
 import spray.httpx._
 import spray.json._
+import spray.routing.authentication.UserPass
 
 trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
   implicit object BSONObjectIDFormat extends JsonFormat[BSONObjectID] {
@@ -27,7 +28,7 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val userFormat = jsonFormat2(User)
   implicit val projectFormat = jsonFormat3(Project)
 
-  implicit val authenticationRequestFormat = jsonFormat2(AuthenticationRequest)
+  implicit val userPassFormat = jsonFormat2(UserPass)
   implicit val authenticationResponseFormat = jsonFormat2(AuthenticationResponse)
   implicit val authenticationStateFormat = jsonFormat1(AuthenticationState)
 }

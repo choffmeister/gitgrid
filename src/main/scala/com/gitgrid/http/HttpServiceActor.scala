@@ -2,14 +2,14 @@ package com.gitgrid.http
 
 import akka.actor._
 import akka.io.Tcp._
-import com.gitgrid.Config
 import com.gitgrid.git._
+import com.gitgrid.models.Database
 import spray.http.StatusCodes._
 import spray.http._
 
-class HttpServiceActor(implicit config: Config) extends Actor with ActorLogging {
-  val apiHttpActor = context.actorOf(Props(new ApiHttpServiceActor))
-  val gitHttpActor = context.actorOf(Props(new GitHttpServiceActor))
+class HttpServiceActor(db: Database) extends Actor with ActorLogging {
+  val apiHttpActor = context.actorOf(Props(new ApiHttpServiceActor(db)))
+  val gitHttpActor = context.actorOf(Props(new GitHttpServiceActor(db)))
 
   def receive = {
     case Connected(_, _) =>

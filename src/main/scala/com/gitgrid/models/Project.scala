@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent._
@@ -10,7 +11,7 @@ case class Project(
   canonicalName: String = ""
 ) extends BaseModel
 
-class ProjectTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[Project](database, collectionName) {
+class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
   implicit val reader = ProjectBSONFormat.ProjectBSONReader
   implicit val writer = ProjectBSONFormat.ProjectBSONWriter
 

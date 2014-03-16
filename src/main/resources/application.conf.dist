@@ -10,7 +10,6 @@ gitgrid {
     host = localhost
     port = 27017
     database = gitgrid-production
-    collectionprefix = ""
   }
 }
 

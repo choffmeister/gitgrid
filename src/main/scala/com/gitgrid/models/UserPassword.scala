@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent._
@@ -13,7 +14,7 @@ case class UserPassword(
   hashAlgorithm: String = ""
 ) extends BaseModel
 
-class UserPasswordTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collectionName) {
+class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
   implicit val reader = UserPasswordBSONFormat.UserPasswordBSONReader
   implicit val writer = UserPasswordBSONFormat.UserPasswordBSONWriter
 
