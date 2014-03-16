@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
 import scala.concurrent._
@@ -11,7 +12,7 @@ case class Session(
   expires: Option[BSONDateTime] = None
 ) extends BaseModel
 
-class SessionTable(database: Database, collectionName: String)(implicit executor: ExecutionContext) extends Table[Session](database, collectionName) {
+class SessionTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Session](database, collection) {
   implicit val reader = SessionBSONFormat.SessionBSONReader
   implicit val writer = SessionBSONFormat.SessionBSONWriter
 

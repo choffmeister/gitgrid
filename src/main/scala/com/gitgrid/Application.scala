@@ -3,15 +3,18 @@ package com.gitgrid
 import akka.actor._
 import akka.io.IO
 import com.gitgrid.http.HttpServiceActor
+import com.gitgrid.models.Database
 import scala.concurrent.duration._
 import spray.can.Http
 
 class Application extends Bootable {
   implicit val system = ActorSystem("gitgrid")
-  implicit val config = Config()
+  implicit val executor = system.dispatcher
+  val config = Config()
+  val db = Database(config)
 
   def startup() = {
-    val httpServiceActor = system.actorOf(Props(new HttpServiceActor), "httpservice")
+    val httpServiceActor = system.actorOf(Props(new HttpServiceActor(db)), "httpservice")
 
     IO(Http) ! Http.Bind(httpServiceActor, interface = config.httpInterface, port = config.httpPort)
   }

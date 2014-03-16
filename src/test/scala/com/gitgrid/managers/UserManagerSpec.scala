@@ -1,10 +1,12 @@
 package com.gitgrid.managers
 
+import com.gitgrid._
 import com.gitgrid.auth.GitGridUserPassAuthenticator
-import com.gitgrid.models._
-import com.gitgrid.{AsyncUtils, TestConfig}
+import com.gitgrid.models.User
+import com.gitgrid.models.UserPassword
 import org.specs2.mutable._
 import reactivemongo.bson.BSONDateTime
+import scala.Some
 import spray.routing.authentication.UserPass
 
 class UserManagerSpec extends Specification with AsyncUtils {
@@ -14,7 +16,7 @@ class UserManagerSpec extends Specification with AsyncUtils {
 
   "UserManager" should {
     "set password" in new TestConfig {
-      val db = Database()
+      val db = TestDatabase.create(config)
       val um = new UserManager(db)
       val upa = new GitGridUserPassAuthenticator(db)
 

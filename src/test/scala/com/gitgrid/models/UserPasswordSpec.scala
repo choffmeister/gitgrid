@@ -9,7 +9,7 @@ class UserPasswordSpec extends Specification with AsyncUtils {
 
   "UserPassword" should {
     "work" in new TestConfig {
-      val db = Database()
+      val db = TestDatabase.create(config)
       val up1 = UserPassword(userId = newId, createdAt = BSONDateTime(0))
       val up2 = UserPassword(userId = newId, createdAt = BSONDateTime(1))
       val up3 = UserPassword(userId = newId, createdAt = BSONDateTime(2))
