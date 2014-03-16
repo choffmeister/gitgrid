@@ -1,20 +1,24 @@
 package com.gitgrid.http
 
 import akka.actor._
-import spray.routing.HttpService
 import com.gitgrid.Config
-import com.gitgrid.models.User
-import com.gitgrid.auth.AuthenticationHandler
+import com.gitgrid.auth._
+import com.gitgrid.git.GitRepository
+import com.gitgrid.http.directives._
+import com.gitgrid.managers.UserManager
+import com.gitgrid.models._
+import java.io.File
+import spray.routing._
+import spray.routing.authentication.UserPass
 
-case class AuthenticationRequest(userName: String, password: String)
 case class AuthenticationResponse(message: String, user: Option[User])
+case class AuthenticationState(user: Option[User])
 
-class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLogging with HttpService {
-  import JsonProtocol._
-
-  implicit def actorRefFactory = context
-  implicit def executor = context.dispatcher
-  val authenticationHandler = new AuthenticationHandler()
+class ApiHttpServiceActor(db: Database) extends Actor with ActorLogging with HttpService with AuthenticationDirectives with JsonProtocol {
+  implicit val actorRefFactory = context
+  implicit val executor = context.dispatcher
+  val authenticator = new GitGridHttpAuthenticator(db)
+  val authorizer = new GitGridAuthorizer(db)
 
   def receive = runRoute(route)
   lazy val route =
@@ -23,8 +27,24 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
         authRoute
       } ~
       path("ping") {
-        post {
-          complete("pong")
+        complete("pong")
+      } ~
+      pathPrefix("projects") {
+        projectRoute
+      }
+    }
+
+  lazy val projectRoute =
+    pathEnd {
+      post {
+        authenticate() { user =>
+          entity(as[Project]) { project =>
+            onSuccess(db.projects.insert(project.copy(id = Some(reactivemongo.bson.BSONObjectID.generate), userId = user.id.get))) { project =>
+              val dir = new File(Config.repositoriesDir, project.id.get.stringify)
+              GitRepository.init(dir, bare = true)
+              complete(project)
+            }
+          }
         }
       }
     }
@@ -32,17 +52,37 @@ class ApiHttpServiceActor(implicit config: Config) extends Actor with ActorLoggi
   lazy val authRoute =
     path("login") {
       post {
-        entity(as[AuthenticationRequest]) { credentials =>
-          onSuccess(authenticationHandler.authenticate(credentials.userName, credentials.password)) {
-            case Some(user) => complete(AuthenticationResponse("Logged in", Some(user)))
-            case _ => complete(AuthenticationResponse("Invalid username or password", None))
-          }
+        formsLogin(authenticator) {
+          case Some(user) => complete(AuthenticationResponse("Logged in", Some(user)))
+          case _ => complete(AuthenticationResponse("Invalid username or password", None))
         }
       }
     } ~
     path("logout") {
       post {
-        complete("Logout")
+        formsLogout(authenticator) {
+          complete(AuthenticationResponse("Logged out", None))
+        }
+      }
+    } ~
+    path("state") {
+      get {
+        authenticateOption() { user =>
+          complete(AuthenticationState(user))
+        }
+      }
+    } ~
+    path("register") {
+      post {
+        entity(as[UserPass]) { userPass =>
+          val um = new UserManager(db)
+          onSuccess(um.createUser(userPass.user, userPass.pass)) { user => complete(user) }
+        }
       }
     }
+
+  def authenticate(): Directive1[User] = authenticate(authenticator)
+  def authenticateOption(): Directive1[Option[User]] = authenticateOption(authenticator)
+  def authorize(user: Option[User], action: => Any): Directive0 = authorizeDetached(authorizer.authorize(user, action))
+  def authorize(user: User, action: => Any): Directive0 = authorizeDetached(authorizer.authorize(Some(user), action))
 }

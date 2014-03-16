@@ -1,18 +1,20 @@
 package com.gitgrid.http
 
-import org.specs2.mutable._
-import spray.testkit._
+import akka.testkit._
 import com.gitgrid._
-import akka.testkit.TestActorRef
+import com.gitgrid.models.User
+import org.specs2.mutable._
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{duration, ExecutionContext}
+import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
-import com.gitgrid.models._
-import reactivemongo.bson._
-import scala.concurrent.ExecutionContext
+import spray.http._
+import spray.routing.authentication.UserPass
+import spray.testkit._
 
-class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils {
-  import JsonProtocol._
+class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils with JsonProtocol {
   override implicit val executor = ExecutionContext.Implicits.global
-  def newId = BSONObjectID.generate
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5000, duration.MILLISECONDS))
 
   "ApiHttpServiceActorSpec" should {
     "respond to ping requests" in new TestApiHttpService {
@@ -24,50 +26,109 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActorSpec /auth" should {
-    "handle login requests" in new TestApiHttpService {
-      val db = Database()
-      val u1 = await(db.users.insert(User(id = Some(newId), userName = "user1")))
-      val p1 = await(db.userPasswords.insert(UserPassword(id = Some(newId), userId = u1.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass1", hashAlgorithm = "plain")))
-      val u2 = await(db.users.insert(User(id = Some(newId), userName = "user2")))
-      val p2 = await(db.userPasswords.insert(UserPassword(id = Some(newId), userId = u2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
-
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+    "accept authentication request with valid credentials" in new TestApiHttpService {
+      Post("/api/auth/login", UserPass("user1", "pass1")) ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(u1)
+        responseAs[AuthenticationResponse].user === Some(user1)
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass2")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user2", "pass2")) ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(u2)
+        responseAs[AuthenticationResponse].user === Some(user2)
       }
+    }
 
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass2")) ~> sealedRoute ~> check {
+    "reject authentication request with invalid credentials" in new TestApiHttpService {
+      Post("/api/auth/login", UserPass("user1", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user2", "pass1")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user", "pass")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", UserPass("user", "pass")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
+      }
+    }
+
+    "set and unset session cookies" in new TestApiHttpService {
+      await(db.sessions.all) must haveSize(0)
+      Get("/api/auth/state") ~> route ~> check {
+        status === OK
+        responseAs[AuthenticationState].user must beNone
+      }
+
+      val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
+        val cookie = getCookie(headers)
+        cookie must beSome
+        cookie.get.name === "gitgrid-sid"
+        cookie.get.expires must beNone
+        cookie.get.content
+      }
+
+      await(db.sessions.all) must haveSize(1)
+      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
+        status === OK
+        responseAs[AuthenticationState].user must beSome(user1)
+      }
+
+      Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
+        val cookie = getCookie(headers)
+        cookie must beSome
+        cookie.get.name === "gitgrid-sid"
+        cookie.get.expires must beSome
+        cookie.get.expires.get.clicks must beLessThan(System.currentTimeMillis)
+      }
+
+      await(db.sessions.all) must haveSize(0)
+      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
+        status === OK
+        responseAs[AuthenticationState].user must beNone
       }
     }
 
     "handle logout requests" in new TestApiHttpService {
       Post("/api/auth/logout") ~> route ~> check {
         status === OK
-        responseAs[String] === "Logout"
+        responseAs[AuthenticationState].user must beNone
       }
+    }
+
+    "allow registration" in new TestApiHttpService {
+      await(db.users.all) must haveSize(2)
+
+      Post("/api/auth/register", UserPass("user3", "pass3")) ~> route ~> check {
+        status === OK
+        val res = responseAs[User]
+        res.id must beSome
+        res.userName === "user3"
+      }
+
+      await(db.users.all) must haveSize(3)
+
+      Post("/api/auth/login", UserPass("user3", "pass3")) ~> route ~> check {
+        val cookie = getCookie(headers)
+        cookie must beSome
+        cookie.get.name === "gitgrid-sid"
+      }
+    }
+  }
+
+  def getCookie(headers: List[HttpHeader]): Option[HttpCookie] = {
+    val header = headers.find(h => h.name.toLowerCase == "set-cookie")
+    header match {
+      case Some(header) => Some(header.asInstanceOf[`Set-Cookie`].cookie)
+      case _ => None
     }
   }
 }
 
-trait TestApiHttpService extends TestActorSystem with TestConfig {
-  val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor)
+trait TestApiHttpService extends TestActorSystem with TestDatabase {
+  val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor(db))
   val apiHttpService = apiHttpServiceRef.underlyingActor
 
   def route = apiHttpService.route

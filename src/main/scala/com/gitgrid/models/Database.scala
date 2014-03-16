@@ -1,20 +1,18 @@
 package com.gitgrid.models
 
-import reactivemongo.api._
-import scala.concurrent._
-import reactivemongo.bson._
 import com.gitgrid.Config
+import reactivemongo.api._
 import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.bson._
+import scala.concurrent._
 
 abstract class BaseModel {
   val id: Option[BSONObjectID]
 }
 
-abstract class Table[M <: BaseModel](database: Database, collectionName: String)(implicit val executor: ExecutionContext) {
+abstract class Table[M <: BaseModel](database: Database, collection: BSONCollection)(implicit val executor: ExecutionContext) {
   implicit val reader: BSONDocumentReader[M]
   implicit val writer: BSONDocumentWriter[M]
-
-  val collection: BSONCollection = database.database(collectionName)
 
   def all: Future[List[M]] = query(BSONDocument.empty)
   def find(id: BSONObjectID): Future[Option[M]] = queryOne(byId(id))
@@ -30,18 +28,20 @@ abstract class Table[M <: BaseModel](database: Database, collectionName: String)
   private def byId(e: M): BSONDocument = byId(e.id.get)
 }
 
-class Database(nodes: Seq[String], databaseName: String)(implicit ec: ExecutionContext) {
-  val driver = Database.driver
-  val connection = driver.connection(nodes)
-  val database = connection(databaseName)
+class Database(connection: MongoConnection, databaseName: String, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
+  private val database = connection(databaseName)
 
-  lazy val users = new UserTable(this)
-  lazy val userPasswords = new UserPasswordTable(this)
-  lazy val sessions = new SessionTable(this)
+  lazy val users = new UserTable(this, database(collectionNamePrefix + "users"))
+  lazy val userPasswords = new UserPasswordTable(this, database(collectionNamePrefix + "user-passwords"))
+  lazy val sessions = new SessionTable(this, database(collectionNamePrefix + "sessions"))
+  lazy val projects = new ProjectTable(this, database(collectionNamePrefix + "projects"))
 }
 
 object Database {
   lazy val driver = new MongoDriver()
 
-  def apply()(implicit config: Config, ec: ExecutionContext): Database = new Database(config.mongoDbServers, config.mongoDbDatabaseName)
+  def apply()(implicit ec: ExecutionContext): Database = {
+    val connection = driver.connection(Config.mongoDbServers)
+    new Database(connection, Config.mongoDbDatabaseName)
+  }
 }

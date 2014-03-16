@@ -1,18 +1,15 @@
 package com.gitgrid.models
 
-import org.specs2.mutable._
 import com.gitgrid._
-import reactivemongo.bson.BSONObjectID
+import org.specs2.mutable._
 
 class UserSpec extends Specification with AsyncUtils {
-  def newId = BSONObjectID.generate
-
   "User" should {
-    "work" in new TestConfig {
-      val db = Database()
-      val u1 = User(id = Some(newId), userName = "user1")
-      val u2 = User(id = Some(newId), userName = "user2")
-      val u3 = User(id = Some(newId), userName = "user3")
+    "work" in {
+      val db = TestDatabase.create()
+      val u1 = User(userName = "user1")
+      val u2 = User(userName = "user2")
+      val u3 = User(userName = "user3")
 
       await(db.users.all) must haveSize(0)
       await(db.users.insert(u1))

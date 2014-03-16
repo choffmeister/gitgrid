@@ -1,18 +1,18 @@
 package com.gitgrid.models
 
-import org.specs2.mutable._
 import com.gitgrid._
+import org.specs2.mutable._
 import reactivemongo.bson.BSONObjectID
 
 class SessionSpec extends Specification with AsyncUtils {
   def newId = BSONObjectID.generate
 
   "Session" should {
-    "work" in new TestConfig {
-      val db = Database()
-      val s1 = Session(id = Some(newId), userId = newId, sessionId = "session1")
-      val s2 = Session(id = Some(newId), userId = newId, sessionId = "session2")
-      val s3 = Session(id = Some(newId), userId = newId, sessionId = "session3")
+    "work" in {
+      val db = TestDatabase.create()
+      val s1 = Session(userId = newId, sessionId = "session1")
+      val s2 = Session(userId = newId, sessionId = "session2")
+      val s3 = Session(userId = newId, sessionId = "session3")
 
       await(db.sessions.all) must haveSize(0)
       await(db.sessions.insert(s1))

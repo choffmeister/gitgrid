@@ -1,10 +1,12 @@
 package com.gitgrid.models
 
+import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.api.indexes._
 import reactivemongo.bson._
-import scala.concurrent.ExecutionContext
+import scala.concurrent._
 
 case class UserPassword(
-  id: Option[BSONObjectID] = None,
+  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
   userId: BSONObjectID,
   createdAt: BSONDateTime,
   hash: String = "",
@@ -12,11 +14,11 @@ case class UserPassword(
   hashAlgorithm: String = ""
 ) extends BaseModel
 
-class UserPasswordTable(database: Database)(implicit executor: ExecutionContext) extends Table[UserPassword](database, "user-passwords") {
+class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
   implicit val reader = UserPasswordBSONFormat.UserPasswordBSONReader
   implicit val writer = UserPasswordBSONFormat.UserPasswordBSONWriter
 
-  def findCurrentPassword(userId: BSONObjectID) = queryOne(BSONDocument(
+  def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(
     "$query" -> BSONDocument(
       "userId" -> userId
     ),
@@ -24,6 +26,8 @@ class UserPasswordTable(database: Database)(implicit executor: ExecutionContext)
       "createdAt" -> -1
     )
   ))
+
+  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "createdAt" -> IndexType.Descending)))
 }
 
 object UserPasswordBSONFormat {

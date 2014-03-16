@@ -1,18 +1,18 @@
 package com.gitgrid.models
 
-import org.specs2.mutable._
 import com.gitgrid._
+import org.specs2.mutable._
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 
 class UserPasswordSpec extends Specification with AsyncUtils {
   def newId = BSONObjectID.generate
 
   "UserPassword" should {
-    "work" in new TestConfig {
-      val db = Database()
-      val up1 = UserPassword(id = Some(newId), userId = newId, createdAt = BSONDateTime(0))
-      val up2 = UserPassword(id = Some(newId), userId = newId, createdAt = BSONDateTime(1))
-      val up3 = UserPassword(id = Some(newId), userId = newId, createdAt = BSONDateTime(2))
+    "work" in {
+      val db = TestDatabase.create()
+      val up1 = UserPassword(userId = newId, createdAt = BSONDateTime(0))
+      val up2 = UserPassword(userId = newId, createdAt = BSONDateTime(1))
+      val up3 = UserPassword(userId = newId, createdAt = BSONDateTime(2))
 
       await(db.userPasswords.all) must haveSize(0)
       await(db.userPasswords.insert(up1))
