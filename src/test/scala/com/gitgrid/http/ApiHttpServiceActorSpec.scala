@@ -2,7 +2,7 @@ package com.gitgrid.http
 
 import akka.testkit._
 import com.gitgrid._
-import com.gitgrid.models.User
+import com.gitgrid.models.{Project, User}
 import org.specs2.mutable._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{duration, ExecutionContext}
@@ -115,6 +115,22 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         cookie must beSome
         cookie.get.name === "gitgrid-sid"
       }
+    }
+  }
+
+  "ApiHttpServiceActorSpec /users" should {
+    "yield users" in new TestApiHttpService {
+      Get("/api/users/user1") ~> route ~> check { responseAs[User] === user1 }
+      Get("/api/users/user0") ~> sealedRoute ~> check { status === NotFound }
+    }
+  }
+
+  "ApiHttpServiceActorSpec /projects" should {
+    "yield projects" in new TestApiHttpService {
+      Get("/api/projects/user1/project1") ~> route ~> check { responseAs[Project] === project1 }
+      Get("/api/projects/user2/project2") ~> route ~> check { responseAs[Project] === project2 }
+      Get("/api/projects/user1/project2") ~> sealedRoute ~> check { status === NotFound }
+      Get("/api/projects/user2/project1") ~> sealedRoute ~> check { status === NotFound }
     }
   }
 
