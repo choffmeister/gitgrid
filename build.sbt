@@ -1,3 +1,6 @@
+import de.johoop.jacoco4sbt._
+import JacocoPlugin._
+
 name := "gitgrid"
 
 version := "0.0.1-SNAPSHOT"
@@ -48,3 +51,5 @@ pack <<= (baseDirectory, pack, streams) map { (baseDirectory: File, value: File,
   s.log.info("Done copying config files.")
   value
 }
+
+jacoco.settings
