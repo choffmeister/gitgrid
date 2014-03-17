@@ -1,6 +1,8 @@
 package com.gitgrid
 
+import com.gitgrid.git.GitRepository
 import com.gitgrid.models._
+import java.io.File
 import java.util.UUID
 import org.specs2.specification.Scope
 import reactivemongo.api.MongoConnection
@@ -18,7 +20,9 @@ trait TestDatabase extends Scope with AsyncUtils {
   val password2 = await(db.userPasswords.insert(UserPassword(userId = user2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
 
   val project1 = await(db.projects.insert(Project(userId = user1.id.get, name = "project1")))
+  GitRepository.init(new File(Config.repositoriesDir, project1.id.get.stringify), bare = true)
   val project2 = await(db.projects.insert(Project(userId = user2.id.get, name = "project2")))
+  GitRepository.init(new File(Config.repositoriesDir, project2.id.get.stringify), bare = true)
 }
 
 object TestDatabase {
