@@ -1,28 +1,21 @@
 package com.gitgrid
 
-import com.gitgrid.git.GitRepository
+import com.gitgrid.managers.{ProjectManager, UserManager}
 import com.gitgrid.models._
-import java.io.File
 import java.util.UUID
 import org.specs2.specification.Scope
 import reactivemongo.api.MongoConnection
-import reactivemongo.bson._
 import scala.concurrent.ExecutionContext
 
 trait TestDatabase extends Scope with AsyncUtils {
-  def newId = BSONObjectID.generate
-
   val db = TestDatabase.create()
+  val um = new UserManager(db)
+  val pm = new ProjectManager(db)
 
-  val user1 = await(db.users.insert(User(userName = "user1")))
-  val password1 = await(db.userPasswords.insert(UserPassword(userId = user1.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass1", hashAlgorithm = "plain")))
-  val user2 = await(db.users.insert(User(userName = "user2")))
-  val password2 = await(db.userPasswords.insert(UserPassword(userId = user2.id.get, createdAt = BSONDateTime(System.currentTimeMillis), hash = "pass2", hashAlgorithm = "plain")))
-
-  val project1 = await(db.projects.insert(Project(userId = user1.id.get, name = "project1")))
-  GitRepository.init(new File(Config.repositoriesDir, project1.id.get.stringify), bare = true)
-  val project2 = await(db.projects.insert(Project(userId = user2.id.get, name = "project2")))
-  GitRepository.init(new File(Config.repositoriesDir, project2.id.get.stringify), bare = true)
+  val user1 = await(um.createUser("user1", "pass1"))
+  val user2 = await(um.createUser("user2", "pass2"))
+  val project1 = await(pm.createProject(user1.id.get, "project1"))
+  val project2 = await(pm.createProject(user2.id.get, "project2"))
 }
 
 object TestDatabase {
