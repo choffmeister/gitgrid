@@ -35,6 +35,14 @@ class GitHttpServiceActorTest extends Specification with AsyncUtils {
       res3.status === Unauthorized
     }
 
+    "deny access with insufficient permissions" in new TestActorSystem with TestDatabase {
+      val gitService = TestActorRef(new GitHttpServiceActor(db))
+
+      val req1 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user2", "pass2")
+      val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
+      res1.status === Unauthorized
+    }
+
     "allow access with valid credentials via smart HTTP protocol" in new TestActorSystem with TestDatabase {
       val gitService = TestActorRef(new GitHttpServiceActor(db))
 
@@ -43,6 +51,12 @@ class GitHttpServiceActorTest extends Specification with AsyncUtils {
       res1.status === OK
       res1.entity.asString must contain("00" * 20)
       res1.entity.asString must endWith("0000")
+
+      val req2 = authorize(HttpRequest(method = GET, uri = Uri("/user2/project2.git/info/refs?service=git-upload-pack")), "user2", "pass2")
+      val res2 = await(gitService ? req2).asInstanceOf[HttpResponse]
+      res2.status === OK
+      res2.entity.asString must contain("00" * 20)
+      res2.entity.asString must endWith("0000")
     }
   }
 
