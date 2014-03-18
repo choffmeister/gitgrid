@@ -39,6 +39,36 @@ class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with
       }
     }
 
+  def authRoute(authenticatedUser: Option[User]) =
+    path("login") {
+      post {
+        formsLogin(authenticator) {
+          case Some(user) => complete(AuthenticationResponse("Logged in", Some(user)))
+          case _ => complete(AuthenticationResponse("Invalid username or password", None))
+        }
+      }
+    } ~
+    path("logout") {
+      post {
+        formsLogout(authenticator) {
+          complete(AuthenticationResponse("Logged out", None))
+        }
+      }
+    } ~
+    path("state") {
+      get {
+        complete(AuthenticationState(authenticatedUser))
+      }
+    } ~
+    path("register") {
+      post {
+        entity(as[UserPass]) { userPass =>
+          val um = new UserManager(db)
+          onSuccess(um.createUser(userPass.user, userPass.pass)) { user => complete(user) }
+        }
+      }
+    }
+
   def usersRoute(authenticatedUser: Option[User]) =
     userPathPrefix { user =>
       complete(user)
@@ -50,9 +80,6 @@ class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with
         complete(project)
       } ~
       pathPrefix("git") {
-        def gitRepository[T](project: Project)(inner: GitRepository => T): T =
-          GitRepository(new File(Config.repositoriesDir, project.id.get.stringify))(inner)
-
         path("branches") {
           complete(gitRepository(project)(repo => repo.branches()))
         } ~
@@ -116,38 +143,11 @@ class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with
       }
     }
 
-  def authRoute(authenticatedUser: Option[User]) =
-    path("login") {
-      post {
-        formsLogin(authenticator) {
-          case Some(user) => complete(AuthenticationResponse("Logged in", Some(user)))
-          case _ => complete(AuthenticationResponse("Invalid username or password", None))
-        }
-      }
-    } ~
-    path("logout") {
-      post {
-        formsLogout(authenticator) {
-          complete(AuthenticationResponse("Logged out", None))
-        }
-      }
-    } ~
-    path("state") {
-      get {
-        complete(AuthenticationState(authenticatedUser))
-      }
-    } ~
-    path("register") {
-      post {
-        entity(as[UserPass]) { userPass =>
-          val um = new UserManager(db)
-          onSuccess(um.createUser(userPass.user, userPass.pass)) { user => complete(user) }
-        }
-      }
-    }
-
   def authenticate(): Directive1[User] = authenticate(authenticator)
   def authenticateOption(): Directive1[Option[User]] = authenticateOption(authenticator)
   def authorize(user: Option[User], action: => Any): Directive0 = authorizeDetached(authorizer.authorize(user, action))
   def authorize(user: User, action: => Any): Directive0 = authorizeDetached(authorizer.authorize(Some(user), action))
+
+  def gitRepository[T](project: Project)(inner: GitRepository => T): T =
+    GitRepository(new File(Config.repositoriesDir, project.id.get.stringify))(inner)
 }
