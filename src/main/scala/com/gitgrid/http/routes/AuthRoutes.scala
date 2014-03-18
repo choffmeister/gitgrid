@@ -3,9 +3,10 @@ package com.gitgrid.http.routes
 import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
 import scala.concurrent._
-import spray.routing.authentication.UserPass
+import spray.http.StatusCodes._
 
 case class AuthenticationResponse(message: String, user: Option[User])
+case class RegistrationRequest(userName: String, password: String)
 
 class AuthRoutes(val db: Database)(implicit val executor: ExecutionContext) extends Routes {
   val um = new UserManager(db)
@@ -36,8 +37,10 @@ class AuthRoutes(val db: Database)(implicit val executor: ExecutionContext) exte
     } ~
     path("register") {
       post {
-        entity(as[UserPass]) { userPass =>
-          onSuccess(um.createUser(userPass.user, userPass.pass)) { user => complete(user) }
+        entity(as[RegistrationRequest]) { registration =>
+          onSuccess(um.createUser(registration.userName, registration.password)) { user =>
+            complete(user)
+          }
         }
       }
     }

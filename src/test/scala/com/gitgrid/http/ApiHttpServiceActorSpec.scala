@@ -102,7 +102,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     "allow registration" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
 
-      Post("/api/auth/register", UserPass("user3", "pass3")) ~> route ~> check {
+      Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
         res.id must beSome
@@ -115,6 +115,12 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         val cookie = getCookie(headers)
         cookie must beSome
         cookie.get.name === "gitgrid-sid"
+      }
+    }
+
+    "fail on duplicate username" in new TestApiHttpService {
+      Post("/api/auth/register", RegistrationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+        status === InternalServerError
       }
     }
   }
