@@ -35,6 +35,9 @@ class ProjectsRoutes(val db: Database)(implicit val executor: ExecutionContext) 
               complete(gitRepository(project)(repo => repo.tree(repo.resolve(sha))))
             } ~
             path("blob" / Segment) { sha =>
+              complete(gitRepository(project)(repo => repo.blob(repo.resolve(sha))))
+            } ~
+            path("blob-raw" / Segment) { sha =>
               complete(gitRepository(project)(repo => repo.blob(repo.resolve(sha)).readAsString(repo)))
             } ~
             path("tree" / Segment / RestPath) { (refOrSha, path) =>
