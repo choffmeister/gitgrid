@@ -1,6 +1,7 @@
 package com.gitgrid.http
 
 import com.gitgrid.git._
+import com.gitgrid.http.routes._
 import com.gitgrid.models._
 import java.util.Date
 import reactivemongo.bson._
@@ -41,7 +42,7 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
   implicit val userPassFormat = jsonFormat2(UserPass)
   implicit val authenticationResponseFormat = jsonFormat2(AuthenticationResponse)
-  implicit val authenticationStateFormat = jsonFormat1(AuthenticationState)
+  implicit val registrationRequestFormat = jsonFormat2(RegistrationRequest)
 
   implicit val gitRefFormat = jsonFormat2(GitRef)
   implicit object GitObjectTypeFormat extends JsonFormat[GitObjectType] {

@@ -2,6 +2,7 @@ package com.gitgrid.http
 
 import akka.testkit._
 import com.gitgrid._
+import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
 import org.specs2.mutable._
 import scala.concurrent.duration.FiniteDuration
@@ -59,7 +60,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.sessions.all) must haveSize(0)
       Get("/api/auth/state") ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beNone
+        responseAs[AuthenticationResponse].user must beNone
       }
 
       val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
@@ -73,7 +74,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.sessions.all) must haveSize(1)
       Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beSome(user1)
+        responseAs[AuthenticationResponse].user must beSome(user1)
       }
 
       Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
@@ -87,21 +88,21 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.sessions.all) must haveSize(0)
       Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beNone
+        responseAs[AuthenticationResponse].user must beNone
       }
     }
 
     "handle logout requests" in new TestApiHttpService {
       Post("/api/auth/logout") ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beNone
+        responseAs[AuthenticationResponse].user must beNone
       }
     }
 
     "allow registration" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
 
-      Post("/api/auth/register", UserPass("user3", "pass3")) ~> route ~> check {
+      Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
         res.id must beSome
@@ -116,6 +117,12 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         cookie.get.name === "gitgrid-sid"
       }
     }
+
+    "fail on duplicate username" in new TestApiHttpService {
+      Post("/api/auth/register", RegistrationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+        status === InternalServerError
+      }
+    }
   }
 
   "ApiHttpServiceActorSpec /users" should {
@@ -127,8 +134,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActorSpec /projects" should {
     "yield projects" in new TestApiHttpService {
-      Get("/api/projects/user1/project1") ~> route ~> check { responseAs[Project] === project1 }
-      Get("/api/projects/user2/project2") ~> route ~> check { responseAs[Project] === project2 }
+      Get("/api/projects/user1/project1") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user1", "pass1"))) ~> route ~> check { responseAs[Project] === project1 }
+      Get("/api/projects/user2/project2") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check { responseAs[Project] === project2 }
       Get("/api/projects/user1/project2") ~> sealedRoute ~> check { status === NotFound }
       Get("/api/projects/user2/project1") ~> sealedRoute ~> check { status === NotFound }
     }
