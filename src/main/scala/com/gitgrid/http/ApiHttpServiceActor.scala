@@ -21,28 +21,30 @@ class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with
   val authorizer = new GitGridAuthorizer(db)
 
   def receive = runRoute(route)
-  lazy val route =
-    pathPrefix("api") {
-      pathPrefix("auth") {
-        authRoute
-      } ~
-      path("ping") {
-        complete("pong")
-      } ~
-      pathPrefix("users") {
-        usersRoute
-      } ~
-      pathPrefix("projects") {
-        projectsRoute
+  def route =
+    authenticateOption(authenticator) { authenticatedUser =>
+      pathPrefix("api") {
+        pathPrefix("auth") {
+          authRoute(authenticatedUser)
+        } ~
+        path("ping") {
+          complete("pong")
+        } ~
+        pathPrefix("users") {
+          usersRoute(authenticatedUser)
+        } ~
+        pathPrefix("projects") {
+          projectsRoute(authenticatedUser)
+        }
       }
     }
 
-  lazy val usersRoute =
+  def usersRoute(authenticatedUser: Option[User]) =
     userPathPrefix { user =>
       complete(user)
     }
 
-  lazy val projectsRoute =
+  def projectsRoute(authenticatedUser: Option[User]) =
     projectPathPrefix { project =>
       pathEnd {
         complete(project)
@@ -114,7 +116,7 @@ class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with
       }
     }
 
-  lazy val authRoute =
+  def authRoute(authenticatedUser: Option[User]) =
     path("login") {
       post {
         formsLogin(authenticator) {
@@ -132,9 +134,7 @@ class ApiHttpServiceActor(val db: Database) extends Actor with ActorLogging with
     } ~
     path("state") {
       get {
-        authenticateOption() { user =>
-          complete(AuthenticationState(user))
-        }
+        complete(AuthenticationState(authenticatedUser))
       }
     } ~
     path("register") {
