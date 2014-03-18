@@ -29,7 +29,7 @@ class AuthRoutes(val db: Database)(implicit val executor: ExecutionContext) exte
     } ~
     path("state") {
       get {
-        authenticateOption(authenticator) {
+        authenticateOption() {
           case Some(user) => complete(AuthenticationResponse("Authenticated", Some(user)))
           case _ => complete(AuthenticationResponse("Unauthenticated", None))
         }

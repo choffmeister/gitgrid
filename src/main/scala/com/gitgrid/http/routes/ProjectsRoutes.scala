@@ -66,7 +66,7 @@ class ProjectsRoutes(val db: Database)(implicit val executor: ExecutionContext) 
     } ~
     pathEnd {
       post {
-        authenticate(authenticator) { user =>
+        authenticate() { user =>
           entity(as[Project]) { project =>
             val pm = new ProjectManager(db)
             onSuccess(pm.createProject(user.id.get, project.name)) { project =>
