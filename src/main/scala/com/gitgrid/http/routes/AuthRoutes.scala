@@ -6,7 +6,6 @@ import scala.concurrent._
 import spray.routing.authentication.UserPass
 
 case class AuthenticationResponse(message: String, user: Option[User])
-case class AuthenticationState(user: Option[User])
 
 class AuthRoutes(val db: Database)(implicit val executor: ExecutionContext) extends Routes {
   val um = new UserManager(db)
@@ -29,8 +28,9 @@ class AuthRoutes(val db: Database)(implicit val executor: ExecutionContext) exte
     } ~
     path("state") {
       get {
-        authenticateOption(authenticator) { user =>
-          complete(AuthenticationState(user))
+        authenticateOption(authenticator) {
+          case Some(user) => complete(AuthenticationResponse("Authenticated", Some(user)))
+          case _ => complete(AuthenticationResponse("Unauthenticated", None))
         }
       }
     } ~

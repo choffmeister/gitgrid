@@ -60,7 +60,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.sessions.all) must haveSize(0)
       Get("/api/auth/state") ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beNone
+        responseAs[AuthenticationResponse].user must beNone
       }
 
       val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
@@ -74,7 +74,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.sessions.all) must haveSize(1)
       Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beSome(user1)
+        responseAs[AuthenticationResponse].user must beSome(user1)
       }
 
       Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
@@ -88,14 +88,14 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.sessions.all) must haveSize(0)
       Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beNone
+        responseAs[AuthenticationResponse].user must beNone
       }
     }
 
     "handle logout requests" in new TestApiHttpService {
       Post("/api/auth/logout") ~> route ~> check {
         status === OK
-        responseAs[AuthenticationState].user must beNone
+        responseAs[AuthenticationResponse].user must beNone
       }
     }
 
