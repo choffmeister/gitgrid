@@ -134,8 +134,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActorSpec /projects" should {
     "yield projects" in new TestApiHttpService {
-      Get("/api/projects/user1/project1") ~> route ~> check { responseAs[Project] === project1 }
-      Get("/api/projects/user2/project2") ~> route ~> check { responseAs[Project] === project2 }
+      Get("/api/projects/user1/project1") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user1", "pass1"))) ~> route ~> check { responseAs[Project] === project1 }
+      Get("/api/projects/user2/project2") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check { responseAs[Project] === project2 }
       Get("/api/projects/user1/project2") ~> sealedRoute ~> check { status === NotFound }
       Get("/api/projects/user2/project1") ~> sealedRoute ~> check { status === NotFound }
     }

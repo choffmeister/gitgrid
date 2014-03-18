@@ -32,7 +32,7 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
 
     case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-upload-pack")) =>
       project(sender, ownerName, projectName) { (sender, project) =>
-        authorize(req, sender, AccessProjectRepository(project)) { sender =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
           openRepository(ownerName, projectName, sender) { repo =>
             val in = decodeRequest(req).entity.data.toByteArray
             val out = uploadPack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
@@ -43,7 +43,7 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
 
     case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-receive-pack")) =>
       project(sender, ownerName, projectName) { (sender, project) =>
-        authorize(req, sender, AccessProjectRepository(project)) { sender =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
           openRepository(ownerName, projectName, sender) { repo =>
             val in = decodeRequest(req).entity.data.toByteArray
             val out = receivePack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
@@ -54,7 +54,7 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
 
     case req@GitHttpRequest(ownerName, projectName, "git-upload-pack", None) =>
       project(sender, ownerName, projectName) { (sender, project) =>
-        authorize(req, sender, AccessProjectRepository(project)) { sender =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
           openRepository(ownerName, projectName, sender) { repo =>
             val in = decodeRequest(req).entity.data.toByteArray
             val out = uploadPack(repo, in, biDirectionalPipe = false)
@@ -65,7 +65,7 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
 
     case req@GitHttpRequest(ownerName, projectName, "git-receive-pack", None) =>
       project(sender, ownerName, projectName) { (sender, project) =>
-        authorize(req, sender, AccessProjectRepository(project)) { sender =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
           openRepository(ownerName, projectName, sender) { repo =>
             val in = decodeRequest(req).entity.data.toByteArray
             val out = receivePack(repo, in, biDirectionalPipe = false)
