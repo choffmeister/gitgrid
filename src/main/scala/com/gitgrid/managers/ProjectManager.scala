@@ -11,7 +11,9 @@ class ProjectManager(db: Database)(implicit ec: ExecutionContext) {
   def createProject(userId: BSONObjectID, name: String): Future[Project] = {
     for {
       project <- db.projects.insert(Project(userId = userId, name = name))
-      repository <- future(GitRepository.init(new File(Config.repositoriesDir, project.id.get.stringify), bare = true))
+      repository <- future(GitRepository.init(getRepositoryDirectory(project.id.get), bare = true))
     } yield project
   }
+
+  def getRepositoryDirectory(projectId: BSONObjectID): File = new File(Config.repositoriesDir, projectId.stringify)
 }

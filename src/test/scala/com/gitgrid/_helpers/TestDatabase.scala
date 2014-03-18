@@ -16,6 +16,7 @@ trait TestDatabase extends Scope with AsyncUtils {
   val user2 = await(um.createUser("user2", "pass2"))
   val project1 = await(pm.createProject(user1.id.get, "project1"))
   val project2 = await(pm.createProject(user2.id.get, "project2"))
+  TestDatabase.unzipRepository(pm, project2, "/repo1.zip")
 }
 
 object TestDatabase {
@@ -32,4 +33,12 @@ object TestDatabase {
       connection
     }
   }
+
+  def unzipRepository(projectManager: ProjectManager, project: Project, resourceName: String): Unit = {
+    val dir = projectManager.getRepositoryDirectory(project.id.get)
+    if (dir.exists) dir.delete()
+    ZipUtils.unzip(classOf[ResourcesAnchor].getResourceAsStream(resourceName), dir)
+  }
 }
+
+class ResourcesAnchor
