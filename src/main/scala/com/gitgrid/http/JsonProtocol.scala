@@ -1,6 +1,7 @@
 package com.gitgrid.http
 
 import com.gitgrid.git._
+import com.gitgrid.http.routes._
 import com.gitgrid.models._
 import java.util.Date
 import reactivemongo.bson._

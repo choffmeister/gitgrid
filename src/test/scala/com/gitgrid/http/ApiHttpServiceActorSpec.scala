@@ -2,6 +2,7 @@ package com.gitgrid.http
 
 import akka.testkit._
 import com.gitgrid._
+import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
 import org.specs2.mutable._
 import scala.concurrent.duration.FiniteDuration
