@@ -2,6 +2,8 @@ package com.gitgrid.git
 
 import akka.pattern._
 import akka.testkit._
+import com.gitgrid.managers.ProjectManager
+import com.gitgrid.models._
 import com.gitgrid._
 import org.specs2.mutable._
 import spray.http.HttpHeaders.Authorization
@@ -49,13 +51,13 @@ class GitHttpServiceActorTest extends Specification with AsyncUtils {
       val req1 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user1", "pass1")
       val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
       res1.status === OK
-      res1.entity.asString must contain("00" * 20)
+      res1.entity.asString must contain("0000000000000000000000000000000000000000")
       res1.entity.asString must endWith("0000")
 
       val req2 = authorize(HttpRequest(method = GET, uri = Uri("/user2/project2.git/info/refs?service=git-upload-pack")), "user2", "pass2")
       val res2 = await(gitService ? req2).asInstanceOf[HttpResponse]
       res2.status === OK
-      res2.entity.asString must contain("00" * 20)
+      res2.entity.asString must contain("bf3c1e0ca32e74080b6378506827b9cbc28bbffb")
       res2.entity.asString must endWith("0000")
     }
   }
