@@ -55,7 +55,14 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
         case _ => deserializationError("Unknown git object type")
       }
 
-    def read(value: JsValue) = deserializationError("Deserialization of GitObjectType is not implemented")
+    def read(value: JsValue) =
+      value match {
+        case JsString("commit") => GitCommitObjectType
+        case JsString("tree") => GitTreeObjectType
+        case JsString("blob") => GitBlobObjectType
+        case JsString("tag") => GitTagObjectType
+        case _ => deserializationError("Unknown git object type")
+      }
   }
   implicit val gitCommitSignatureFormat = jsonFormat4(GitCommitSignature)
   implicit val gitCommitFormat = jsonFormat7(GitCommit)
