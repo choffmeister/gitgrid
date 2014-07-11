@@ -1,8 +1,14 @@
-# Simple Build Tool
+# Build target
 target/
 
 # IDEA
 .idea/
+
+# Node modules
+node_modules/
+
+# Bower components
+bower_components/
 
 # Trash
 .cache
