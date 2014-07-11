@@ -8,8 +8,7 @@ class ProjectSpec extends Specification with AsyncUtils {
   def newId = BSONObjectID.generate
 
   "User" should {
-    "work" in {
-      val db = TestDatabase.create()
+    "work" in new EmptyTestEnvironment {
       val p1 = Project(userId = newId, name = "p1")
       val p2 = Project(userId = newId, name = "p2")
       val p3 = Project(userId = newId, name = "p3")

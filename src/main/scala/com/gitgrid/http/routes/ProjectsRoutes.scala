@@ -8,8 +8,8 @@ import com.gitgrid.models._
 import java.io.File
 import scala.concurrent._
 
-class ProjectsRoutes(val db: Database)(implicit val executor: ExecutionContext) extends Routes {
-  val pm = new ProjectManager(db)
+class ProjectsRoutes(cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
+  val pm = new ProjectManager(cfg, db)
 
   def route =
     projectPathPrefix { project =>
@@ -87,5 +87,5 @@ class ProjectsRoutes(val db: Database)(implicit val executor: ExecutionContext) 
     }
 
   def gitRepository[T](project: Project)(inner: GitRepository => T): T =
-    GitRepository(new File(Config.repositoriesDir, project.id.get.stringify))(inner)
+    GitRepository(new File(cfg.repositoriesDir, project.id.get.stringify))(inner)
 }

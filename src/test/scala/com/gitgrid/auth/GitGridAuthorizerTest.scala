@@ -1,11 +1,11 @@
 package com.gitgrid.auth
 
-import com.gitgrid.TestDatabase
+import com.gitgrid.TestEnvironment
 import org.specs2.mutable._
 
 class GitGridAuthorizerTest extends Specification {
   "GitGridAuthorizer" should {
-    "properly grant and deny access to projects" in new TestDatabase {
+    "properly grant and deny access to projects" in new TestEnvironment {
       val auth = new GitGridAuthorizer(db)
 
       await(auth.authorize(None, ProjectRead(project1))) === false
@@ -16,7 +16,7 @@ class GitGridAuthorizerTest extends Specification {
       await(auth.authorize(Some(user2), ProjectRead(project2))) === true
     }
 
-    "properly grant and deny access to project repositores" in new TestDatabase {
+    "properly grant and deny access to project repositores" in new TestEnvironment {
       val auth = new GitGridAuthorizer(db)
 
       await(auth.authorize(None, ProjectRepositoryReadWrite(project1))) === false

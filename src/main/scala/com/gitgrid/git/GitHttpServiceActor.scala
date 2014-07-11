@@ -18,7 +18,7 @@ import spray.httpx.encoding._
 import spray.routing.AuthenticationFailedRejection
 import spray.routing.RequestContext
 
-class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
+class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLogging {
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(db)
   val authorizer = new GitGridAuthorizer(db)
@@ -112,7 +112,7 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
 
   private def openRepository(userName: String, projectName: String, sender: ActorRef)(inner: GitRepository => HttpResponse) = {
     db.projects.findByFullQualifiedName(userName, projectName).map {
-      case Some(project) => GitRepository(new File(Config.repositoriesDir, project.id.get.stringify))(inner)
+      case Some(project) => GitRepository(new File(cfg.repositoriesDir, project.id.get.stringify))(inner)
       case _ => HttpResponse(NotFound)
     }.onComplete {
       case Success(res: HttpResponse) =>

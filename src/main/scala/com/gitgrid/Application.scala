@@ -10,12 +10,13 @@ import spray.can.Http
 class Application extends Bootable {
   implicit val system = ActorSystem("gitgrid")
   implicit val executor = system.dispatcher
-  val db = Database()
+  val cfg = Config.load()
+  val db = Database.open(cfg.mongoDbServers, cfg.mongoDbDatabaseName)
 
   def startup() = {
-    val httpServiceActor = system.actorOf(Props(new HttpServiceActor(db)), "httpservice")
+    val httpServiceActor = system.actorOf(Props(new HttpServiceActor(cfg, db)), "httpservice")
 
-    IO(Http) ! Http.Bind(httpServiceActor, interface = Config.httpInterface, port = Config.httpPort)
+    IO(Http) ! Http.Bind(httpServiceActor, interface = cfg.httpInterface, port = cfg.httpPort)
   }
 
   def shutdown() = {

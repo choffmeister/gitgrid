@@ -13,16 +13,16 @@ import spray.http._
 
 class GitHttpServiceActorTest extends Specification with AsyncUtils {
   "GitHttpServiceActor" should {
-    "forbid access with dump HTTP protocol" in new TestActorSystem with TestDatabase {
-      val gitService = TestActorRef(new GitHttpServiceActor(db))
+    "forbid access with dump HTTP protocol" in new TestActorSystem with TestEnvironment {
+      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
       val req1 = HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs"))
       val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
       res1.status === Forbidden
     }
 
-    "deny access with invalid credentials" in new TestActorSystem with TestDatabase {
-      val gitService = TestActorRef(new GitHttpServiceActor(db))
+    "deny access with invalid credentials" in new TestActorSystem with TestEnvironment {
+      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
       val req1 = HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack"))
       val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
@@ -37,16 +37,16 @@ class GitHttpServiceActorTest extends Specification with AsyncUtils {
       res3.status === Unauthorized
     }
 
-    "deny access with insufficient permissions" in new TestActorSystem with TestDatabase {
-      val gitService = TestActorRef(new GitHttpServiceActor(db))
+    "deny access with insufficient permissions" in new TestActorSystem with TestEnvironment {
+      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
       val req1 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user2", "pass2")
       val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
       res1.status === Unauthorized
     }
 
-    "allow access with valid credentials via smart HTTP protocol" in new TestActorSystem with TestDatabase {
-      val gitService = TestActorRef(new GitHttpServiceActor(db))
+    "allow access with valid credentials via smart HTTP protocol" in new TestActorSystem with TestEnvironment {
+      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
       val req1 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user1", "pass1")
       val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]

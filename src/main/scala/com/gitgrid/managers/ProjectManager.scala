@@ -7,7 +7,7 @@ import java.io.File
 import reactivemongo.bson.BSONObjectID
 import scala.concurrent._
 
-class ProjectManager(db: Database)(implicit ec: ExecutionContext) {
+class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
   def createProject(userId: BSONObjectID, name: String): Future[Project] = {
     for {
       project <- db.projects.insert(Project(userId = userId, name = name))
@@ -15,5 +15,5 @@ class ProjectManager(db: Database)(implicit ec: ExecutionContext) {
     } yield project
   }
 
-  def getRepositoryDirectory(projectId: BSONObjectID): File = new File(Config.repositoriesDir, projectId.stringify)
+  def getRepositoryDirectory(projectId: BSONObjectID): File = new File(cfg.repositoriesDir, projectId.stringify)
 }
