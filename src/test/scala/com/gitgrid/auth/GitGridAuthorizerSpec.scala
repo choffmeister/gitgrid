@@ -3,7 +3,7 @@ package com.gitgrid.auth
 import com.gitgrid.TestEnvironment
 import org.specs2.mutable._
 
-class GitGridAuthorizerTest extends Specification {
+class GitGridAuthorizerSpec extends Specification {
   "GitGridAuthorizer" should {
     "properly grant and deny access to projects" in new TestEnvironment {
       val auth = new GitGridAuthorizer(db)

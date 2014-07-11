@@ -11,7 +11,7 @@ import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
 
-class GitHttpServiceActorTest extends Specification with AsyncUtils {
+class GitHttpServiceActorSpec extends Specification with AsyncUtils {
   "GitHttpServiceActor" should {
     "forbid access with dump HTTP protocol" in new TestActorSystem with TestEnvironment {
       val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
