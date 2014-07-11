@@ -9,7 +9,7 @@ organization := "com.gitgrid"
 
 scalaVersion := "2.10.3"
 
-scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
+scalacOptions := Seq("-encoding", "utf8")
 
 resolvers += "typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"
 
