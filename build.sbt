@@ -3,7 +3,7 @@ import JacocoPlugin._
 
 name := "gitgrid"
 
-version := "0.0.2"
+version := "0.0.3-SNAPSHOT"
 
 organization := "com.gitgrid"
 
