@@ -3,12 +3,13 @@
 ## Development
 
 ~~~ bash
-# run this once
-$ sbt webAppToolsInit
-
 # run this to start development server up
 $ sbt webAppStart run
+~~~
 
+## Testing
+
+~~~ bash
 # run this to run backend tests
 $ sbt test
 
@@ -19,5 +20,5 @@ $ sbt jacoco:cover
 ## Packaging
 
 ~~~ bash
-$ sbt clean webAppToolsInit webAppBuild pack
+$ sbt clean pack
 ~~~
