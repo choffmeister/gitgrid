@@ -36,19 +36,35 @@ libraryDependencies ++= {
   dependencies ++ testDependencies
 }
 
+webAppSettings
+
 packSettings
 
 packMain := Map("gitgrid" -> "com.gitgrid.Application")
 
-packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/conf"))
+packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config", "${PROG_HOME}/resources"))
+
+pack <<= pack dependsOn(webAppBuild)
+
+pack <<= (baseDirectory, pack, streams) map { (baseDirectory: File, value: File, s) =>
+  val webSourceDir = baseDirectory / "target/web"
+  val webTargetDir = baseDirectory / "target/pack/resources/web"
+  s.log.info("Copying web files to target/pack/resources/web")
+  IO.delete(webTargetDir)
+  webTargetDir.mkdirs()
+  IO.copyDirectory(webSourceDir, webTargetDir)
+  s.log.info("Done.")
+  value
+}
 
 pack <<= (baseDirectory, pack, streams) map { (baseDirectory: File, value: File, s) =>
   val confSourceDir = baseDirectory / "src/main/resources"
-  val confTargetDir = baseDirectory / "target/pack/conf"
+  val confTargetDir = baseDirectory / "target/pack/config"
+  s.log.info("Copying config files to target/pack/config")
   confTargetDir.mkdirs()
   IO.copyFile(confSourceDir / "application.conf.dist", confTargetDir / "application.conf")
   IO.copyFile(confSourceDir / "logback.xml.dist", confTargetDir / "logback.xml")
-  s.log.info("Done copying config files.")
+  s.log.info("Done.")
   value
 }
 

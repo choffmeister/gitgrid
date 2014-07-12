@@ -1,13 +1,23 @@
 # GitGrid
 
+## Development
+
 ~~~ bash
-# build
-$ sbt compile
+# run this once
+$ sbt webAppToolsInit
 
-# test
+# run this to start development server up
+$ sbt webAppStart run
+
+# run this to run backend tests
 $ sbt test
-$ sbt jacoco:cover
 
-# package
-$ sbt pack
+# run this to run backend tests with coverage report
+$ sbt jacoco:cover
+~~~
+
+## Packaging
+
+~~~ bash
+$ sbt clean webAppToolsInit webAppBuild pack
 ~~~
