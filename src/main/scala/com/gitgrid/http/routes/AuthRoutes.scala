@@ -1,14 +1,14 @@
 package com.gitgrid.http.routes
 
+import com.gitgrid.Config
 import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
 import scala.concurrent._
-import spray.http.StatusCodes._
 
 case class AuthenticationResponse(message: String, user: Option[User])
 case class RegistrationRequest(userName: String, password: String)
 
-class AuthRoutes(val db: Database)(implicit val executor: ExecutionContext) extends Routes {
+class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
   val um = new UserManager(db)
 
   def route =

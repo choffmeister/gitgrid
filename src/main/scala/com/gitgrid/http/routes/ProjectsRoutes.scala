@@ -8,7 +8,7 @@ import com.gitgrid.models._
 import java.io.File
 import scala.concurrent._
 
-class ProjectsRoutes(cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
+class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
   val pm = new ProjectManager(cfg, db)
 
   def route =
