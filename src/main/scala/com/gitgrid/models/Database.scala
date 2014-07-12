@@ -28,20 +28,20 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
   private def byId(e: M): BSONDocument = byId(e.id.get)
 }
 
-class Database(connection: MongoConnection, databaseName: String, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
-  private val database = connection(databaseName)
-
-  lazy val users = new UserTable(this, database(collectionNamePrefix + "users"))
-  lazy val userPasswords = new UserPasswordTable(this, database(collectionNamePrefix + "user-passwords"))
-  lazy val sessions = new SessionTable(this, database(collectionNamePrefix + "sessions"))
-  lazy val projects = new ProjectTable(this, database(collectionNamePrefix + "projects"))
+class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
+  lazy val users = new UserTable(this, mongoDbDatabase(collectionNamePrefix + "users"))
+  lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "user-passwords"))
+  lazy val sessions = new SessionTable(this, mongoDbDatabase(collectionNamePrefix + "sessions"))
+  lazy val projects = new ProjectTable(this, mongoDbDatabase(collectionNamePrefix + "projects"))
 }
 
 object Database {
-  lazy val driver = new MongoDriver()
+  lazy val mongoDbDriver = new MongoDriver()
 
-  def apply()(implicit ec: ExecutionContext): Database = {
-    val connection = driver.connection(Config.mongoDbServers)
-    new Database(connection, Config.mongoDbDatabaseName)
+  def open(servers: List[String], databaseName: String, collectionNamePrefix: String = "")(implicit ec: ExecutionContext): Database = {
+    val mongoDbConnection = mongoDbDriver.connection(servers)
+    val mongoDbDatabase = mongoDbConnection(databaseName)
+
+    new Database(mongoDbDatabase, collectionNamePrefix)
   }
 }

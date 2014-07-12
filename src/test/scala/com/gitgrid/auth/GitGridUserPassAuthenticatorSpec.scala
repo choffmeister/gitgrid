@@ -13,7 +13,7 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
   val tomorrow = BSONDateTime(System.currentTimeMillis + 24 * 60 * 60 * 1000)
 
   "GitGridUserPassAuthenticator" should {
-    "properly authenticate user passed" in new TestDatabase {
+    "properly authenticate user passed" in new TestEnvironment {
       val upa = new GitGridUserPassAuthenticator(db)
 
       await(upa(None)) must beNone
@@ -24,7 +24,7 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
       await(upa(Some(UserPass("user", "pass")))) must beNone
     }
 
-    "properly check passwords hashed with plain" in new TestDatabase {
+    "properly check passwords hashed with plain" in new TestEnvironment {
       val upa = new GitGridUserPassAuthenticator(db)
 
       upa.checkPassword("", "", "plain", "") === true
@@ -38,8 +38,7 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
       upa.checkPassword("abc", "", "plain", "abC") === false
     }
 
-    "only accept most recent password" in {
-      val db = TestDatabase.create()
+    "only accept most recent password" in new EmptyTestEnvironment {
       val upa = new GitGridUserPassAuthenticator(db)
 
       val u1 = await(db.users.insert(User(userName = "user1")))

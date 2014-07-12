@@ -21,15 +21,17 @@ trait AuthenticationDirectives {
       case _ => provide(Option.empty[T])
     }
 
-  def authorizeDetached(check: => Future[Boolean]): Directive0 = onSuccess(check).flatMap[HNil] {
-    res => authorize(res)
-  }
-
-  def authorizeDetached(check: RequestContext => Future[Boolean]): Directive0 = extract(check).flatMap { future =>
-    onSuccess(future).flatMap[HNil] {
+  def authorizeDetached(check: => Future[Boolean]): Directive0 = onSuccess(check)
+    .flatMap[HNil] {
       res => authorize(res)
     }
-  }
+
+  def authorizeDetached(check: RequestContext => Future[Boolean]): Directive0 = extract(check)
+    .flatMap { future =>
+      onSuccess(future).flatMap[HNil] {
+        res => authorize(res)
+      }
+    }
 
   def formsLogin(auth: GitGridHttpAuthenticator): Directive1[Option[User]] = {
     implicit val stringFormat = DefaultJsonProtocol.StringJsonFormat

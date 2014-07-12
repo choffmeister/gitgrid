@@ -2,20 +2,23 @@ package com.gitgrid.git
 
 import akka.actor._
 import com.gitgrid.Config
-import com.gitgrid.auth.{GitGridAuthorizer, GitGridHttpAuthenticator}
+import com.gitgrid.auth._
 import com.gitgrid.models._
 import java.io._
 import org.eclipse.jgit.transport.{UploadPack, ReceivePack}
-import scala.util.{Success, Failure}
+import scala.util.Failure
+import scala.util.Success
 import spray.can._
 import spray.http.CacheDirectives._
+import spray.http.CacheDirectives.`max-age`
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.encoding._
-import spray.routing.{AuthenticationFailedRejection, RequestContext}
+import spray.routing.AuthenticationFailedRejection
+import spray.routing.RequestContext
 
-class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
+class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLogging {
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(db)
   val authorizer = new GitGridAuthorizer(db)
@@ -27,39 +30,47 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
     case req@GitHttpRequest(_, _, "info/refs", None) =>
       sender ! HttpResponse(status = Forbidden, entity = "Git dump HTTP protocol is not supported")
 
-    case req@GitHttpRequest(namespace, name, "info/refs", Some("git-upload-pack")) =>
-      authorize(req, sender, Unit) { sender =>
-        openRepository(namespace, name, sender) { repo =>
-          val in = decodeRequest(req).entity.data.toByteArray
-          val out = uploadPack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
-          encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitUploadPackAdvertisement, GitHttpServiceConstants.gitUploadPackHeader ++ out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+    case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-upload-pack")) =>
+      project(sender, ownerName, projectName) { (sender, project) =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
+          openRepository(ownerName, projectName, sender) { repo =>
+            val in = decodeRequest(req).entity.data.toByteArray
+            val out = uploadPack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
+            encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitUploadPackAdvertisement, GitHttpServiceConstants.gitUploadPackHeader ++ out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+          }
         }
       }
 
-    case req@GitHttpRequest(namespace, name, "info/refs", Some("git-receive-pack")) =>
-      authorize(req, sender, Unit) { sender =>
-        openRepository(namespace, name, sender) { repo =>
-          val in = decodeRequest(req).entity.data.toByteArray
-          val out = receivePack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
-          encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitReceivePackAdvertisement, GitHttpServiceConstants.gitReceivePackHeader ++ out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+    case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-receive-pack")) =>
+      project(sender, ownerName, projectName) { (sender, project) =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
+          openRepository(ownerName, projectName, sender) { repo =>
+            val in = decodeRequest(req).entity.data.toByteArray
+            val out = receivePack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
+            encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitReceivePackAdvertisement, GitHttpServiceConstants.gitReceivePackHeader ++ out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+          }
         }
       }
 
-    case req@GitHttpRequest(namespace, name, "git-upload-pack", None) =>
-      authorize(req, sender, Unit) { sender =>
-        openRepository(namespace, name, sender) { repo =>
-          val in = decodeRequest(req).entity.data.toByteArray
-          val out = uploadPack(repo, in, biDirectionalPipe = false)
-          encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitUploadPackResult, out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+    case req@GitHttpRequest(ownerName, projectName, "git-upload-pack", None) =>
+      project(sender, ownerName, projectName) { (sender, project) =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
+          openRepository(ownerName, projectName, sender) { repo =>
+            val in = decodeRequest(req).entity.data.toByteArray
+            val out = uploadPack(repo, in, biDirectionalPipe = false)
+            encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitUploadPackResult, out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+          }
         }
       }
 
-    case req@GitHttpRequest(namespace, name, "git-receive-pack", None) =>
-      authorize(req, sender, Unit) { sender =>
-        openRepository(namespace, name, sender) { repo =>
-          val in = decodeRequest(req).entity.data.toByteArray
-          val out = receivePack(repo, in, biDirectionalPipe = false)
-          encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitUploadPackResult, out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+    case req@GitHttpRequest(ownerName, projectName, "git-receive-pack", None) =>
+      project(sender, ownerName, projectName) { (sender, project) =>
+        authorize(req, sender, ProjectRepositoryReadWrite(project)) { sender =>
+          openRepository(ownerName, projectName, sender) { repo =>
+            val in = decodeRequest(req).entity.data.toByteArray
+            val out = receivePack(repo, in, biDirectionalPipe = false)
+            encodeResponse(HttpResponse(entity = HttpEntity(GitHttpServiceConstants.gitUploadPackResult, out), headers = GitHttpServiceConstants.noCacheHeaders), req.acceptedEncodingRanges)
+          }
         }
       }
 
@@ -85,15 +96,23 @@ class GitHttpServiceActor(db: Database) extends Actor with ActorLogging {
       case Success(true) =>
         inner(sender)
       case Success(false) =>
-        sender ! HttpResponse(Forbidden, "You are not allow to access this repository")
+        sender ! HttpResponse(Unauthorized, "You are not allow to access this repository")
       case Failure(ex) =>
         sender ! HttpResponse(InternalServerError)
     }
   }
 
-  private def openRepository(userName: String, canonicalName: String, sender: ActorRef)(inner: GitRepository => HttpResponse) = {
-    db.projects.findByFullQualifiedName(userName, canonicalName).map {
-      case Some(project) => GitRepository(new File(Config.repositoriesDir, project.id.get.stringify))(inner)
+  private def project(sender: ActorRef, ownerName: String, projectName: String)(inner: (ActorRef, Project) => Any): Unit = {
+    db.projects.findByFullQualifiedName(ownerName, projectName).onComplete {
+      case Success(Some(project)) => inner(sender, project)
+      case Success(None) => sender ! HttpResponse(NotFound)
+      case Failure(_) => sender ! HttpResponse(InternalServerError)
+    }
+  }
+
+  private def openRepository(userName: String, projectName: String, sender: ActorRef)(inner: GitRepository => HttpResponse) = {
+    db.projects.findByFullQualifiedName(userName, projectName).map {
+      case Some(project) => GitRepository(new File(cfg.repositoriesDir, project.id.get.stringify))(inner)
       case _ => HttpResponse(NotFound)
     }.onComplete {
       case Success(res: HttpResponse) =>
@@ -183,8 +202,8 @@ object GitHttpRequest {
   val pattern = """^/([a-zA-Z0-9\-\_]+)/([a-zA-Z0-9\-\_]+)\.git/(.*)$""".r
 
   def unapply(req: HttpRequest): Option[(String, String, String, Option[String])] = req.uri.path.toString() match {
-    case pattern(repositoryNamespace, repositoryName, action) =>
-      Some((repositoryNamespace, repositoryName, action, req.uri.query.get("service")))
+    case pattern(ownerName, projectName, action) =>
+      Some((ownerName, projectName, action, req.uri.query.get("service")))
     case _ => None
   }
 }

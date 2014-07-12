@@ -8,8 +8,7 @@ class UserPasswordSpec extends Specification with AsyncUtils {
   def newId = BSONObjectID.generate
 
   "UserPassword" should {
-    "work" in {
-      val db = TestDatabase.create()
+    "work" in new EmptyTestEnvironment {
       val up1 = UserPassword(userId = newId, createdAt = BSONDateTime(0))
       val up2 = UserPassword(userId = newId, createdAt = BSONDateTime(1))
       val up3 = UserPassword(userId = newId, createdAt = BSONDateTime(2))
