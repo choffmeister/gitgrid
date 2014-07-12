@@ -36,11 +36,15 @@ libraryDependencies ++= {
   dependencies ++ testDependencies
 }
 
+webAppSettings
+
 packSettings
 
 packMain := Map("gitgrid" -> "com.gitgrid.Application")
 
 packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config", "${PROG_HOME}/resources"))
+
+pack <<= pack dependsOn(webAppBuild)
 
 pack <<= (baseDirectory, pack, streams) map { (baseDirectory: File, value: File, s) =>
   val webSourceDir = baseDirectory / "target/web"
