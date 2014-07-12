@@ -7,7 +7,7 @@ version := "0.0.1-SNAPSHOT"
 
 organization := "com.gitgrid"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.10.4"
 
 scalacOptions := Seq("-encoding", "utf8")
 
