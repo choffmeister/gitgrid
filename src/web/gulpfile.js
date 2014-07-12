@@ -18,13 +18,13 @@ var argv = require('yargs').argv,
 
 var config = {
   debug: !argv.dist,
-  src: 'src/',
-  dest: 'target/',
+  src: 'app/',
+  dest: '../../target/web/',
   port: 9000
 };
 
 gulp.task('jade', function () {
-  return gulp.src(config.src + 'jade/**/*.jade')
+  return gulp.src(config.src + '**/*.jade')
     .pipe(jade({ pretty: config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
@@ -36,27 +36,27 @@ gulp.task('jade', function () {
 });
 
 gulp.task('less', function () {
-  return gulp.src(config.src + 'less/main.less')
+  return gulp.src(config.src + 'styles/main.less')
     .pipe(less({ compress: !config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
       gutil.beep();
       this.end();
     })
-    .pipe(rename('style.css'))
+    .pipe(rename('styles/main.css'))
     .pipe(gulp.dest(config.dest))
     .pipe(livereload({ auto: false }));
 });
 
 gulp.task('coffee', function () {
-  return gulp.src(config.src + 'coffee/**/*.coffee')
+  return gulp.src(config.src + 'scripts/**/*.coffee')
     .pipe(coffee({ bare: false }))
     .on('error', function (err) {
       gutil.log(err);
       gutil.beep();
       this.end();
     })
-    .pipe(concat('app.js'))
+    .pipe(concat('scripts/app.js'))
     .pipe(gif(!config.debug, uglify()))
     .pipe(gulp.dest(config.dest))
     .pipe(livereload({ auto: false }));
@@ -76,9 +76,9 @@ gulp.task('vendor', function () {
 
 gulp.task('watch', ['build'], function () {
   livereload.listen({ auto: true });
-  gulp.watch(config.src + 'coffee/**/*.coffee', ['coffee']);
-  gulp.watch(config.src + 'less/**/*.less', ['less']);
-  gulp.watch(config.src + 'jade/**/*.jade', ['jade']);
+  gulp.watch(config.src + 'scripts/**/*.coffee', ['coffee']);
+  gulp.watch(config.src + 'styles/**/*.less', ['less']);
+  gulp.watch(config.src + '**/*.jade', ['jade']);
 });
 
 gulp.task('connect', function (next) {
