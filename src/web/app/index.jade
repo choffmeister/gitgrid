@@ -1,9 +1,17 @@
 doctype html
-html
+html(ng-app="app")
   head
     title GitGrid
     link(rel="stylesheet", href="/styles/main.css")
-  body
-    include views/home.jade
     script(type="text/javascript", src="/vendor/jquery/dist/jquery.js")
+    script(type="text/javascript", src="/vendor/angular/angular.js")
+    script(type="text/javascript", src="/vendor/angular-route/angular-route.js")
     script(type="text/javascript", src="/scripts/app.js")
+  body
+    div.container-fluid
+      h1 GitGrid
+      ul
+        li: a(href="/") Home
+        li: a(href="/about") About
+    div.container-fluid(ng-view)
+

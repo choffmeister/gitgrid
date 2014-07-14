@@ -1,1 +1,1 @@
-console.log("GitGrid")
+angular.module("app", ["ngRoute"])
