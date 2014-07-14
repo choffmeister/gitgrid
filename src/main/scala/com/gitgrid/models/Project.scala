@@ -12,8 +12,8 @@ case class Project(
 ) extends BaseModel
 
 class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
-  implicit val reader = ProjectBSONFormat.ProjectBSONReader
-  implicit val writer = ProjectBSONFormat.ProjectBSONWriter
+  implicit val reader = ProjectBSONFormat.Reader
+  implicit val writer = ProjectBSONFormat.Writer
 
   def findByFullQualifiedName(ownerName: String, projectName: String): Future[Option[Project]] = {
     database.users.findByUserName(ownerName).flatMap {
@@ -26,7 +26,7 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
 }
 
 object ProjectBSONFormat {
-  implicit object ProjectBSONReader extends BSONDocumentReader[Project] {
+  implicit object Reader extends BSONDocumentReader[Project] {
     def read(doc: BSONDocument) = Project(
       id = doc.getAs[BSONObjectID]("_id"),
       userId = doc.getAs[BSONObjectID]("userId").get,
@@ -34,7 +34,7 @@ object ProjectBSONFormat {
     )
   }
 
-  implicit object ProjectBSONWriter extends BSONDocumentWriter[Project] {
+  implicit object Writer extends BSONDocumentWriter[Project] {
     def write(obj: Project): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,

@@ -13,8 +13,8 @@ case class Session(
 ) extends BaseModel
 
 class SessionTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Session](database, collection) {
-  implicit val reader = SessionBSONFormat.SessionBSONReader
-  implicit val writer = SessionBSONFormat.SessionBSONWriter
+  implicit val reader = SessionBSONFormat.Reader
+  implicit val writer = SessionBSONFormat.Writer
 
   def findBySessionId(sessionId: String): Future[Option[Session]] = queryOne(BSONDocument("sessionId" -> sessionId))
   def deleteBySessionId(sessionId: String): Future[Unit] = collection.remove(BSONDocument("sessionId" -> sessionId)).map(_ => Unit)
@@ -23,7 +23,7 @@ class SessionTable(database: Database, collection: BSONCollection)(implicit exec
 }
 
 object SessionBSONFormat {
-  implicit object SessionBSONReader extends BSONDocumentReader[Session] {
+  implicit object Reader extends BSONDocumentReader[Session] {
     def read(doc: BSONDocument) = Session(
       id = doc.getAs[BSONObjectID]("_id"),
       sessionId = doc.getAs[String]("sessionId").get,
@@ -32,7 +32,7 @@ object SessionBSONFormat {
     )
   }
 
-  implicit object SessionBSONWriter extends BSONDocumentWriter[Session] {
+  implicit object Writer extends BSONDocumentWriter[Session] {
     def write(obj: Session): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "sessionId" -> obj.sessionId,

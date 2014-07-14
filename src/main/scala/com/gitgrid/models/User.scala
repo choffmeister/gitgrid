@@ -11,8 +11,8 @@ case class User(
 ) extends BaseModel
 
 class UserTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[User](database, collection) {
-  implicit val reader = UserBSONFormat.UserBSONReader
-  implicit val writer = UserBSONFormat.UserBSONWriter
+  implicit val reader = UserBSONFormat.Reader
+  implicit val writer = UserBSONFormat.Writer
 
   def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("userName" -> userName))
 
@@ -20,14 +20,14 @@ class UserTable(database: Database, collection: BSONCollection)(implicit executo
 }
 
 object UserBSONFormat {
-  implicit object UserBSONReader extends BSONDocumentReader[User] {
+  implicit object Reader extends BSONDocumentReader[User] {
     def read(doc: BSONDocument) = User(
       id = doc.getAs[BSONObjectID]("_id"),
       userName = doc.getAs[String]("userName").get
     )
   }
 
-  implicit object UserBSONWriter extends BSONDocumentWriter[User] {
+  implicit object Writer extends BSONDocumentWriter[User] {
     def write(obj: User): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userName" -> obj.userName

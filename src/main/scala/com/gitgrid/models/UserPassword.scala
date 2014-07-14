@@ -15,8 +15,8 @@ case class UserPassword(
 ) extends BaseModel
 
 class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
-  implicit val reader = UserPasswordBSONFormat.UserPasswordBSONReader
-  implicit val writer = UserPasswordBSONFormat.UserPasswordBSONWriter
+  implicit val reader = UserPasswordBSONFormat.Reader
+  implicit val writer = UserPasswordBSONFormat.Writer
 
   def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(
     "$query" -> BSONDocument(
@@ -31,7 +31,7 @@ class UserPasswordTable(database: Database, collection: BSONCollection)(implicit
 }
 
 object UserPasswordBSONFormat {
-  implicit object UserPasswordBSONReader extends BSONDocumentReader[UserPassword] {
+  implicit object Reader extends BSONDocumentReader[UserPassword] {
     def read(doc: BSONDocument) = UserPassword(
       id = doc.getAs[BSONObjectID]("_id"),
       userId = doc.getAs[BSONObjectID]("userId").get,
@@ -42,7 +42,7 @@ object UserPasswordBSONFormat {
     )
   }
 
-  implicit object UserPasswordBSONWriter extends BSONDocumentWriter[UserPassword] {
+  implicit object Writer extends BSONDocumentWriter[UserPassword] {
     def write(obj: UserPassword): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,

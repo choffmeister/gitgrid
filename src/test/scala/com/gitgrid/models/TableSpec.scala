@@ -41,19 +41,19 @@ case class TestEntity(
 ) extends BaseModel
 
 class TestEntityTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[TestEntity](database, collection) {
-  implicit val reader = TestEntityBSONFormat.TestEntityReader
-  implicit val writer = TestEntityBSONFormat.TestEntityWriter
+  implicit val reader = TestEntityBSONFormat.Reader
+  implicit val writer = TestEntityBSONFormat.Writer
 }
 
 object TestEntityBSONFormat {
-  implicit object TestEntityReader extends BSONDocumentReader[TestEntity] {
+  implicit object Reader extends BSONDocumentReader[TestEntity] {
     def read(doc: BSONDocument) = TestEntity(
       id = doc.getAs[BSONObjectID]("_id"),
       name = doc.getAs[String]("name").get
     )
   }
 
-  implicit object TestEntityWriter extends BSONDocumentWriter[TestEntity] {
+  implicit object Writer extends BSONDocumentWriter[TestEntity] {
     def write(obj: TestEntity): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "name" -> obj.name
