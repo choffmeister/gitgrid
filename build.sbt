@@ -46,26 +46,26 @@ packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config", "${PROG_HOME}/
 
 pack <<= pack dependsOn(webAppBuild)
 
-pack <<= (baseDirectory, pack, streams) map { (baseDirectory: File, value: File, s) =>
-  val webSourceDir = baseDirectory / "target/web"
-  val webTargetDir = baseDirectory / "target/pack/resources/web"
-  s.log.info("Copying web files to target/pack/resources/web")
+pack <<= (target, pack, streams) map { (targetDir: File, packDir: File, s) =>
+  val webSourceDir = targetDir / "web"
+  val webTargetDir = packDir / "resources/web"
+  s.log.info(s"Copying web files")
   IO.delete(webTargetDir)
   webTargetDir.mkdirs()
   IO.copyDirectory(webSourceDir, webTargetDir)
   s.log.info("Done.")
-  value
+  packDir
 }
 
-pack <<= (baseDirectory, pack, streams) map { (baseDirectory: File, value: File, s) =>
-  val confSourceDir = baseDirectory / "src/main/resources"
-  val confTargetDir = baseDirectory / "target/pack/config"
-  s.log.info("Copying config files to target/pack/config")
+pack <<= (baseDirectory, pack, streams) map { (baseDir: File, packDir: File, s) =>
+  val confSourceDir = baseDir / "src/main/resources"
+  val confTargetDir = packDir / "config"
+  s.log.info(s"Copying config files")
   confTargetDir.mkdirs()
   IO.copyFile(confSourceDir / "application.conf.dist", confTargetDir / "application.conf")
   IO.copyFile(confSourceDir / "logback.xml.dist", confTargetDir / "logback.xml")
   s.log.info("Done.")
-  value
+  packDir
 }
 
 jacoco.settings
