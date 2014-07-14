@@ -40,7 +40,7 @@ trait AuthenticationDirectives {
 
     entity(as[UserPass]).flatMap { userPass =>
       val future = auth.userPassAuthenticator(Some(userPass)).flatMap {
-        case Some(user) => auth.sessionHandler.createSession(user.id.get).map(session => Some(user, session))
+        case Some(user) => auth.sessionManager.createSession(user.id.get).map(session => Some(user, session))
         case _ => Future.successful(Option.empty[(User, Session)])
       }
 
@@ -54,7 +54,7 @@ trait AuthenticationDirectives {
   def formsLogout(auth: GitGridHttpAuthenticator): Directive0 = {
     extract(ctx => ctx).flatMap { ctx =>
       val future = ctx.request.cookies.find(c => c.name == auth.cookieName).map(_.content) match {
-        case Some(sessionId) => auth.sessionHandler.revokeSession(sessionId)
+        case Some(sessionId) => auth.sessionManager.revokeSession(sessionId)
         case _ => Future.successful()
       }
 

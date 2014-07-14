@@ -14,7 +14,7 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
 
   "GitGridUserPassAuthenticator" should {
     "properly authenticate user passed" in new TestEnvironment {
-      val upa = new GitGridUserPassAuthenticator(db)
+      val upa = new GitGridUserPassAuthenticator(um)
 
       await(upa(None)) must beNone
       await(upa(Some(UserPass("user1", "pass1")))) must beSome(user1)
@@ -24,22 +24,8 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
       await(upa(Some(UserPass("user", "pass")))) must beNone
     }
 
-    "properly check passwords hashed with plain" in new TestEnvironment {
-      val upa = new GitGridUserPassAuthenticator(db)
-
-      upa.checkPassword("", "", "plain", "") === true
-      upa.checkPassword("a", "", "plain", "a") === true
-      upa.checkPassword("ab", "", "plain", "ab") === true
-      upa.checkPassword("abc", "", "plain", "abc") === true
-
-      upa.checkPassword("", "", "plain", "a") === false
-      upa.checkPassword("a", "", "plain", "ab") === false
-      upa.checkPassword("ab", "", "plain", "abc") === false
-      upa.checkPassword("abc", "", "plain", "abC") === false
-    }
-
     "only accept most recent password" in new EmptyTestEnvironment {
-      val upa = new GitGridUserPassAuthenticator(db)
+      val upa = new GitGridUserPassAuthenticator(um)
 
       val u1 = await(db.users.insert(User(userName = "user1")))
       val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id.get, hash = "pass1-old", hashAlgorithm = "plain")))
