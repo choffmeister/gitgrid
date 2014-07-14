@@ -2,8 +2,10 @@ package com.gitgrid
 
 import java.util.UUID
 import com.gitgrid.models.Database
-import reactivemongo.api.MongoConnection
+import reactivemongo.api._
 import scala.concurrent.ExecutionContext
+
+class TestDatabase(val mongoDbDatabase: DefaultDB, val collectionNamePrefix: String = "")(implicit ec: ExecutionContext) extends Database(mongoDbDatabase, collectionNamePrefix)
 
 object TestDatabase {
   private var connections = Map.empty[(Seq[String]), MongoConnection]
@@ -17,11 +19,11 @@ object TestDatabase {
     }
   }
 
-  def create(cfg: Config)(implicit ec: ExecutionContext): Database = {
+  def create(cfg: Config)(implicit ec: ExecutionContext): TestDatabase = {
     val conn = connection(cfg.mongoDbServers)
     val data = conn(cfg.mongoDbDatabaseName)
     val prefix = s"_test_${UUID.randomUUID()}_"
 
-    new Database(data, prefix)
+    new TestDatabase(data, prefix)
   }
 }
