@@ -12,6 +12,8 @@ html(ng-app="app")
       h1 GitGrid
       ul
         li: a(href="/") Home
+        li(ng-show="!user"): a(href="/login") Login
+        li(ng-show="!!user"): a(href="/logout") Logout
         li: a(href="/about") About
     div.container-fluid(ng-view)
 
