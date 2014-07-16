@@ -10,33 +10,61 @@ case class WebAppToolsVersions(
 
 object WebAppPlugin extends Plugin {
   val webAppTest = taskKey[Unit]("executes gulp task 'test'")
-  val webAppBuild = taskKey[Unit]("executes gulp task 'build --dist'")
+  val webAppBuild = taskKey[File]("executes gulp task 'build --dist'")
   val webAppStart = taskKey[Unit]("starts a gulp development server as background process")
   val webAppStop = taskKey[Unit]("stops the running gulp development server backgrund process")
 
   val webAppToolsVersions = taskKey[WebAppToolsVersions]("retrieves the versions of node, npm, bower and gulp")
   val webAppInit = taskKey[Unit]("checks for node, npm, bower and gulp and installs node modules and bower components")
-  val webAppDir = settingKey[File]("the path to the wep app root directory")
+  val webAppSourceDir = settingKey[File]("the path to the wep app source directory")
+  val webAppTargetDir = settingKey[File]("the path to the wep app target directory")
 
   lazy val webAppSettings = Seq[Def.Setting[_]](
-    webAppDir := baseDirectory.value / "src/web",
+    webAppSourceDir := baseDirectory.value / "src/web",
+    webAppTargetDir := target.value / "web",
 
     webAppTest := {
-      runGulp(webAppDir.value, "test", dist = false)
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+
+      runGulp(sourceDir, "test", targetDir, dist = false)
     },
     webAppBuild := {
       val s = streams.value
-      webAppInit.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
 
+      webAppInit.value
       s.log.info("Building web app")
-      runGulp(webAppDir.value, "build", dist = true)
+      runGulp(sourceDir, "build", targetDir, dist = true)
       s.log.info("Done.")
+      targetDir
     },
     webAppStart := {
-      startGulp(webAppDir.value, "default", dist = false)
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+
+      startGulp(sourceDir, "default", targetDir, dist = false)
     },
     webAppStop := {
+      val s = streams.value
+
       stopGulp()
+    },
+    webAppInit := {
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+      val versions = webAppToolsVersions.value
+
+      ensureToolsVersions(versions)
+      s.log.info(s"Web app tools node-${versions.nodeVersion.get}, npm-${versions.npmVersion.get}, bower-${versions.bowerVersion.get} and gulp-${versions.gulpVersion.get}")
+      s.log.info("Initializing web app")
+      npmInstall(sourceDir)
+      bowerInstall(sourceDir)
+      s.log.info("Done.")
     },
     webAppToolsVersions := {
       val node = getToolVersion("node")
@@ -45,18 +73,6 @@ object WebAppPlugin extends Plugin {
       val gulp = getToolVersion("gulp")
 
       WebAppToolsVersions(node, npm, bower, gulp)
-    },
-    webAppInit := {
-      val s = streams.value
-
-      val versions = webAppToolsVersions.value
-      ensureToolsVersions(versions)
-      s.log.info(s"Web app tools node-${versions.nodeVersion.get}, npm-${versions.npmVersion.get}, bower-${versions.bowerVersion.get} and gulp-${versions.gulpVersion.get}")
-
-      s.log.info("Initializing web app")
-      npmInstall(webAppDir.value)
-      bowerInstall(webAppDir.value)
-      s.log.info("Done.")
     }
   )
 
@@ -70,10 +86,10 @@ object WebAppPlugin extends Plugin {
     execute("bower" :: "install" :: Nil, cwd, "Installing Bower components failed")
   }
 
-  private def runGulp(cwd: File, task: String, dist: Boolean) {
+  private def runGulp(cwd: File, task: String, target: File, dist: Boolean) {
     val command = dist match {
-      case false => "gulp" :: task :: Nil
-      case true => "gulp" :: task :: "--dist" :: Nil
+      case false => "gulp" :: task :: s"--target=$target" :: Nil
+      case true => "gulp" :: task :: s"--target=$target" :: "--dist" :: Nil
     }
     val returnValue = Process(command, cwd) !
 
@@ -82,12 +98,12 @@ object WebAppPlugin extends Plugin {
     }
   }
 
-  private def startGulp(cwd: File, task: String, dist: Boolean) {
+  private def startGulp(cwd: File, task: String, target: File, dist: Boolean) {
     if (running)  stopGulp()
 
     process = dist match {
-      case false => Process("gulp" :: task :: Nil, cwd).run()
-      case true => Process("gulp" :: task :: "--dist" :: Nil, cwd).run()
+      case false => Process("gulp" :: task :: s"--target=$target" :: Nil, cwd).run()
+      case true => Process("gulp" :: task :: s"--target=$target" :: "--dist" :: Nil, cwd).run()
     }
     running = true
   }

@@ -10,6 +10,7 @@ var argv = require('yargs').argv,
     jade = require('gulp-jade'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
+    path = require('path'),
     proxy = require('proxy-middleware'),
     rename = require('gulp-rename'),
     rewrite = require('connect-modrewrite'),
@@ -18,25 +19,29 @@ var argv = require('yargs').argv,
 
 var config = {
   debug: !argv.dist,
-  src: 'app/',
-  dest: '../../target/web/',
-  port: 9000
+  src: function (p) {
+    return path.join('app', p || '');
+  },
+  dest: function (p) {
+    return path.join(argv.target || 'target', p || '');
+  },
+  port: argv.port || 9000
 };
 
 gulp.task('jade', function () {
-  return gulp.src(config.src + '**/*.jade')
+  return gulp.src(config.src('**/*.jade'))
     .pipe(jade({ pretty: config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
       gutil.beep();
       this.end();
     })
-    .pipe(gulp.dest(config.dest))
+    .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
 gulp.task('less', function () {
-  return gulp.src(config.src + 'styles/main.less')
+  return gulp.src(config.src('styles/main.less'))
     .pipe(less({ compress: !config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
@@ -44,12 +49,12 @@ gulp.task('less', function () {
       this.end();
     })
     .pipe(rename('styles/main.css'))
-    .pipe(gulp.dest(config.dest))
+    .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
 gulp.task('coffee', function () {
-  return gulp.src(config.src + 'scripts/**/*.coffee')
+  return gulp.src(config.src('scripts/**/*.coffee'))
     .pipe(coffee({ bare: false }))
     .on('error', function (err) {
       gutil.log(err);
@@ -58,7 +63,7 @@ gulp.task('coffee', function () {
     })
     .pipe(concat('scripts/app.js'))
     .pipe(gif(!config.debug, uglify()))
-    .pipe(gulp.dest(config.dest))
+    .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
@@ -71,7 +76,7 @@ gulp.task('vendor', function () {
     .pipe(filters.js)
     .pipe(gif(!config.debug, uglify({ preserveComments: 'some' })))
     .pipe(filters.js.restore())
-    .pipe(gulp.dest(config.dest + 'vendor'));
+    .pipe(gulp.dest(config.dest('vendor')));
 });
 
 gulp.task('watch', ['build'], function () {
@@ -85,7 +90,7 @@ gulp.task('connect', function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
     .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot))$ /index.html [L]']))
-    .use(connect.static(config.dest))
+    .use(connect.static(config.dest()))
     .listen(config.port, next)
 });
 
