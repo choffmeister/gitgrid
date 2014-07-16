@@ -44,10 +44,7 @@ packMain := Map("gitgrid" -> "com.gitgrid.Application")
 
 packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config", "${PROG_HOME}/resources"))
 
-pack <<= pack dependsOn(webAppBuild)
-
-pack <<= (target, pack, streams) map { (targetDir: File, packDir: File, s) =>
-  val webSourceDir = targetDir / "web"
+pack <<= (WebAppPlugin.webAppBuild, pack, streams) map { (webSourceDir: File, packDir: File, s) =>
   val webTargetDir = packDir / "resources/web"
   s.log.info(s"Copying web files")
   IO.delete(webTargetDir)
