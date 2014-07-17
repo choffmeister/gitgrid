@@ -3,6 +3,7 @@ angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProv
     .when "/", { templateUrl: "/views/home.html" }
     .when "/login", { templateUrl: "/views/login.html", controller: "loginController" }
     .when "/logout", { templateUrl: "/views/logout.html", controller: "logoutController" }
+    .when "/register", { templateUrl: "/views/register.html", controller: "registerController" }
     .when "/about", { templateUrl: "/views/about.html" }
     .otherwise { templateUrl: "/views/notfound.html" }
 
