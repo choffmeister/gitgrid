@@ -9,7 +9,7 @@ import spray.http.StatusCodes._
 import spray.http._
 
 class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils {
-  "StaticContentHttpServiceActorSpec" should {
+  "StaticContentHttpServiceActor" should {
     "return HTTP 404 not found on unknown route" in new TestActorSystem with TestEnvironment {
       val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 

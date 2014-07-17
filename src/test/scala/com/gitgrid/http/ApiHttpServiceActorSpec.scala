@@ -18,7 +18,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   override implicit val executor = ExecutionContext.Implicits.global
   implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5000, duration.MILLISECONDS))
 
-  "ApiHttpServiceActorSpec" should {
+  "ApiHttpServiceActor" should {
     "respond to ping requests" in new TestApiHttpService {
       Post("/api/ping") ~> route ~> check {
         status === OK
