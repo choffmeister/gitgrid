@@ -81,9 +81,9 @@ gulp.task('vendor', function () {
 
 gulp.task('watch', ['build'], function () {
   livereload.listen({ auto: true });
-  gulp.watch(config.src + 'scripts/**/*.coffee', ['coffee']);
-  gulp.watch(config.src + 'styles/**/*.less', ['less']);
-  gulp.watch(config.src + '**/*.jade', ['jade']);
+  gulp.watch(config.src('scripts/**/*.coffee'), ['coffee']);
+  gulp.watch(config.src('styles/**/*.less'), ['less']);
+  gulp.watch(config.src('**/*.jade'), ['jade']);
 });
 
 gulp.task('connect', function (next) {
