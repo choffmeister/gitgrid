@@ -42,28 +42,11 @@ packSettings
 
 packMain := Map("gitgrid" -> "com.gitgrid.Application")
 
-packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config", "${PROG_HOME}/resources"))
+packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config"))
 
-pack <<= (WebAppPlugin.webAppBuild, pack, streams) map { (webSourceDir: File, packDir: File, s) =>
-  val webTargetDir = packDir / "resources/web"
-  s.log.info(s"Copying web files")
-  IO.delete(webTargetDir)
-  webTargetDir.mkdirs()
-  IO.copyDirectory(webSourceDir, webTargetDir)
-  s.log.info("Done.")
-  packDir
-}
+packResourceDir += (target.value / "web" -> "web")
 
-pack <<= (baseDirectory, pack, streams) map { (baseDir: File, packDir: File, s) =>
-  val confSourceDir = baseDir / "src/main/resources"
-  val confTargetDir = packDir / "config"
-  s.log.info(s"Copying config files")
-  confTargetDir.mkdirs()
-  IO.copyFile(confSourceDir / "application.conf.dist", confTargetDir / "application.conf")
-  IO.copyFile(confSourceDir / "logback.xml.dist", confTargetDir / "logback.xml")
-  s.log.info("Done.")
-  packDir
-}
+pack <<= pack.dependsOn(webAppBuild)
 
 jacoco.settings
 
