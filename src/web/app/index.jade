@@ -7,17 +7,19 @@ html(ng-app="app")
     meta(name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
     link(rel="stylesheet", href="/styles/main.css")
     script(type="text/javascript", src="/vendor/jquery/dist/jquery.js")
+    script(type="text/javascript", src="/vendor/bootstrap/dist/js/bootstrap.js")
     script(type="text/javascript", src="/vendor/angular/angular.js")
     script(type="text/javascript", src="/vendor/angular-route/angular-route.js")
     script(type="text/javascript", src="/scripts/app.js")
   body
-    div.container-fluid
-      h1 GitGrid
-      ul
-        li: a(href="/") Home
-        li(ng-show="!user"): a(href="/login") Login
-        li(ng-show="!!user"): a(href="/logout") Logout
-        li(ng-show="!user"): a(href="/register") Register
-        li: a(href="/about") About
+    navigation-menu(id="nav-main", brand="GitGrid")
+      ul.nav.navbar-nav
+        navigation-entry(label="'Register'", url="'/register'")
+        navigation-entry(label="'About'", url="'/about'")
+      ul.nav.navbar-nav.navbar-right
+        navigation-entry(label="'Login'", url="'/login'", ng-hide="user")
+        navigation-sub-menu(label="user.userName", ng-show="user")
+          navigation-entry(label="'Profile'", url="'/'")
+          navigation-divider
+          navigation-entry(label="'Logout'", url="'/logout'")
     div.container-fluid(ng-view)
-
