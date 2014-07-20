@@ -10,7 +10,7 @@ import scala.concurrent._
 class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
   def createProject(userId: BSONObjectID, name: String): Future[Project] = {
     for {
-      project <- db.projects.insert(Project(userId = userId, name = name))
+      project <- db.projects.insert(Project(ownerId = userId, name = name))
       repository <- future(GitRepository.init(getRepositoryDirectory(project.id.get), bare = true))
     } yield project
   }

@@ -10,7 +10,7 @@ class GitGridAuthorizer(db: Database) {
   def authorize(user: Option[User], action: => Any): Future[Boolean] = action match {
     case ProjectRead(project) =>
       user match {
-        case Some(user) => Future.successful(project.userId == user.id.get)
+        case Some(user) => Future.successful(project.ownerId == user.id.get)
         case _ => Future.successful(false)
       }
     case ProjectRepositoryReadWrite(project) =>

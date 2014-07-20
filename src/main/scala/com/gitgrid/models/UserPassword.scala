@@ -8,10 +8,10 @@ import scala.concurrent._
 case class UserPassword(
   id: Option[BSONObjectID] = Some(BSONObjectID.generate),
   userId: BSONObjectID,
-  createdAt: BSONDateTime,
   hash: String = "",
   hashSalt: String = "",
-  hashAlgorithm: String = ""
+  hashAlgorithm: String = "",
+  createdAt: BSONDateTime = BSONDateTime(System.currentTimeMillis)
 ) extends BaseModel
 
 class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
@@ -35,10 +35,10 @@ object UserPasswordBSONFormat {
     def read(doc: BSONDocument) = UserPassword(
       id = doc.getAs[BSONObjectID]("_id"),
       userId = doc.getAs[BSONObjectID]("userId").get,
-      createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       hash = doc.getAs[String]("hash").get,
       hashSalt = doc.getAs[String]("hashSalt").get,
-      hashAlgorithm = doc.getAs[String]("hashAlgorithm").get
+      hashAlgorithm = doc.getAs[String]("hashAlgorithm").get,
+      createdAt = doc.getAs[BSONDateTime]("createdAt").get
     )
   }
 
@@ -46,10 +46,10 @@ object UserPasswordBSONFormat {
     def write(obj: UserPassword): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
-      "createdAt" -> obj.createdAt,
       "hash" -> obj.hash,
       "hashSalt" -> obj.hashSalt,
-      "hashAlgorithm" -> obj.hashAlgorithm
+      "hashAlgorithm" -> obj.hashAlgorithm,
+      "createdAt" -> obj.createdAt
     )
   }
 }

@@ -7,8 +7,13 @@ import scala.concurrent._
 
 case class Project(
   id: Option[BSONObjectID] = Some(BSONObjectID.generate),
-  userId: BSONObjectID,
-  name: String = ""
+  ownerId: BSONObjectID,
+  name: String,
+  description: String = "",
+  public: Boolean = false,
+  createdAt: BSONDateTime = BSONDateTime(System.currentTimeMillis),
+  updatedAt: BSONDateTime = BSONDateTime(System.currentTimeMillis),
+  pushedAt: Option[BSONDateTime] = None
 ) extends BaseModel
 
 class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
@@ -17,28 +22,38 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
 
   def findByFullQualifiedName(ownerName: String, projectName: String): Future[Option[Project]] = {
     database.users.findByUserName(ownerName).flatMap {
-      case Some(user) => queryOne(BSONDocument("userId" -> user.id.get, "name" -> projectName))
+      case Some(user) => queryOne(BSONDocument("ownerId" -> user.id.get, "name" -> projectName))
       case _ => future(None)
     }
   }
 
-  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "name" -> IndexType.Ascending), unique = true))
+  collection.indexesManager.ensure(Index(List("ownerId" -> IndexType.Ascending, "name" -> IndexType.Ascending), unique = true))
 }
 
 object ProjectBSONFormat {
   implicit object Reader extends BSONDocumentReader[Project] {
     def read(doc: BSONDocument) = Project(
       id = doc.getAs[BSONObjectID]("_id"),
-      userId = doc.getAs[BSONObjectID]("userId").get,
-      name = doc.getAs[String]("name").get
+      ownerId = doc.getAs[BSONObjectID]("ownerId").get,
+      name = doc.getAs[String]("name").get,
+      description = doc.getAs[String]("description").get,
+      public = doc.getAs[Boolean]("public").get,
+      createdAt = doc.getAs[BSONDateTime]("createdAt").get,
+      updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
+      pushedAt = doc.getAs[BSONDateTime]("pushedAt")
     )
   }
 
   implicit object Writer extends BSONDocumentWriter[Project] {
     def write(obj: Project): BSONDocument = BSONDocument(
       "_id" -> obj.id,
-      "userId" -> obj.userId,
-      "name" -> obj.name
+      "ownerId" -> obj.ownerId,
+      "name" -> obj.name,
+      "description" -> obj.description,
+      "public" -> obj.public,
+      "createdAt" -> obj.createdAt,
+      "updatedAt" -> obj.updatedAt,
+      "pushedAt" -> obj.pushedAt
     )
   }
 }
