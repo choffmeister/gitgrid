@@ -1,9 +1,6 @@
-angular.module("app").factory("authService", ["$rootScope", "$http", ($rootScope, $http) ->
+angular.module("app").factory("authService", ["$rootScope", "restService", ($rootScope, restService) ->
   login: (userName, password) ->
-    $http.post("/api/auth/login", { user: userName, pass: password })
-      .success((res) -> $rootScope.user = res.user)
-
+    restService.login(userName, password).success((res) -> $rootScope.user = res.user)
   logout: () ->
-    $http.post("/api/auth/logout")
-      .success((res) -> $rootScope.user = null)
+    restService.logout().success((res) -> $rootScope.user = null)
 ])

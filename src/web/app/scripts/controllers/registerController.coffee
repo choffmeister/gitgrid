@@ -1,4 +1,4 @@
-angular.module("app").controller("registerController", ["$scope", "$location", "$http", ($scope, $location, $http) ->
+angular.module("app").controller("registerController", ["$scope", "$location", "restService", ($scope, $location, restService) ->
   $scope.userName = ""
   $scope.password = ""
   $scope.message = null
@@ -8,7 +8,7 @@ angular.module("app").controller("registerController", ["$scope", "$location", "
     password = $scope.password
     $scope.password = ""
 
-    $http.post("/api/auth/register", { userName: userName, password: password })
+    restService.register(userName, password)
       .success((res) -> $location.path("/login"))
       .error((err) ->
         $scope.message =
