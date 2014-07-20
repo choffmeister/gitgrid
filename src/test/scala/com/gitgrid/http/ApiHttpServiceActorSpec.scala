@@ -127,7 +127,11 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActorSpec /users" should {
-    "yield users" in new TestApiHttpService {
+    "yield all users" in new TestApiHttpService {
+      Get("/api/users") ~> route ~> check { responseAs[List[User]] === List(user1, user2) }
+    }
+
+    "yield specific users" in new TestApiHttpService {
       Get("/api/users/user1") ~> route ~> check { responseAs[User] === user1 }
       Get("/api/users/user0") ~> sealedRoute ~> check { status === NotFound }
     }
