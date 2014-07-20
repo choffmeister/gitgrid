@@ -30,7 +30,7 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
 
 class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
   lazy val users = new UserTable(this, mongoDbDatabase(collectionNamePrefix + "users"))
-  lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "user-passwords"))
+  lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "userPasswords"))
   lazy val sessions = new SessionTable(this, mongoDbDatabase(collectionNamePrefix + "sessions"))
   lazy val projects = new ProjectTable(this, mongoDbDatabase(collectionNamePrefix + "projects"))
 }
