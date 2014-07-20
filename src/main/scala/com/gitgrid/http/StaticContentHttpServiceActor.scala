@@ -18,6 +18,7 @@ class StaticContentHttpServiceActor(cfg: Config) extends Actor with HttpService 
       path("login")(idx) ~
       path("logout")(idx) ~
       path("register")(idx) ~
+      path("users")(idx) ~
       path("about")(idx) ~
       getFromDirectory(webDir)
     case _ =>

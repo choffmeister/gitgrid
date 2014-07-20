@@ -5,4 +5,6 @@ angular.module("app").factory("restService", ["$http", ($http) ->
     $http.post("/api/auth/logout")
   register: (userName, password) ->
     $http.post("/api/auth/register", { userName: userName, password: password })
+  listUsers: () ->
+    $http.get("/api/users")
 ])
