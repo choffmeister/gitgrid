@@ -9,10 +9,12 @@ case class ProjectRepositoryReadWrite(project: Project)
 class GitGridAuthorizer(db: Database) {
   def authorize(user: Option[User], action: => Any): Future[Boolean] = action match {
     case ProjectRead(project) =>
-      user match {
-        case Some(user) => Future.successful(project.ownerId == user.id.get)
-        case _ => Future.successful(false)
-      }
+      if (project.public == false) {
+        user match {
+          case Some(user) => Future.successful(project.ownerId == user.id.get)
+          case _ => Future.successful(false)
+        }
+      } else Future.successful(true)
     case ProjectRepositoryReadWrite(project) =>
       authorize(user, ProjectRead(project))
     case _ =>

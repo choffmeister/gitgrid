@@ -156,11 +156,30 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Post("/api/projects", newProject1) ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === Forbidden }
     }
 
+    "GET /projects list projects" in new TestApiHttpService {
+      Get("/api/projects") ~> route ~> check { responseAs[List[Project]] === List(project3) }
+      Get("/api/projects") ~> auth("user1", "pass1") ~> route ~> check { responseAs[List[Project]] === List(project1, project3) }
+      Get("/api/projects") ~> auth("user2", "pass2") ~> route ~> check { responseAs[List[Project]] === List(project2, project3) }
+    }
+
+    "GET /projects/{userName} list projects for user" in new TestApiHttpService {
+      Get("/api/projects/user1") ~> route ~> check { responseAs[List[Project]] === List(project3) }
+      Get("/api/projects/user1") ~> auth("user1", "pass1") ~> route ~> check { responseAs[List[Project]] === List(project1, project3) }
+      Get("/api/projects/user1") ~> auth("user2", "pass2") ~> route ~> check { responseAs[List[Project]] === List(project3) }
+      Get("/api/projects/user2") ~> route ~> check { responseAs[List[Project]] === Nil }
+      Get("/api/projects/user2") ~> auth("user1", "pass1") ~> route ~> check { responseAs[List[Project]] === Nil }
+      Get("/api/projects/user2") ~> auth("user2", "pass2") ~> route ~> check { responseAs[List[Project]] === List(project2) }
+      Get("/api/projects/user3") ~> sealedRoute ~> check { status === NotFound }
+    }
+
     "GET /projects/{userName}/{projectName} return specific project" in new TestApiHttpService {
       Get("/api/projects/user1/project1") ~> auth("user1", "pass1") ~> route ~> check { responseAs[Project] === project1 }
       Get("/api/projects/user2/project2") ~> auth("user2", "pass2") ~> route ~> check { responseAs[Project] === project2 }
       Get("/api/projects/user1/project2") ~> sealedRoute ~> check { status === NotFound }
       Get("/api/projects/user2/project1") ~> sealedRoute ~> check { status === NotFound }
+      Get("/api/projects/user1/project3") ~> auth("user1", "pass1") ~> route ~> check { responseAs[Project] === project3 }
+      Get("/api/projects/user1/project3") ~> auth("user2", "pass2") ~> route ~> check { responseAs[Project] === project3 }
+      Get("/api/projects/user1/project3") ~> route ~> check { responseAs[Project] === project3 }
     }
   }
 

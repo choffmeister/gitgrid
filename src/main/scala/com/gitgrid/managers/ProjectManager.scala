@@ -17,5 +17,19 @@ class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
     } yield project
   }
 
+  def listProjects(authUser: Option[User]): Future[List[Project]] = authUser match {
+    case Some(authUser) =>
+      db.projects.query(BSONDocument("$or" -> List(BSONDocument("ownerId" -> authUser.id.get), BSONDocument("public" -> true))))
+    case _ =>
+      db.projects.query(BSONDocument("public" -> true))
+  }
+
+  def listProjectsForOwner(authUser: Option[User], ownerId: BSONObjectID): Future[List[Project]] = authUser match {
+    case Some(authUser) if authUser.id.get == ownerId =>
+      db.projects.query(BSONDocument("ownerId" -> authUser.id.get))
+    case _ =>
+      db.projects.query(BSONDocument("$and" -> List(BSONDocument("ownerId" -> ownerId),  BSONDocument("public" -> true))))
+  }
+
   def getRepositoryDirectory(projectId: BSONObjectID): File = new File(cfg.repositoriesDir, projectId.stringify)
 }

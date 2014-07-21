@@ -74,7 +74,21 @@ class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: E
         }
       }
     } ~
+    userPathPrefix { user =>
+      pathEnd {
+        get {
+          authenticateOption() { authUser =>
+            complete(pm.listProjectsForOwner(authUser, user.id.get))
+          }
+        }
+      }
+    } ~
     pathEnd {
+      get {
+        authenticateOption() { authUser =>
+          complete(pm.listProjects(authUser))
+        }
+      } ~
       post {
         authenticate() { user =>
           entity(as[Project]) { project =>
