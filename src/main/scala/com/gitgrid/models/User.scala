@@ -6,15 +6,26 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class User(
-  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
+  id: Option[BSONObjectID] = None,
   userName: String = "",
-  createdAt: BSONDateTime = BSONDateTime(System.currentTimeMillis),
-  updatedAt: BSONDateTime = BSONDateTime(System.currentTimeMillis)
+  createdAt: BSONDateTime = BSONDateTime(0),
+  updatedAt: BSONDateTime = BSONDateTime(0)
 ) extends BaseModel
 
 class UserTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[User](database, collection) {
   implicit val reader = UserBSONFormat.Reader
   implicit val writer = UserBSONFormat.Writer
+
+  override def insert(user: User): Future[User] = {
+    val id = Some(BSONObjectID.generate)
+    val now = BSONDateTime(System.currentTimeMillis)
+    super.insert(user.copy(id = id, createdAt = now, updatedAt = now))
+  }
+
+  override def update(user: User): Future[User] = {
+    val now = BSONDateTime(System.currentTimeMillis)
+    super.insert(user.copy(updatedAt = now))
+  }
 
   def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("userName" -> userName))
 

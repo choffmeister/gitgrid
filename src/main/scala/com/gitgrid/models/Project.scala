@@ -6,19 +6,30 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class Project(
-  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
+  id: Option[BSONObjectID] = None,
   ownerId: BSONObjectID,
   name: String,
   description: String = "",
   public: Boolean = false,
-  createdAt: BSONDateTime = BSONDateTime(System.currentTimeMillis),
-  updatedAt: BSONDateTime = BSONDateTime(System.currentTimeMillis),
+  createdAt: BSONDateTime = BSONDateTime(0),
+  updatedAt: BSONDateTime = BSONDateTime(0),
   pushedAt: Option[BSONDateTime] = None
 ) extends BaseModel
 
 class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
   implicit val reader = ProjectBSONFormat.Reader
   implicit val writer = ProjectBSONFormat.Writer
+
+  override def insert(project: Project): Future[Project] = {
+    val id = Some(BSONObjectID.generate)
+    val now = BSONDateTime(System.currentTimeMillis)
+    super.insert(project.copy(id = id, createdAt = now, updatedAt = now))
+  }
+
+  override def update(project: Project): Future[Project] = {
+    val now = BSONDateTime(System.currentTimeMillis)
+    super.insert(project.copy(updatedAt = now))
+  }
 
   def findByFullQualifiedName(ownerName: String, projectName: String): Future[Option[Project]] = {
     database.users.findByUserName(ownerName).flatMap {

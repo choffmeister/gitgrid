@@ -10,10 +10,6 @@ import scala.Some
 import spray.routing.authentication.UserPass
 
 class UserManagerSpec extends Specification with AsyncUtils {
-  val now = BSONDateTime(System.currentTimeMillis)
-  val yesterday = BSONDateTime(System.currentTimeMillis - 24 * 60 * 60 * 1000)
-  val tomorrow = BSONDateTime(System.currentTimeMillis + 24 * 60 * 60 * 1000)
-
   "UserManager" should {
     "set and validate password" in new EmptyTestEnvironment {
       val u1 = await(db.users.insert(User(userName = "user1")))
@@ -21,16 +17,21 @@ class UserManagerSpec extends Specification with AsyncUtils {
 
       await(um.changeUserPassword(u1, "pass1-old"))
       await(um.changeUserPassword(u2, "pass2-old"))
+      Thread.sleep(100L)
       await(um.validateUserPassword(u1, "pass1-old")) === true
       await(um.validateUserPassword(u2, "pass2-old")) === true
       await(um.validateUserPassword(u1, "pass1-new")) === false
       await(um.validateUserPassword(u2, "pass2-new")) === false
+
       await(um.changeUserPassword(u1, "pass1-new"))
+      Thread.sleep(100L)
       await(um.validateUserPassword(u1, "pass1-old")) === false
       await(um.validateUserPassword(u2, "pass2-old")) === true
       await(um.validateUserPassword(u1, "pass1-new")) === true
       await(um.validateUserPassword(u2, "pass2-new")) === false
+
       await(um.changeUserPassword(u2, "pass2-new"))
+      Thread.sleep(100L)
       await(um.validateUserPassword(u1, "pass1-old")) === false
       await(um.validateUserPassword(u2, "pass2-old")) === false
       await(um.validateUserPassword(u1, "pass1-new")) === true
