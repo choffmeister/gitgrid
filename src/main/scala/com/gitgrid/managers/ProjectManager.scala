@@ -10,7 +10,7 @@ import scala.concurrent._
 class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
   def createProject(project: Project): Future[Project] = {
     val now = BSONDateTime(System.currentTimeMillis)
-    val project2 = project.copy(createdAt = now, updatedAt = now, pushedAt = None)
+    val project2 = project.copy(id = Some(BSONObjectID.generate), createdAt = now, updatedAt = now, pushedAt = None)
     for {
       project <- db.projects.insert(project2)
       repository <- future(GitRepository.init(getRepositoryDirectory(project.id.get), bare = true))

@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserManager(db: Database)(implicit ec: ExecutionContext) {
   def createUser(user: User, password: String): Future[User] = {
     val now = BSONDateTime(System.currentTimeMillis)
-    val user2 = user.copy(createdAt = now, updatedAt = now)
+    val user2 = user.copy(id = Some(BSONObjectID.generate), createdAt = now, updatedAt = now)
     for {
       u <- db.users.insert(user2)
       p <- changeUserPassword(u, password)
