@@ -12,10 +12,11 @@ trait EmptyTestEnvironment extends Scope with AsyncUtils {
 }
 
 trait TestEnvironment extends EmptyTestEnvironment {
-  val user1 = await(um.createUser("user1", "pass1"))
-  val user2 = await(um.createUser("user2", "pass2"))
-  val project1 = await(pm.createProject(user1.id.get, "project1"))
-  val project2 = await(pm.createProject(user2.id.get, "project2"))
+  val user1 = await(um.createUser(User(userName = "user1"), "pass1"))
+  val user2 = await(um.createUser(User(userName = "user2"), "pass2"))
+  val project1 = await(pm.createProject(Project(ownerId = user1.id.get, name = "project1", public = false)))
+  val project2 = await(pm.createProject(Project(ownerId = user2.id.get, name = "project2", public = false)))
+  val project3 = await(pm.createProject(Project(ownerId = user1.id.get, name = "project3", public = true)))
   TestEnvironment.unzipRepository(pm, project2, "/repo1.zip")
 }
 

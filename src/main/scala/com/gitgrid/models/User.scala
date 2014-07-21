@@ -7,7 +7,9 @@ import scala.concurrent._
 
 case class User(
   id: Option[BSONObjectID] = Some(BSONObjectID.generate),
-  userName: String = ""
+  userName: String = "",
+  createdAt: BSONDateTime = BSONDateTime(System.currentTimeMillis),
+  updatedAt: BSONDateTime = BSONDateTime(System.currentTimeMillis)
 ) extends BaseModel
 
 class UserTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[User](database, collection) {
@@ -23,14 +25,18 @@ object UserBSONFormat {
   implicit object Reader extends BSONDocumentReader[User] {
     def read(doc: BSONDocument) = User(
       id = doc.getAs[BSONObjectID]("_id"),
-      userName = doc.getAs[String]("userName").get
+      userName = doc.getAs[String]("userName").get,
+      createdAt = doc.getAs[BSONDateTime]("createdAt").get,
+      updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
     )
   }
 
   implicit object Writer extends BSONDocumentWriter[User] {
     def write(obj: User): BSONDocument = BSONDocument(
       "_id" -> obj.id,
-      "userName" -> obj.userName
+      "userName" -> obj.userName,
+      "createdAt" -> obj.createdAt,
+      "updatedAt" -> obj.updatedAt
     )
   }
 }

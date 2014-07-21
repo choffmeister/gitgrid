@@ -22,7 +22,7 @@ object TestDatabase {
   def create(cfg: Config)(implicit ec: ExecutionContext): TestDatabase = {
     val conn = connection(cfg.mongoDbServers)
     val data = conn(cfg.mongoDbDatabaseName)
-    val prefix = s"_test_${UUID.randomUUID()}_"
+    val prefix = s"${UUID.randomUUID().toString.replace("-", "")}_"
 
     new TestDatabase(data, prefix)
   }
