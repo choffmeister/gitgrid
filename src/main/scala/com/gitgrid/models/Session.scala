@@ -6,7 +6,7 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class Session(
-  id: Option[BSONObjectID] = None,
+  id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
   sessionId: String,
   expires: Option[BSONDateTime] = None
@@ -17,7 +17,7 @@ class SessionTable(database: Database, collection: BSONCollection)(implicit exec
   implicit val writer = SessionBSONFormat.Writer
 
   override def insert(session: Session): Future[Session] = {
-    val id = Some(BSONObjectID.generate)
+    val id = BSONObjectID.generate
     super.insert(session.copy(id = id))
   }
 
@@ -30,7 +30,7 @@ class SessionTable(database: Database, collection: BSONCollection)(implicit exec
 object SessionBSONFormat {
   implicit object Reader extends BSONDocumentReader[Session] {
     def read(doc: BSONDocument) = Session(
-      id = doc.getAs[BSONObjectID]("_id"),
+      id = doc.getAs[BSONObjectID]("_id").get,
       sessionId = doc.getAs[String]("sessionId").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
       expires = doc.getAs[BSONDateTime]("expires")

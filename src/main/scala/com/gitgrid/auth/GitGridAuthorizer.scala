@@ -11,7 +11,7 @@ class GitGridAuthorizer(db: Database) {
     case ProjectRead(project) =>
       if (project.public == false) {
         user match {
-          case Some(user) => Future.successful(project.ownerId == user.id.get)
+          case Some(user) => Future.successful(project.ownerId == user.id)
           case _ => Future.successful(false)
         }
       } else Future.successful(true)

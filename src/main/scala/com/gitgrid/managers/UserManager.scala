@@ -30,7 +30,7 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
     val hash = calculateHash(newPassword, hashSalt, hashAlgorithm)
 
     db.userPasswords.insert(UserPassword(
-      userId = user.id.get,
+      userId = user.id,
       createdAt = now,
       hash = hash,
       hashSalt = hashSalt,
@@ -39,7 +39,7 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
   }
 
   def validateUserPassword(user: User, password: String): Future[Boolean] = {
-    db.userPasswords.findCurrentPassword(user.id.get).map {
+    db.userPasswords.findCurrentPassword(user.id).map {
       case Some(pwd) => pwd.hash == calculateHash(password, pwd.hashSalt, pwd.hashAlgorithm)
       case _ => throw new Exception("Could not find current user password")
     }

@@ -7,7 +7,7 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 abstract class BaseModel {
-  val id: Option[BSONObjectID]
+  val id: BSONObjectID
 }
 
 abstract class Table[M <: BaseModel](database: Database, collection: BSONCollection)(implicit val executor: ExecutionContext) {
@@ -19,13 +19,11 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
   def query(q: BSONDocument): Future[List[M]] = collection.find(q).cursor[M].collect[List]()
   def queryOne(q: BSONDocument): Future[Option[M]] = collection.find(q).one[M]
   def insert(m: M): Future[M] = collection.insert(m).map(_ => m)
-  def update(m: M): Future[M] = collection.update(byId(m), m).map(_ => m)
+  def update(m: M): Future[M] = collection.update(byId(m.id), m).map(_ => m)
   def delete(id: BSONObjectID): Future[Unit] = collection.remove(byId(id)).map(_ => Unit)
-  def delete(m: M): Future[Unit] = delete(m.id.get)
+  def delete(m: M): Future[Unit] = delete(m.id)
 
   private def byId(id: BSONObjectID): BSONDocument = BSONDocument("_id" -> id)
-  private def byId(id: Option[BSONObjectID]): BSONDocument = byId(id.get)
-  private def byId(e: M): BSONDocument = byId(e.id.get)
 }
 
 class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {

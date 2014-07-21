@@ -6,7 +6,7 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class UserPassword(
-  id: Option[BSONObjectID] = None,
+  id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
   hash: String = "",
   hashSalt: String = "",
@@ -19,7 +19,7 @@ class UserPasswordTable(database: Database, collection: BSONCollection)(implicit
   implicit val writer = UserPasswordBSONFormat.Writer
 
   override def insert(userPassword: UserPassword): Future[UserPassword] = {
-    val id = Some(BSONObjectID.generate)
+    val id = BSONObjectID.generate
     val now = BSONDateTime(System.currentTimeMillis)
     super.insert(userPassword.copy(id = id, createdAt = now))
   }
@@ -35,7 +35,7 @@ class UserPasswordTable(database: Database, collection: BSONCollection)(implicit
 object UserPasswordBSONFormat {
   implicit object Reader extends BSONDocumentReader[UserPassword] {
     def read(doc: BSONDocument) = UserPassword(
-      id = doc.getAs[BSONObjectID]("_id"),
+      id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
       hash = doc.getAs[String]("hash").get,
       hashSalt = doc.getAs[String]("hashSalt").get,
