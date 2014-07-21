@@ -19,7 +19,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5000, duration.MILLISECONDS))
 
   "ApiHttpServiceActor misc routes" should {
-    "/ping respond to ping requests" in new TestApiHttpService {
+    "GET /ping respond to ping requests" in new TestApiHttpService {
       Post("/api/ping") ~> route ~> check {
         status === OK
         responseAs[String] === "pong"
@@ -28,7 +28,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActor authentication routes" should {
-    "/auth/login accept authentication request with valid credentials" in new TestApiHttpService {
+    "POST /auth/login accept authentication request with valid credentials" in new TestApiHttpService {
       Post("/api/auth/login", UserPass("user1", "pass1")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user === Some(user1)
@@ -40,7 +40,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "/auth/login reject authentication request with invalid credentials" in new TestApiHttpService {
+    "POST /auth/login reject authentication request with invalid credentials" in new TestApiHttpService {
       Post("/api/auth/login", UserPass("user1", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
@@ -57,14 +57,14 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "/auth/logout handle logout requests" in new TestApiHttpService {
+    "POST /auth/logout handle logout requests" in new TestApiHttpService {
       Post("/api/auth/logout") ~> route ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
     }
 
-    "/auth/log(in|out) set and unset session cookie" in new TestApiHttpService {
+    "POST /auth/log(in|out) set and unset session cookie" in new TestApiHttpService {
       await(db.sessions.all) must haveSize(0)
       Get("/api/auth/state") ~> route ~> check {
         status === OK
@@ -100,7 +100,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "/auth/register allow registration" in new TestApiHttpService {
+    "POST /auth/register create a new user account" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
 
       Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
@@ -120,7 +120,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "/auth/register fail on duplicate username" in new TestApiHttpService {
+    "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
       Post("/api/auth/register", RegistrationRequest("user1", "pass1")) ~> sealedRoute ~> check {
         status === InternalServerError
       }
@@ -128,18 +128,18 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActor user routes" should {
-    "/users" in new TestApiHttpService {
+    "GET /users list users" in new TestApiHttpService {
       Get("/api/users") ~> route ~> check { responseAs[List[User]] === List(user1, user2) }
     }
 
-    "/users/{userName}" in new TestApiHttpService {
+    "GET /users/{userName} return specific user" in new TestApiHttpService {
       Get("/api/users/user1") ~> route ~> check { responseAs[User] === user1 }
       Get("/api/users/user0") ~> sealedRoute ~> check { status === NotFound }
     }
   }
 
   "ApiHttpServiceActor project routes" should {
-    "/projects/{userName}/{projectName}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName} return specific project" in new TestApiHttpService {
       Get("/api/projects/user1/project1") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user1", "pass1"))) ~> route ~> check { responseAs[Project] === project1 }
       Get("/api/projects/user2/project2") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check { responseAs[Project] === project2 }
       Get("/api/projects/user1/project2") ~> sealedRoute ~> check { status === NotFound }
@@ -148,7 +148,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActor GIT routes" should {
-    "/projects/{userName}/{projectName}/git/branches" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/branches list branches" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/branches") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[List[GitRef]]
@@ -156,7 +156,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "/projects/{userName}/{projectName}/git/branches" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/tags list tags" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/tags") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[List[GitRef]]
@@ -165,63 +165,63 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "/projects/{userName}/{projectName}/git/commits" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/commits list commits" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/commits") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[List[GitCommit]]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/commit/{id}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/commit/{id} return specific commit" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/commit/bf3c1e0ca32e74080b6378506827b9cbc28bbffb") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[GitCommit]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/tree/{id}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/tree/{id} return specific tree" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/tree/aae19ad8d143bbe2f70858e8cd641847822c9080") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/blob/{id}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/blob/{id} return specific blob" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/blob/bb228175807fabf88754bf44be67fc19aaaff686") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[GitBlob]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/blob-raw/{id}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/blob-raw/{id} return specific blob content" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/blob-raw/bb228175807fabf88754bf44be67fc19aaaff686") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         responseAs[String] must contain("Version 0.1")
       }
     }
 
-    "/projects/{userName}/{projectName}/git/tree/{ref}/" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/tree/{ref}/ return specific tree" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/tree/master/") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/tree/{ref}/{path}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/tree/{ref}/{path} return specific tree" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/tree/master/src") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/blob/{ref}/{path}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/blob/{ref}/{path} return specific blob" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/blob/master/README.md") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         val response = responseAs[GitBlob]
       }
     }
 
-    "/projects/{userName}/{projectName}/git/blob-raw/{ref}/{path}" in new TestApiHttpService {
+    "GET /projects/{userName}/{projectName}/git/blob-raw/{ref}/{path} return specific blob content" in new TestApiHttpService {
       Get("/api/projects/user2/project2/git/blob-raw/master/README.md") ~> addHeader(HttpHeaders.Authorization(BasicHttpCredentials("user2", "pass2"))) ~> route ~> check {
         status === OK
         responseAs[String] must contain("Version 0.1")
