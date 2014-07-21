@@ -139,6 +139,13 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActor project routes" should {
+    "POST /projects create a new project" in new TestApiHttpService {
+      val newProject = Project(ownerId = user1.id.get, name = "project-new")
+      Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === NotFound }
+      Post("/api/projects", newProject) ~> auth("user1", "pass1") ~> route ~> check { status === OK }
+      Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> route ~> check { status === OK }
+    }
+
     "GET /projects/{userName}/{projectName} return specific project" in new TestApiHttpService {
       Get("/api/projects/user1/project1") ~> auth("user1", "pass1") ~> route ~> check { responseAs[Project] === project1 }
       Get("/api/projects/user2/project2") ~> auth("user2", "pass2") ~> route ~> check { responseAs[Project] === project2 }
