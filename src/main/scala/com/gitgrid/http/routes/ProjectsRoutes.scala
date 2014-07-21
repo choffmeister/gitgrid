@@ -78,8 +78,10 @@ class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: E
       post {
         authenticate() { user =>
           entity(as[Project]) { project =>
-            onSuccess(pm.createProject(user.id.get, project.name)) { project =>
-              complete(project)
+            authorize(project.ownerId == user.id.get) {
+              onSuccess(pm.createProject(project)) { project =>
+                complete(project)
+              }
             }
           }
         }

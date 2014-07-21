@@ -146,6 +146,16 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> route ~> check { status === OK }
     }
 
+    "POST /projects fail on unsufficient authentication" in new TestApiHttpService {
+      val newProject1 = Project(ownerId = user1.id.get, name = "project-new")
+      Post("/api/projects", newProject1) ~> sealedRoute ~> check { status === Unauthorized }
+    }
+
+    "POST /projects fail on creating a project for another user" in new TestApiHttpService {
+      val newProject1 = Project(ownerId = user1.id.get, name = "project-new")
+      Post("/api/projects", newProject1) ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === Forbidden }
+    }
+
     "GET /projects/{userName}/{projectName} return specific project" in new TestApiHttpService {
       Get("/api/projects/user1/project1") ~> auth("user1", "pass1") ~> route ~> check { responseAs[Project] === project1 }
       Get("/api/projects/user2/project2") ~> auth("user2", "pass2") ~> route ~> check { responseAs[Project] === project2 }

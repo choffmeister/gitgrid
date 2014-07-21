@@ -1,13 +1,15 @@
 package com.gitgrid.managers
 
 import com.gitgrid.models._
-import reactivemongo.bson.BSONDateTime
+import reactivemongo.bson._
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserManager(db: Database)(implicit ec: ExecutionContext) {
-  def createUser(userName: String, password: String): Future[User] = {
+  def createUser(user: User, password: String): Future[User] = {
+    val now = BSONDateTime(System.currentTimeMillis)
+    val user2 = user.copy(createdAt = now, updatedAt = now)
     for {
-      u <- db.users.insert(User(userName = userName))
+      u <- db.users.insert(user2)
       p <- changeUserPassword(u, password)
     } yield u
   }
