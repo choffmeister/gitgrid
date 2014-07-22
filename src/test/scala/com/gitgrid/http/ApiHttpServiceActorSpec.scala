@@ -149,6 +149,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         status === OK
         val res = responseAs[Project]
         res.id !== BSONObjectID("00" * 12)
+        res.ownerId === user1.id
+        res.ownerName === user1.userName
         res.createdAt.value must beGreaterThan(0L)
         res.updatedAt.value must beGreaterThan(0L)
       }

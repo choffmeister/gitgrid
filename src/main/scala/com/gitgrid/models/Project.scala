@@ -9,6 +9,7 @@ case class Project(
   id: BSONObjectID = BSONObjectID("00" * 12),
   ownerId: BSONObjectID,
   name: String,
+  ownerName: String = "",
   description: String = "",
   public: Boolean = false,
   createdAt: BSONDateTime = BSONDateTime(0),
@@ -27,8 +28,13 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
   }
 
   override def preUpdate(project: Project): Future[Project] = {
-    val now = BSONDateTime(System.currentTimeMillis)
-    Future.successful(project.copy(updatedAt = now))
+    database.users.find(project.ownerId).map {
+      case Some(owner) =>
+        val now = BSONDateTime(System.currentTimeMillis)
+        project.copy(ownerName = owner.userName, updatedAt = now)
+      case _ =>
+        throw new Exception("Unknown user id")
+    }
   }
 
   def findByFullQualifiedName(ownerName: String, projectName: String): Future[Option[Project]] = {
@@ -47,6 +53,7 @@ object ProjectBSONFormat {
       id = doc.getAs[BSONObjectID]("_id").get,
       ownerId = doc.getAs[BSONObjectID]("ownerId").get,
       name = doc.getAs[String]("name").get,
+      ownerName = doc.getAs[String]("ownerName").get,
       description = doc.getAs[String]("description").get,
       public = doc.getAs[Boolean]("public").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
@@ -60,6 +67,7 @@ object ProjectBSONFormat {
       "_id" -> obj.id,
       "ownerId" -> obj.ownerId,
       "name" -> obj.name,
+      "ownerName" -> obj.ownerName,
       "description" -> obj.description,
       "public" -> obj.public,
       "createdAt" -> obj.createdAt,
