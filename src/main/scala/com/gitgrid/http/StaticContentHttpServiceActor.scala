@@ -13,14 +13,12 @@ class StaticContentHttpServiceActor(cfg: Config) extends Actor with HttpService 
   def receive = runRoute(route)
   def route = cfg.webDir.map(_.toString) match {
     case Some(webDir) =>
-      val idx = getFromFile(s"${webDir}/index.html")
-      pathSingleSlash(idx) ~
-      path("login")(idx) ~
-      path("logout")(idx) ~
-      path("register")(idx) ~
-      path("users")(idx) ~
-      path("about")(idx) ~
-      getFromDirectory(webDir)
+      def index = getFromFile(s"${webDir}/index.html")
+      def assets = getFromDirectory(webDir)
+      pathSingleSlash(index) ~
+      path("index.html")(index) ~
+      assets ~
+      pathPrefixTest(!("scripts" | "styles" | "vendor" | "views"))(index)
     case _ =>
       reject()
   }
