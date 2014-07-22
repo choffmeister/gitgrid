@@ -186,11 +186,29 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     "GET /projects/{userName}/{projectName} return specific project" in new TestApiHttpService {
       Get("/api/projects/user1/project1") ~> auth("user1", "pass1") ~> route ~> check { responseAs[Project] === project1 }
       Get("/api/projects/user2/project2") ~> auth("user2", "pass2") ~> route ~> check { responseAs[Project] === project2 }
-      Get("/api/projects/user1/project2") ~> sealedRoute ~> check { status === NotFound }
-      Get("/api/projects/user2/project1") ~> sealedRoute ~> check { status === NotFound }
       Get("/api/projects/user1/project3") ~> auth("user1", "pass1") ~> route ~> check { responseAs[Project] === project3 }
       Get("/api/projects/user1/project3") ~> auth("user2", "pass2") ~> route ~> check { responseAs[Project] === project3 }
       Get("/api/projects/user1/project3") ~> route ~> check { responseAs[Project] === project3 }
+    }
+
+    "GET /projects/{userName}/{projectName} deny access to ungranted projects with correct HTTP return code" in new TestApiHttpService {
+      Get("/api/projects/user1/project0") ~> sealedRoute ~> check { status === Unauthorized }
+      Get("/api/projects/user1/project1") ~> sealedRoute ~> check { status === Unauthorized }
+      Get("/api/projects/user1/project3") ~> sealedRoute ~> check { status === OK }
+      Get("/api/projects/user2/project0") ~> sealedRoute ~> check { status === Unauthorized }
+      Get("/api/projects/user2/project2") ~> sealedRoute ~> check { status === Unauthorized }
+
+      Get("/api/projects/user1/project0") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === NotFound }
+      Get("/api/projects/user1/project1") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === OK }
+      Get("/api/projects/user1/project3") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === OK }
+      Get("/api/projects/user2/project0") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === Forbidden }
+      Get("/api/projects/user2/project2") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === Forbidden }
+
+      Get("/api/projects/user1/project0") ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === Forbidden }
+      Get("/api/projects/user1/project1") ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === Forbidden }
+      Get("/api/projects/user1/project3") ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === OK }
+      Get("/api/projects/user2/project0") ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === NotFound }
+      Get("/api/projects/user2/project2") ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === OK }
     }
   }
 

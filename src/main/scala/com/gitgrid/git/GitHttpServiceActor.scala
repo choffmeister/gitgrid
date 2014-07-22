@@ -28,7 +28,7 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
       sender ! Http.Register(self)
 
     case req@GitHttpRequest(_, _, "info/refs", None) =>
-      sender ! HttpResponse(status = Forbidden, entity = "Git dump HTTP protocol is not supported")
+      sender ! HttpResponse(status = NotImplemented, entity = "Git dump HTTP protocol is not supported")
 
     case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-upload-pack")) =>
       project(sender, ownerName, projectName) { (sender, project) =>
@@ -96,7 +96,7 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
       case Success(true) =>
         inner(sender)
       case Success(false) =>
-        sender ! HttpResponse(Unauthorized, "You are not allow to access this repository")
+        sender ! HttpResponse(NotFound)
       case Failure(ex) =>
         sender ! HttpResponse(InternalServerError)
     }

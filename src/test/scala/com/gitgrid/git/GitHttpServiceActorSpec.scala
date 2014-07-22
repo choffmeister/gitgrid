@@ -11,57 +11,67 @@ import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
 
-class GitHttpServiceActorSpec extends Specification with AsyncUtils {
+class GitHttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "GitHttpServiceActor" should {
-    "forbid access with dump HTTP protocol" in new TestActorSystem with TestEnvironment {
-      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
-
-      val req1 = HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs"))
-      val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
-      res1.status === Forbidden
+    "mark access with dump HTTP protocol as not implemented" in new TestActorSystem with TestEnvironment {
+      implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
+      req(GET, "/user1/project1.git/info/refs").status === NotImplemented
     }
 
-    "deny access with invalid credentials" in new TestActorSystem with TestEnvironment {
-      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
+    "deny access to ungranted repository with correct HTTP return code" in new TestActorSystem with TestEnvironment {
+      implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
-      val req1 = HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack"))
-      val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
-      res1.status === Unauthorized
+      reqGitRead ("user1", "project0").status === Unauthorized
+      reqGitWrite("user1", "project0").status === Unauthorized
+      reqGitRead ("user1", "project1").status === Unauthorized
+      reqGitWrite("user1", "project1").status === Unauthorized
+      reqGitRead ("user1", "project3").status === OK
+      reqGitWrite("user1", "project3").status === Unauthorized
+      reqGitRead ("user2", "project0").status === Unauthorized
+      reqGitWrite("user2", "project0").status === Unauthorized
+      reqGitRead ("user2", "project2").status === Unauthorized
+      reqGitWrite("user2", "project2").status === Unauthorized
 
-      val req2 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user0", "pass1")
-      val res2 = await(gitService ? req2).asInstanceOf[HttpResponse]
-      res2.status === Unauthorized
+      reqGitRead ("user1", "project0", "user1", "pass1").status === NotFound
+      reqGitWrite("user1", "project0", "user1", "pass1").status === NotFound
+      reqGitRead ("user1", "project1", "user1", "pass1").status === OK
+      reqGitWrite("user1", "project1", "user1", "pass1").status === OK
+      reqGitRead ("user1", "project3", "user1", "pass1").status === OK
+      reqGitWrite("user1", "project3", "user1", "pass1").status === OK
+      reqGitRead ("user2", "project0", "user1", "pass1").status === Forbidden
+      reqGitWrite("user2", "project0", "user1", "pass1").status === Forbidden
+      reqGitRead ("user2", "project2", "user1", "pass1").status === Forbidden
+      reqGitWrite("user2", "project2", "user1", "pass1").status === Forbidden
 
-      val req3 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user1", "pass2")
-      val res3 = await(gitService ? req3).asInstanceOf[HttpResponse]
-      res3.status === Unauthorized
+      reqGitRead ("user1", "project0", "user2", "pass2").status === Forbidden
+      reqGitWrite("user1", "project0", "user2", "pass2").status === Forbidden
+      reqGitRead ("user1", "project1", "user2", "pass2").status === Forbidden
+      reqGitWrite("user1", "project1", "user2", "pass2").status === Forbidden
+      reqGitRead ("user1", "project3", "user2", "pass2").status === OK
+      reqGitWrite("user1", "project3", "user2", "pass2").status === Forbidden
+      reqGitRead ("user2", "project0", "user2", "pass2").status === NotFound
+      reqGitWrite("user2", "project0", "user2", "pass2").status === NotFound
+      reqGitRead ("user2", "project2", "user2", "pass2").status === OK
+      reqGitWrite("user2", "project2", "user2", "pass2").status === OK
     }
 
-    "deny access with insufficient permissions" in new TestActorSystem with TestEnvironment {
-      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
+    "serve correct GIT repository to project" in new TestActorSystem with TestEnvironment {
+      implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
-      val req1 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user2", "pass2")
-      val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
-      res1.status === Unauthorized
-    }
-
-    "allow access with valid credentials via smart HTTP protocol" in new TestActorSystem with TestEnvironment {
-      val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
-
-      val req1 = authorize(HttpRequest(method = GET, uri = Uri("/user1/project1.git/info/refs?service=git-upload-pack")), "user1", "pass1")
-      val res1 = await(gitService ? req1).asInstanceOf[HttpResponse]
+      val res1 = reqGitRead("user1", "project1", "user1", "pass1")
       res1.status === OK
       res1.entity.asString must contain("0000000000000000000000000000000000000000")
       res1.entity.asString must endWith("0000")
 
-      val req2 = authorize(HttpRequest(method = GET, uri = Uri("/user2/project2.git/info/refs?service=git-upload-pack")), "user2", "pass2")
-      val res2 = await(gitService ? req2).asInstanceOf[HttpResponse]
+      val res2 = reqGitRead("user2", "project2", "user2", "pass2")
       res2.status === OK
       res2.entity.asString must contain("bf3c1e0ca32e74080b6378506827b9cbc28bbffb")
       res2.entity.asString must endWith("0000")
+
+      val res3 = reqGitRead("user1", "project3")
+      res3.status === OK
+      res3.entity.asString must contain("0000000000000000000000000000000000000000")
+      res3.entity.asString must endWith("0000")
     }
   }
-
-  def authorize(req: HttpRequest, user: String, pass: String) =
-    req.copy(headers = req.headers ++ List(Authorization(BasicHttpCredentials(user, pass))))
 }
