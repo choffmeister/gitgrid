@@ -14,7 +14,8 @@ html(ng-app="app")
   body
     navigation-menu(id="nav-main", brand="GitGrid")
       ul.nav.navbar-nav
-        navigation-entry(label="'Register'", url="'/register'")
+        navigation-entry(label="'Register'", url="'/register'", ng-hide="user")
+        navigation-entry(label="'Create project'", url="'/new'", ng-show="user")
         navigation-entry(label="'Users'", url="'/users'")
         navigation-entry(label="'About'", url="'/about'")
       ul.nav.navbar-nav.navbar-right

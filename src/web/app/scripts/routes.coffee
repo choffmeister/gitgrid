@@ -5,6 +5,7 @@ angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProv
     .when "/logout", { templateUrl: "/views/logout.html", controller: "logoutController" }
     .when "/register", { templateUrl: "/views/register.html", controller: "registerController" }
     .when "/users", { templateUrl: "/views/users.html", controller: "usersController" }
+    .when "/new", { templateUrl: "/views/createproject.html", controller: "createProjectController" }
     .when "/about", { templateUrl: "/views/about.html" }
     .otherwise { templateUrl: "/views/notfound.html" }
 
