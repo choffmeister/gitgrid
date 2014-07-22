@@ -1,4 +1,7 @@
 angular.module("app").factory("authService", ["$http", "$rootScope", ($http, $rootScope) ->
+  $http.get("/api/auth/state")
+    .success((res) -> $rootScope.user = res.user if res.user?)
+
   isAuthenticated: () ->
     $rootScope.user?
   getUser: () ->
