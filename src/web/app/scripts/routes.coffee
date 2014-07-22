@@ -7,6 +7,10 @@ angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProv
     .when "/users", { templateUrl: "/views/users.html", controller: "usersController" }
     .when "/new", { templateUrl: "/views/createproject.html", controller: "createProjectController" }
     .when "/about", { templateUrl: "/views/about.html" }
+
+    .when "/:userName", { templateUrl: "/views/showuser.html", controller: "showUserController" }
+    .when "/:ownerName/:projectName", { templateUrl: "/views/showproject.html", controller: "showProjectController" }
+
     .otherwise { templateUrl: "/views/notfound.html" }
 
   $locationProvider.html5Mode(true)
