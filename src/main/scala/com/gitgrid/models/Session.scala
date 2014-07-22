@@ -16,9 +16,9 @@ class SessionTable(database: Database, collection: BSONCollection)(implicit exec
   implicit val reader = SessionBSONFormat.Reader
   implicit val writer = SessionBSONFormat.Writer
 
-  override def insert(session: Session): Future[Session] = {
+  override def preInsert(session: Session): Future[Session] = {
     val id = BSONObjectID.generate
-    super.insert(session.copy(id = id))
+    Future.successful(session.copy(id = id))
   }
 
   def findBySessionId(sessionId: String): Future[Option[Session]] = queryOne(BSONDocument("sessionId" -> sessionId))

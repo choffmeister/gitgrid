@@ -16,15 +16,15 @@ class UserTable(database: Database, collection: BSONCollection)(implicit executo
   implicit val reader = UserBSONFormat.Reader
   implicit val writer = UserBSONFormat.Writer
 
-  override def insert(user: User): Future[User] = {
+  override def preInsert(user: User): Future[User] = {
     val id = BSONObjectID.generate
     val now = BSONDateTime(System.currentTimeMillis)
-    super.insert(user.copy(id = id, createdAt = now, updatedAt = now))
+    Future.successful(user.copy(id = id, createdAt = now))
   }
 
-  override def update(user: User): Future[User] = {
+  override def preUpdate(user: User): Future[User] = {
     val now = BSONDateTime(System.currentTimeMillis)
-    super.insert(user.copy(updatedAt = now))
+    Future.successful(user.copy(updatedAt = now))
   }
 
   def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("userName" -> userName))

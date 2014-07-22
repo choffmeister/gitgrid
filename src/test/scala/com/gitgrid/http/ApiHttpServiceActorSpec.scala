@@ -109,6 +109,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         val res = responseAs[User]
         res.id !== BSONObjectID("00" * 12)
         res.userName === "user3"
+        res.createdAt.value must beGreaterThan(0L)
+        res.updatedAt.value must beGreaterThan(0L)
       }
 
       await(db.users.all) must haveSize(3)
@@ -143,7 +145,13 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     "POST /projects create a new project" in new TestApiHttpService {
       val newProject = Project(ownerId = user1.id, name = "project-new")
       Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === NotFound }
-      Post("/api/projects", newProject) ~> auth("user1", "pass1") ~> route ~> check { status === OK }
+      Post("/api/projects", newProject) ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val res = responseAs[Project]
+        res.id !== BSONObjectID("00" * 12)
+        res.createdAt.value must beGreaterThan(0L)
+        res.updatedAt.value must beGreaterThan(0L)
+      }
       Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> route ~> check { status === OK }
     }
 

@@ -20,15 +20,15 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
   implicit val reader = ProjectBSONFormat.Reader
   implicit val writer = ProjectBSONFormat.Writer
 
-  override def insert(project: Project): Future[Project] = {
+  override def preInsert(project: Project): Future[Project] = {
     val id = BSONObjectID.generate
     val now = BSONDateTime(System.currentTimeMillis)
-    super.insert(project.copy(id = id, createdAt = now, updatedAt = now))
+    Future.successful(project.copy(id = id, createdAt = now))
   }
 
-  override def update(project: Project): Future[Project] = {
+  override def preUpdate(project: Project): Future[Project] = {
     val now = BSONDateTime(System.currentTimeMillis)
-    super.insert(project.copy(updatedAt = now))
+    Future.successful(project.copy(updatedAt = now))
   }
 
   def findByFullQualifiedName(ownerName: String, projectName: String): Future[Option[Project]] = {

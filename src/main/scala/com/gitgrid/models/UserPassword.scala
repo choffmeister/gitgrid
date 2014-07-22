@@ -18,10 +18,10 @@ class UserPasswordTable(database: Database, collection: BSONCollection)(implicit
   implicit val reader = UserPasswordBSONFormat.Reader
   implicit val writer = UserPasswordBSONFormat.Writer
 
-  override def insert(userPassword: UserPassword): Future[UserPassword] = {
+  override def preInsert(user: UserPassword): Future[UserPassword] = {
     val id = BSONObjectID.generate
     val now = BSONDateTime(System.currentTimeMillis)
-    super.insert(userPassword.copy(id = id, createdAt = now))
+    Future.successful(user.copy(id = id, createdAt = now))
   }
 
   def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(

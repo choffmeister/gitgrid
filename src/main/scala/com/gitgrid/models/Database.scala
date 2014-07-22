@@ -18,10 +18,13 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
   def find(id: BSONObjectID): Future[Option[M]] = queryOne(byId(id))
   def query(q: BSONDocument): Future[List[M]] = collection.find(q).cursor[M].collect[List]()
   def queryOne(q: BSONDocument): Future[Option[M]] = collection.find(q).one[M]
-  def insert(m: M): Future[M] = collection.insert(m).map(_ => m)
-  def update(m: M): Future[M] = collection.update(byId(m.id), m).map(_ => m)
+  def insert(m: M): Future[M] = preInsert(m).flatMap(m2 => preUpdate(m2).flatMap(m3 => collection.insert(m3).map(_ => m3)))
+  def update(m: M): Future[M] = preUpdate(m).flatMap(m2 =>collection.update(byId(m2.id), m2).map(_ => m2))
   def delete(id: BSONObjectID): Future[Unit] = collection.remove(byId(id)).map(_ => Unit)
   def delete(m: M): Future[Unit] = delete(m.id)
+
+  def preInsert(m: M): Future[M] = preUpdate(m)
+  def preUpdate(m: M): Future[M] = Future.successful(m)
 
   private def byId(id: BSONObjectID): BSONDocument = BSONDocument("_id" -> id)
 }
