@@ -98,7 +98,7 @@ gulp.task('connect', function (next) {
 
 gulp.task('manifest-include', ['compile'], function () {
   return gulp.src(config.dest('index.html'))
-    .pipe(replace('<html', '<html manifest="cache.manifest"'))
+    .pipe(replace('<html', '<html manifest="/cache.manifest"'))
     .pipe(gulp.dest(config.dest()));
 });
 
