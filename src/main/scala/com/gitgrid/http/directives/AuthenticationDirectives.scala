@@ -40,7 +40,7 @@ trait AuthenticationDirectives {
 
     entity(as[UserPass]).flatMap { userPass =>
       val future = auth.userPassAuthenticator(Some(userPass)).flatMap {
-        case Some(user) => auth.sessionManager.createSession(user.id.get).map(session => Some(user, session))
+        case Some(user) => auth.sessionManager.createSession(user.id).map(session => Some(user, session))
         case _ => Future.successful(Option.empty[(User, Session)])
       }
 

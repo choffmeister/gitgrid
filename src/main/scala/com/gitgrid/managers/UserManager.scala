@@ -6,10 +6,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UserManager(db: Database)(implicit ec: ExecutionContext) {
   def createUser(user: User, password: String): Future[User] = {
-    val now = BSONDateTime(System.currentTimeMillis)
-    val user2 = user.copy(id = Some(BSONObjectID.generate), createdAt = now, updatedAt = now)
     for {
-      u <- db.users.insert(user2)
+      u <- db.users.insert(user)
       p <- changeUserPassword(u, password)
     } yield u
   }
@@ -32,7 +30,7 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
     val hash = calculateHash(newPassword, hashSalt, hashAlgorithm)
 
     db.userPasswords.insert(UserPassword(
-      userId = user.id.get,
+      userId = user.id,
       createdAt = now,
       hash = hash,
       hashSalt = hashSalt,
@@ -41,7 +39,7 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
   }
 
   def validateUserPassword(user: User, password: String): Future[Boolean] = {
-    db.userPasswords.findCurrentPassword(user.id.get).map {
+    db.userPasswords.findCurrentPassword(user.id).map {
       case Some(pwd) => pwd.hash == calculateHash(password, pwd.hashSalt, pwd.hashAlgorithm)
       case _ => throw new Exception("Could not find current user password")
     }

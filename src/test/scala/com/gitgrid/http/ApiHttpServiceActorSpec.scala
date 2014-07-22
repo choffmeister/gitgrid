@@ -6,6 +6,7 @@ import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
 import org.specs2.mutable._
+import reactivemongo.bson.BSONObjectID
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{duration, ExecutionContext}
 import spray.http.HttpHeaders._
@@ -106,8 +107,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
-        res.id must beSome
+        res.id !== BSONObjectID("00" * 12)
         res.userName === "user3"
+        res.createdAt.value must beGreaterThan(0L)
+        res.updatedAt.value must beGreaterThan(0L)
       }
 
       await(db.users.all) must haveSize(3)
@@ -140,19 +143,27 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActor project routes" should {
     "POST /projects create a new project" in new TestApiHttpService {
-      val newProject = Project(id = None, ownerId = user1.id.get, name = "project-new")
+      val newProject = Project(ownerId = user1.id, name = "project-new")
       Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> sealedRoute ~> check { status === NotFound }
-      Post("/api/projects", newProject) ~> auth("user1", "pass1") ~> route ~> check { status === OK }
+      Post("/api/projects", newProject) ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val res = responseAs[Project]
+        res.id !== BSONObjectID("00" * 12)
+        res.ownerId === user1.id
+        res.ownerName === user1.userName
+        res.createdAt.value must beGreaterThan(0L)
+        res.updatedAt.value must beGreaterThan(0L)
+      }
       Get("/api/projects/user1/project-new") ~> auth("user1", "pass1") ~> route ~> check { status === OK }
     }
 
     "POST /projects fail on unsufficient authentication" in new TestApiHttpService {
-      val newProject = Project(id = None, ownerId = user1.id.get, name = "project-new")
+      val newProject = Project(ownerId = user1.id, name = "project-new")
       Post("/api/projects", newProject) ~> sealedRoute ~> check { status === Unauthorized }
     }
 
     "POST /projects fail on creating a project for another user" in new TestApiHttpService {
-      val newProject = Project(id = None, ownerId = user1.id.get, name = "project-new")
+      val newProject = Project(ownerId = user1.id, name = "project-new")
       Post("/api/projects", newProject) ~> auth("user2", "pass2") ~> sealedRoute ~> check { status === Forbidden }
     }
 

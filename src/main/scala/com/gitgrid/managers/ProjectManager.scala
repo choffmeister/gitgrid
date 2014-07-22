@@ -9,24 +9,22 @@ import scala.concurrent._
 
 class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
   def createProject(project: Project): Future[Project] = {
-    val now = BSONDateTime(System.currentTimeMillis)
-    val project2 = project.copy(id = Some(BSONObjectID.generate), createdAt = now, updatedAt = now, pushedAt = None)
     for {
-      project <- db.projects.insert(project2)
-      repository <- future(GitRepository.init(getRepositoryDirectory(project.id.get), bare = true))
+      project <- db.projects.insert(project)
+      repository <- future(GitRepository.init(getRepositoryDirectory(project.id), bare = true))
     } yield project
   }
 
   def listProjects(authUser: Option[User]): Future[List[Project]] = authUser match {
     case Some(authUser) =>
-      db.projects.query(BSONDocument("$or" -> List(BSONDocument("ownerId" -> authUser.id.get), BSONDocument("public" -> true))))
+      db.projects.query(BSONDocument("$or" -> List(BSONDocument("ownerId" -> authUser.id), BSONDocument("public" -> true))))
     case _ =>
       db.projects.query(BSONDocument("public" -> true))
   }
 
   def listProjectsForOwner(authUser: Option[User], ownerId: BSONObjectID): Future[List[Project]] = authUser match {
-    case Some(authUser) if authUser.id.get == ownerId =>
-      db.projects.query(BSONDocument("ownerId" -> authUser.id.get))
+    case Some(authUser) if authUser.id == ownerId =>
+      db.projects.query(BSONDocument("ownerId" -> authUser.id))
     case _ =>
       db.projects.query(BSONDocument("$and" -> List(BSONDocument("ownerId" -> ownerId),  BSONDocument("public" -> true))))
   }

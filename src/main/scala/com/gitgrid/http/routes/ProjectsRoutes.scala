@@ -78,7 +78,7 @@ class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: E
       pathEnd {
         get {
           authenticateOption() { authUser =>
-            complete(pm.listProjectsForOwner(authUser, user.id.get))
+            complete(pm.listProjectsForOwner(authUser, user.id))
           }
         }
       }
@@ -92,7 +92,7 @@ class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: E
       post {
         authenticate() { user =>
           entity(as[Project]) { project =>
-            authorize(project.ownerId == user.id.get) {
+            authorize(project.ownerId == user.id) {
               onSuccess(pm.createProject(project)) { project =>
                 complete(project)
               }
@@ -103,5 +103,5 @@ class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: E
     }
 
   def gitRepository[T](project: Project)(inner: GitRepository => T): T =
-    GitRepository(new File(cfg.repositoriesDir, project.id.get.stringify))(inner)
+    GitRepository(new File(cfg.repositoriesDir, project.id.stringify))(inner)
 }

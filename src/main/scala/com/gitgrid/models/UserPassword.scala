@@ -6,25 +6,27 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class UserPassword(
-  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
+  id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
   hash: String = "",
   hashSalt: String = "",
   hashAlgorithm: String = "",
-  createdAt: BSONDateTime = BSONDateTime(System.currentTimeMillis)
+  createdAt: BSONDateTime = BSONDateTime(0)
 ) extends BaseModel
 
 class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
   implicit val reader = UserPasswordBSONFormat.Reader
   implicit val writer = UserPasswordBSONFormat.Writer
 
+  override def preInsert(user: UserPassword): Future[UserPassword] = {
+    val id = BSONObjectID.generate
+    val now = BSONDateTime(System.currentTimeMillis)
+    Future.successful(user.copy(id = id, createdAt = now))
+  }
+
   def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(
-    "$query" -> BSONDocument(
-      "userId" -> userId
-    ),
-    "$orderby" -> BSONDocument(
-      "createdAt" -> -1
-    )
+    "$query" -> BSONDocument("userId" -> userId),
+    "$orderby" -> BSONDocument("createdAt" -> -1)
   ))
 
   collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "createdAt" -> IndexType.Descending)))
@@ -33,7 +35,7 @@ class UserPasswordTable(database: Database, collection: BSONCollection)(implicit
 object UserPasswordBSONFormat {
   implicit object Reader extends BSONDocumentReader[UserPassword] {
     def read(doc: BSONDocument) = UserPassword(
-      id = doc.getAs[BSONObjectID]("_id"),
+      id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
       hash = doc.getAs[String]("hash").get,
       hashSalt = doc.getAs[String]("hashSalt").get,
