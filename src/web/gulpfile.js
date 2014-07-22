@@ -10,9 +10,11 @@ var argv = require('yargs').argv,
     jade = require('gulp-jade'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
+    manifest = require('gulp-manifest'),
     path = require('path'),
     proxy = require('proxy-middleware'),
     rename = require('gulp-rename'),
+    replace = require('gulp-replace'),
     rewrite = require('connect-modrewrite'),
     uglify = require('gulp-uglify'),
     url = require('url');
@@ -79,7 +81,7 @@ gulp.task('vendor', function () {
     .pipe(gulp.dest(config.dest('vendor')));
 });
 
-gulp.task('watch', ['build'], function () {
+gulp.task('watch', ['compile'], function () {
   livereload.listen({ auto: true });
   gulp.watch(config.src('scripts/**/*.coffee'), ['coffee']);
   gulp.watch(config.src('styles/**/*.less'), ['less']);
@@ -89,10 +91,29 @@ gulp.task('watch', ['build'], function () {
 gulp.task('connect', function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
-    .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot))$ /index.html [L]']))
+    .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot|manifest))$ /index.html [L]']))
     .use(connect.static(config.dest()))
     .listen(config.port, next)
 });
 
-gulp.task('build', ['coffee', 'less', 'jade', 'vendor']);
-gulp.task('default', ['build', 'connect', 'watch']);
+gulp.task('manifest-include', ['compile'], function () {
+  return gulp.src(config.dest('index.html'))
+    .pipe(replace('<html', '<html manifest="cache.manifest"'))
+    .pipe(gulp.dest(config.dest()));
+});
+
+gulp.task('manifest-generate', ['manifest-include'], function () {
+  return gulp.src(config.dest('**/*'))
+    .pipe(manifest({
+      filename: 'cache.manifest',
+      exclude: 'cache.manifest',
+      hash: true,
+      timestamp: false,
+      preferOnline: false
+    }))
+    .pipe(gulp.dest(config.dest()));
+});
+
+gulp.task('compile', ['coffee', 'less', 'jade', 'vendor']);
+gulp.task('build', ['compile', 'manifest-include', 'manifest-generate']);
+gulp.task('default', ['compile', 'connect', 'watch']);
