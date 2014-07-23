@@ -26,4 +26,6 @@ html(ng-app="app")
           navigation-entry(label="'Profile'", url="'/'")
           navigation-divider
           navigation-entry(label="'Logout'", url="'/logout'")
-    div.container-fluid(ng-view)
+    div.container-fluid
+      div(style="position: relative")
+        ng-view.fade

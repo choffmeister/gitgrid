@@ -74,6 +74,7 @@ gulp.task('vendor-scripts', function () {
       config.src('../bower_components/jquery/dist/jquery.js'),
       config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
       config.src('../bower_components/angular/angular.js'),
+      config.src('../bower_components/angular-animate/angular-animate.js'),
       config.src('../bower_components/angular-route/angular-route.js')
     ])
     .pipe(concat('scripts/vendor.js'))
