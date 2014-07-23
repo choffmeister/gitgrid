@@ -12,6 +12,8 @@ html(ng-app="app")
     script(type="text/javascript", src="/scripts/vendor.js")
     script(type="text/javascript", src="/scripts/app.js")
   body
+    div(id="flash-messages")
+      div(ng-repeat="flashMessage in flashMessages") {{flashMessage.title}}
     navigation-menu(id="nav-main", brand="GitGrid")
       ul.nav.navbar-nav
         navigation-entry(label="'Register'", url="'/register'", ng-hide="user")
