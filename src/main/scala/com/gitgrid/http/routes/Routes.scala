@@ -12,9 +12,7 @@ trait Routes extends Directives with AuthenticationDirectives with ExtractionDir
   implicit val executor: ExecutionContext
 
   val authenticator = new GitGridHttpAuthenticator(db)
-  val authorizer = new GitGridAuthorizer(db)
 
   def authenticate(): Directive1[User] = authenticate(authenticator)
   def authenticateOption(): Directive1[Option[User]] = authenticateOption(authenticator)
-  def authorize(user: Option[User], action: Any): Directive0 = authorizeDetached(authorizer.authorize(user, action))
 }
