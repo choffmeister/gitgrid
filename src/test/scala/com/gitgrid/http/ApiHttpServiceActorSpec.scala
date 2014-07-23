@@ -103,6 +103,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
     "POST /auth/register create a new user account" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[AuthenticationResponse].user must beNone }
 
       Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
         status === OK
@@ -114,13 +115,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
 
       await(db.users.all) must haveSize(3)
-
-      Post("/api/auth/login", UserPass("user3", "pass3")) ~> route ~> check {
-        status === OK
-        val res = responseAs[AuthenticationResponse]
-        res.user must beSome
-        res.user.get.userName === "user3"
-      }
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[AuthenticationResponse].user.get.userName === "user3" }
     }
 
     "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
