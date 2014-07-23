@@ -21,6 +21,9 @@ class GitHttpServiceActorSpec extends Specification with AsyncUtils with Request
     "deny access to ungranted repository with correct HTTP return code" in new TestActorSystem with TestEnvironment {
       implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
 
+      reqGitRead ("user0", "project0").status === NotFound
+      reqGitWrite("user0", "project0").status === NotFound
+
       reqGitRead ("user1", "project0").status === Unauthorized
       reqGitWrite("user1", "project0").status === Unauthorized
       reqGitRead ("user1", "project1").status === Unauthorized
