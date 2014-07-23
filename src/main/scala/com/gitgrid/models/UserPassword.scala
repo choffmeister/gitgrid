@@ -6,50 +6,52 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class UserPassword(
-  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
+  id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
-  createdAt: BSONDateTime,
   hash: String = "",
   hashSalt: String = "",
-  hashAlgorithm: String = ""
+  hashAlgorithm: String = "",
+  createdAt: BSONDateTime = BSONDateTime(0)
 ) extends BaseModel
 
 class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
-  implicit val reader = UserPasswordBSONFormat.UserPasswordBSONReader
-  implicit val writer = UserPasswordBSONFormat.UserPasswordBSONWriter
+  implicit val reader = UserPasswordBSONFormat.Reader
+  implicit val writer = UserPasswordBSONFormat.Writer
+
+  override def preInsert(user: UserPassword): Future[UserPassword] = {
+    val id = BSONObjectID.generate
+    val now = BSONDateTime(System.currentTimeMillis)
+    Future.successful(user.copy(id = id, createdAt = now))
+  }
 
   def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(
-    "$query" -> BSONDocument(
-      "userId" -> userId
-    ),
-    "$orderby" -> BSONDocument(
-      "createdAt" -> -1
-    )
+    "$query" -> BSONDocument("userId" -> userId),
+    "$orderby" -> BSONDocument("createdAt" -> -1)
   ))
 
   collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "createdAt" -> IndexType.Descending)))
 }
 
 object UserPasswordBSONFormat {
-  implicit object UserPasswordBSONReader extends BSONDocumentReader[UserPassword] {
+  implicit object Reader extends BSONDocumentReader[UserPassword] {
     def read(doc: BSONDocument) = UserPassword(
-      id = doc.getAs[BSONObjectID]("_id"),
+      id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
-      createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       hash = doc.getAs[String]("hash").get,
       hashSalt = doc.getAs[String]("hashSalt").get,
-      hashAlgorithm = doc.getAs[String]("hashAlgorithm").get
+      hashAlgorithm = doc.getAs[String]("hashAlgorithm").get,
+      createdAt = doc.getAs[BSONDateTime]("createdAt").get
     )
   }
 
-  implicit object UserPasswordBSONWriter extends BSONDocumentWriter[UserPassword] {
+  implicit object Writer extends BSONDocumentWriter[UserPassword] {
     def write(obj: UserPassword): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
-      "createdAt" -> obj.createdAt,
       "hash" -> obj.hash,
       "hashSalt" -> obj.hashSalt,
-      "hashAlgorithm" -> obj.hashAlgorithm
+      "hashAlgorithm" -> obj.hashAlgorithm,
+      "createdAt" -> obj.createdAt
     )
   }
 }

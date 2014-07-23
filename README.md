@@ -3,12 +3,16 @@
 ## Development
 
 ~~~ bash
-# run this once
-$ sbt webAppToolsInit
+# run this once to install NPM and bower packags
+$ sbt webAppInit
 
 # run this to start development server up
 $ sbt webAppStart run
+~~~
 
+## Testing
+
+~~~ bash
 # run this to run backend tests
 $ sbt test
 
@@ -19,5 +23,6 @@ $ sbt jacoco:cover
 ## Packaging
 
 ~~~ bash
-$ sbt clean webAppToolsInit webAppBuild pack
+# run this to clean and then package the whole application
+$ sbt clean pack
 ~~~

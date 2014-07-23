@@ -1,9 +1,29 @@
 doctype html
-html
+html(ng-app="app")
   head
     title GitGrid
+    meta(charset="utf-8")
+    meta(http-equiv="X-UA-Compatible", content="IE=edge")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
+    meta(name="mobile-web-app-capable", content="yes")
+    meta(name="apple-mobile-web-app-capable", content="yes")
+    meta(name="apple-mobile-web-app-status-bar-style", content="black")
     link(rel="stylesheet", href="/styles/main.css")
-  body
-    include views/home.jade
-    script(type="text/javascript", src="/vendor/jquery/dist/jquery.js")
+    script(type="text/javascript", src="/scripts/vendor.js")
     script(type="text/javascript", src="/scripts/app.js")
+  body
+    div(id="flash-messages")
+      div(ng-repeat="flashMessage in flashMessages") {{flashMessage.title}}
+    navigation-menu(id="nav-main", brand="GitGrid")
+      ul.nav.navbar-nav
+        navigation-entry(label="'Register'", url="'/register'", ng-hide="user")
+        navigation-entry(label="'Create project'", url="'/new'", ng-show="user")
+        navigation-entry(label="'Users'", url="'/users'")
+        navigation-entry(label="'About'", url="'/about'")
+      ul.nav.navbar-nav.navbar-right
+        navigation-entry(label="'Login'", url="'/login'", ng-hide="user")
+        navigation-sub-menu(label="user.userName", ng-show="user")
+          navigation-entry(label="'Profile'", url="'/'")
+          navigation-divider
+          navigation-entry(label="'Logout'", url="'/logout'")
+    div.container-fluid(ng-view)

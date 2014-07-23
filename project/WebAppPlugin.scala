@@ -5,89 +5,91 @@ case class WebAppToolsVersions(
   nodeVersion: Option[VersionString],
   npmVersion: Option[VersionString],
   bowerVersion: Option[VersionString],
-  gulpVersion: Option[VersionString])
+  gulpVersion: Option[VersionString]
+)
 
 object WebAppPlugin extends Plugin {
   val webAppTest = taskKey[Unit]("executes gulp task 'test'")
-  val webAppBuild = taskKey[Unit]("executes gulp task 'build --dist'")
+  val webAppBuild = taskKey[File]("executes gulp task 'build --dist'")
   val webAppStart = taskKey[Unit]("starts a gulp development server as background process")
   val webAppStop = taskKey[Unit]("stops the running gulp development server backgrund process")
 
   val webAppToolsVersions = taskKey[WebAppToolsVersions]("retrieves the versions of node, npm, bower and gulp")
-  val webAppToolsInit = taskKey[Unit]("checks for node, npm, bower and gulp and installs node modules and bower components")
-  val webAppDir = settingKey[File]("the path to the wep app root directory")
+  val webAppInit = taskKey[Unit]("checks for node, npm, bower and gulp and installs node modules and bower components")
+  val webAppSourceDir = settingKey[File]("the path to the wep app source directory")
+  val webAppTargetDir = settingKey[File]("the path to the wep app target directory")
 
   lazy val webAppSettings = Seq[Def.Setting[_]](
-    webAppTest := { runGulp(webAppDir.value, "test", dist = false) },
-    webAppBuild := { runGulp(webAppDir.value, "build", dist = true) },
-    webAppStart := { startGulp(webAppDir.value, "default", dist = false) },
-    webAppStop := { stopGulp() },
+    webAppSourceDir := baseDirectory.value / "src/web",
+    webAppTargetDir := target.value / "web",
 
+    webAppTest := {
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+
+      runGulp(sourceDir, "test", targetDir, dist = false)
+    },
+    webAppBuild := {
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+
+      webAppInit.value
+      s.log.info("Building web app")
+      runGulp(sourceDir, "build", targetDir, dist = true)
+      s.log.info("Done.")
+      targetDir
+    },
+    webAppStart := {
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+
+      startGulp(sourceDir, "default", targetDir, dist = false)
+    },
+    webAppStop := {
+      val s = streams.value
+
+      stopGulp()
+    },
+    webAppInit := {
+      val s = streams.value
+      val sourceDir = webAppSourceDir.value
+      val targetDir = webAppTargetDir.value
+      val versions = webAppToolsVersions.value
+
+      ensureToolsVersions(versions)
+      s.log.info(s"Web app tools node-${versions.nodeVersion.get}, npm-${versions.npmVersion.get}, bower-${versions.bowerVersion.get} and gulp-${versions.gulpVersion.get}")
+      s.log.info("Initializing web app")
+      npmInstall(sourceDir)
+      bowerInstall(sourceDir)
+      s.log.info("Done.")
+    },
     webAppToolsVersions := {
-      def getVersion(name: String): Option[VersionString] = {
-        try {
-          VersionString(s"$name --version" !!)
-        } catch {
-          case e: Throwable => None
-        }
-      }
-
-      val node = getVersion("node")
-      val npm = getVersion("npm")
-      val bower = getVersion("bower")
-      val gulp = getVersion("gulp")
+      val node = getToolVersion("node")
+      val npm = getToolVersion("npm")
+      val bower = getToolVersion("bower")
+      val gulp = getToolVersion("gulp")
 
       WebAppToolsVersions(node, npm, bower, gulp)
-    },
-
-    webAppToolsInit := {
-      webAppToolsVersions.value match {
-        case WebAppToolsVersions(Some(node), Some(npm), Some(bower), Some(gulp)) =>
-          println("Versions:")
-          println("- NodeJS " + node)
-          println("- NPM " + npm)
-          println("- Bower " + bower)
-          println("- Gulp " + gulp)
-        case WebAppToolsVersions(None, _, _, _) =>
-          throw new Exception("NodeJS is not installed. Please refer to http://nodejs.org/ for installation instructions.")
-        case WebAppToolsVersions(_, None, _, _) =>
-          throw new Exception("NPM is not installed. Please refer to http://nodejs.org/ for installation instructions.")
-        case WebAppToolsVersions(_, _, None, _) =>
-          throw new Exception("Bower is not installed. Please execute 'npm install -g bower'.")
-        case WebAppToolsVersions(_, _, _, None) =>
-          throw new Exception("Gulp is not installed. Please execute 'npm install -g gulp'.")
-      }
-
-      val webDir: File = webAppDir.value
-      npmInstall(webDir)
-      bowerInstall(webDir)
-    },
-
-    webAppDir := baseDirectory.value / "src/web"
+    }
   )
 
   private def npmInstall(cwd: File) {
-    val command = "npm" :: "install" :: Nil
-    val returnValue = Process(command, cwd) !
-
-    if (returnValue != 0) {
-      throw new Exception("Installing Node modules failed")
-    }
+    execute("npm" :: "prune" :: Nil, cwd, "Pruning extraneous Node modules failed")
+    execute("npm" :: "install" :: Nil, cwd, "Installing Node modules failed")
   }
 
   private def bowerInstall(cwd: File) {
-    val command = "bower" :: "install" :: Nil
-    val returnValue = Process(command, cwd) !
-
-    if (returnValue != 0) {
-      throw new Exception("Installing Bower components failed")
-    }
+    execute("bower" :: "prune" :: Nil, cwd, "Pruning extraneous Bower components failed")
+    execute("bower" :: "install" :: Nil, cwd, "Installing Bower components failed")
   }
 
-  private def runGulp(cwd: File, task: String, dist: Boolean) {
+  private def runGulp(cwd: File, task: String, target: File, dist: Boolean) {
     val command = dist match {
-      case false => "gulp" :: task :: Nil
-      case true => "gulp" :: task :: "--dist" :: Nil
+      case false => "gulp" :: task :: s"--target=$target" :: Nil
+      case true => "gulp" :: task :: s"--target=$target" :: "--dist" :: Nil
     }
     val returnValue = Process(command, cwd) !
 
@@ -96,14 +98,12 @@ object WebAppPlugin extends Plugin {
     }
   }
 
-  private def startGulp(cwd: File, task: String, dist: Boolean) {
-    if (running) {
-      stopGulp()
-    }
+  private def startGulp(cwd: File, task: String, target: File, dist: Boolean) {
+    if (running)  stopGulp()
 
     process = dist match {
-      case false => Process("gulp" :: task :: Nil, cwd).run()
-      case true => Process("gulp" :: task :: "--dist" :: Nil, cwd).run()
+      case false => Process("gulp" :: task :: s"--target=$target" :: Nil, cwd).run()
+      case true => Process("gulp" :: task :: s"--target=$target" :: "--dist" :: Nil, cwd).run()
     }
     running = true
   }
@@ -111,6 +111,37 @@ object WebAppPlugin extends Plugin {
   private def stopGulp() {
     process.destroy()
     running = true
+  }
+
+  private def execute(cmd: List[String], cwd: File, errorMsg: String) {
+    val returnValue = Process(cmd, cwd) !
+
+    if (returnValue != 0) {
+      throw new Exception(errorMsg)
+    }
+  }
+
+  private def ensureToolsVersions(versions: WebAppToolsVersions) {
+    versions match {
+      case WebAppToolsVersions(None, _, _, _) =>
+        throw new Exception("NodeJS is not installed. Please refer to http://nodejs.org/ for installation instructions.")
+      case WebAppToolsVersions(_, None, _, _) =>
+        throw new Exception("NPM is not installed. Please refer to http://nodejs.org/ for installation instructions.")
+      case WebAppToolsVersions(_, _, None, _) =>
+        throw new Exception("Bower is not installed. Please execute 'npm install -g bower'.")
+      case WebAppToolsVersions(_, _, _, None) =>
+        throw new Exception("Gulp is not installed. Please execute 'npm install -g gulp'.")
+      case WebAppToolsVersions(Some(node), Some(npm), Some(bower), Some(gulp)) =>
+        // TODO: validate min versions for tools
+    }
+  }
+
+  private def getToolVersion(name: String): Option[VersionString] = {
+    try {
+      VersionString(s"$name --version" !!)
+    } catch {
+      case e: Throwable => None
+    }
   }
 
   private var running: Boolean = false

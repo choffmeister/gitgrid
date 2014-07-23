@@ -3,40 +3,47 @@ var argv = require('yargs').argv,
     coffee = require('gulp-coffee'),
     concat = require('gulp-concat'),
     connect = require('connect'),
-    filter = require('gulp-filter'),
     gif = require('gulp-if'),
     gulp = require('gulp'),
     gutil = require('gulp-util'),
+    ignore = require('gulp-ignore'),
     jade = require('gulp-jade'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
+    manifest = require('gulp-manifest'),
+    path = require('path'),
     proxy = require('proxy-middleware'),
     rename = require('gulp-rename'),
+    replace = require('gulp-replace'),
     rewrite = require('connect-modrewrite'),
     uglify = require('gulp-uglify'),
     url = require('url');
 
 var config = {
   debug: !argv.dist,
-  src: 'app/',
-  dest: '../../target/web/',
-  port: 9000
+  src: function (p) {
+    return path.join('app', p || '');
+  },
+  dest: function (p) {
+    return path.join(argv.target || 'target', p || '');
+  },
+  port: argv.port || 9000
 };
 
 gulp.task('jade', function () {
-  return gulp.src(config.src + '**/*.jade')
+  return gulp.src(config.src('**/*.jade'))
     .pipe(jade({ pretty: config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
       gutil.beep();
       this.end();
     })
-    .pipe(gulp.dest(config.dest))
+    .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
 gulp.task('less', function () {
-  return gulp.src(config.src + 'styles/main.less')
+  return gulp.src(config.src('styles/main.less'))
     .pipe(less({ compress: !config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
@@ -44,12 +51,12 @@ gulp.task('less', function () {
       this.end();
     })
     .pipe(rename('styles/main.css'))
-    .pipe(gulp.dest(config.dest))
+    .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
 gulp.task('coffee', function () {
-  return gulp.src(config.src + 'scripts/**/*.coffee')
+  return gulp.src(config.src('scripts/**/*.coffee'))
     .pipe(coffee({ bare: false }))
     .on('error', function (err) {
       gutil.log(err);
@@ -58,36 +65,62 @@ gulp.task('coffee', function () {
     })
     .pipe(concat('scripts/app.js'))
     .pipe(gif(!config.debug, uglify()))
-    .pipe(gulp.dest(config.dest))
+    .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
-gulp.task('vendor', function () {
-  var filters = {
-    js: filter('**/*.js')
-  };
-
-  return gulp.src(bower(), { base: 'bower_components' })
-    .pipe(filters.js)
+gulp.task('vendor-scripts', function () {
+  return gulp.src([
+      config.src('../bower_components/jquery/dist/jquery.js'),
+      config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
+      config.src('../bower_components/angular/angular.js'),
+      config.src('../bower_components/angular-route/angular-route.js')
+    ])
+    .pipe(concat('scripts/vendor.js'))
     .pipe(gif(!config.debug, uglify({ preserveComments: 'some' })))
-    .pipe(filters.js.restore())
-    .pipe(gulp.dest(config.dest + 'vendor'));
+    .pipe(gulp.dest(config.dest()));
 });
 
-gulp.task('watch', ['build'], function () {
+gulp.task('vendor-assets', function () {
+  return gulp.src(bower(), { base: 'bower_components' })
+    .pipe(gulp.dest(config.dest('assets')));
+});
+
+gulp.task('vendor', ['vendor-scripts', 'vendor-assets']);
+
+gulp.task('watch', ['compile'], function () {
   livereload.listen({ auto: true });
-  gulp.watch(config.src + 'scripts/**/*.coffee', ['coffee']);
-  gulp.watch(config.src + 'styles/**/*.less', ['less']);
-  gulp.watch(config.src + '**/*.jade', ['jade']);
+  gulp.watch(config.src('scripts/**/*.coffee'), ['coffee']);
+  gulp.watch(config.src('styles/**/*.less'), ['less']);
+  gulp.watch(config.src('**/*.jade'), ['jade']);
 });
 
 gulp.task('connect', function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
-    .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot))$ /index.html [L]']))
-    .use(connect.static(config.dest))
+    .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot|manifest))$ /index.html [L]']))
+    .use(connect.static(config.dest()))
     .listen(config.port, next)
 });
 
-gulp.task('build', ['coffee', 'less', 'jade', 'vendor']);
-gulp.task('default', ['build', 'connect', 'watch']);
+gulp.task('manifest-include', ['compile'], function () {
+  return gulp.src(config.dest('index.html'))
+    .pipe(replace('<html', '<html manifest="/cache.manifest"'))
+    .pipe(gulp.dest(config.dest()));
+});
+
+gulp.task('manifest-generate', ['manifest-include'], function () {
+  return gulp.src(config.dest('**/*'))
+    .pipe(manifest({
+      filename: 'cache.manifest',
+      exclude: 'cache.manifest',
+      hash: true,
+      timestamp: false,
+      preferOnline: false
+    }))
+    .pipe(gulp.dest(config.dest()));
+});
+
+gulp.task('compile', ['coffee', 'less', 'jade', 'vendor']);
+gulp.task('build', ['compile', 'manifest-include', 'manifest-generate']);
+gulp.task('default', ['compile', 'connect', 'watch']);

@@ -12,7 +12,7 @@ import spray.http._
 class HttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLogging {
   val apiHttpActor = context.actorOf(Props(new ApiHttpServiceActor(cfg, db)))
   val gitHttpActor = context.actorOf(Props(new GitHttpServiceActor(cfg, db)))
-  val staticContentHttpActor = context.actorOf(Props(new StaticContentHttpServiceActor()))
+  val staticContentHttpActor = context.actorOf(Props(new StaticContentHttpServiceActor(cfg)))
 
   def receive = {
     case Connected(_, _) =>

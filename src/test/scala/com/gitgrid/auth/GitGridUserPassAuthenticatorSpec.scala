@@ -14,7 +14,7 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
 
   "GitGridUserPassAuthenticator" should {
     "properly authenticate user passed" in new TestEnvironment {
-      val upa = new GitGridUserPassAuthenticator(db)
+      val upa = new GitGridUserPassAuthenticator(um)
 
       await(upa(None)) must beNone
       await(upa(Some(UserPass("user1", "pass1")))) must beSome(user1)
@@ -24,29 +24,15 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
       await(upa(Some(UserPass("user", "pass")))) must beNone
     }
 
-    "properly check passwords hashed with plain" in new TestEnvironment {
-      val upa = new GitGridUserPassAuthenticator(db)
-
-      upa.checkPassword("", "", "plain", "") === true
-      upa.checkPassword("a", "", "plain", "a") === true
-      upa.checkPassword("ab", "", "plain", "ab") === true
-      upa.checkPassword("abc", "", "plain", "abc") === true
-
-      upa.checkPassword("", "", "plain", "a") === false
-      upa.checkPassword("a", "", "plain", "ab") === false
-      upa.checkPassword("ab", "", "plain", "abc") === false
-      upa.checkPassword("abc", "", "plain", "abC") === false
-    }
-
     "only accept most recent password" in new EmptyTestEnvironment {
-      val upa = new GitGridUserPassAuthenticator(db)
+      val upa = new GitGridUserPassAuthenticator(um)
 
       val u1 = await(db.users.insert(User(userName = "user1")))
-      val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id.get, hash = "pass1-old", hashAlgorithm = "plain")))
-      val p1b = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u1.id.get, hash = "pass1-new", hashAlgorithm = "plain")))
-      val u2 = await(db.users.insert(User(id = Some(newId), userName = "user2")))
-      val p2a = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u2.id.get, hash = "pass2-old", hashAlgorithm = "plain")))
-      val p2b = await(db.userPasswords.insert(UserPassword(createdAt = tomorrow, userId = u2.id.get, hash = "pass2-new", hashAlgorithm = "plain")))
+      val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id, hash = "pass1-old", hashAlgorithm = "plain")))
+      val p1b = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u1.id, hash = "pass1-new", hashAlgorithm = "plain")))
+      val u2 = await(db.users.insert(User(userName = "user2")))
+      val p2a = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u2.id, hash = "pass2-old", hashAlgorithm = "plain")))
+      val p2b = await(db.userPasswords.insert(UserPassword(createdAt = tomorrow, userId = u2.id, hash = "pass2-new", hashAlgorithm = "plain")))
 
       await(upa(Some(UserPass("user1", "pass1-new")))) === Some(u1)
       await(upa(Some(UserPass("user2", "pass2-new")))) === Some(u2)

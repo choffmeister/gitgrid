@@ -38,7 +38,7 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
     path("register") {
       post {
         entity(as[RegistrationRequest]) { registration =>
-          onSuccess(um.createUser(registration.userName, registration.password)) { user =>
+          onSuccess(um.createUser(User(userName = registration.userName), registration.password)) { user =>
             complete(user)
           }
         }

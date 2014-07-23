@@ -1,2 +1,5 @@
-h1 GitGrid
-p Lorem ipsum...
+h1 Projects
+ul
+  li(ng-repeat="project in projects")
+    span.glyphicon.glyphicon-book
+    a(ng-href="/{{project.ownerName}}/{{project.name}}") {{project.ownerName}}/{{project.name}}

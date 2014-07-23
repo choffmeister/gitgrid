@@ -1,6 +1,6 @@
 package com.gitgrid.auth
 
-import com.gitgrid.managers.SessionManager
+import com.gitgrid.managers._
 import com.gitgrid.models._
 import scala.concurrent._
 import spray.routing.AuthenticationFailedRejection._
@@ -12,9 +12,10 @@ class GitGridHttpAuthenticator(db: Database)(implicit ec: ExecutionContext) exte
   val cookieName = "gitgrid-sid"
   val cookiePath = "/"
 
-  val userPassAuthenticator = new GitGridUserPassAuthenticator(db)
+  val sessionManager = new SessionManager(db)
+  val userManager = new UserManager(db)
+  val userPassAuthenticator = new GitGridUserPassAuthenticator(userManager)
   val basicAuthenticator = new BasicHttpAuthenticator[User](realm, userPassAuthenticator)
-  val sessionHandler = new SessionManager(db, cookieName, cookiePath)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = {
     authenticateByBasicHttp(ctx).flatMap {
@@ -28,16 +29,12 @@ class GitGridHttpAuthenticator(db: Database)(implicit ec: ExecutionContext) exte
   }
 
   def authenticateBySession(ctx: RequestContext): Future[Authentication[User]] = {
-    sessionHandler.extractSessionId(ctx.request) match {
+    ctx.request.cookies.find(c => c.name == cookieName).map(_.content) match {
       case Some(sessionId) =>
-        sessionHandler.findSession(sessionId)
-          .flatMap[Authentication[User]] {
-            case Some(session) => db.users.find(session.userId).map {
-              case Some(user) => accept(user)
-              case _ => reject(CredentialsRejected)
-            }
-            case _ => rejectFuture(CredentialsRejected)
-          }
+        sessionManager.findUser(sessionId).map {
+          case Some(user) => accept(user)
+          case _ => reject(CredentialsRejected)
+        }
       case _ => rejectFuture(CredentialsMissing)
     }
   }

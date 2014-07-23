@@ -6,13 +6,26 @@ import reactivemongo.bson._
 import scala.concurrent._
 
 case class User(
-  id: Option[BSONObjectID] = Some(BSONObjectID.generate),
-  userName: String = ""
+  id: BSONObjectID = BSONObjectID("00" * 12),
+  userName: String = "",
+  createdAt: BSONDateTime = BSONDateTime(0),
+  updatedAt: BSONDateTime = BSONDateTime(0)
 ) extends BaseModel
 
 class UserTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[User](database, collection) {
-  implicit val reader = UserBSONFormat.UserBSONReader
-  implicit val writer = UserBSONFormat.UserBSONWriter
+  implicit val reader = UserBSONFormat.Reader
+  implicit val writer = UserBSONFormat.Writer
+
+  override def preInsert(user: User): Future[User] = {
+    val id = BSONObjectID.generate
+    val now = BSONDateTime(System.currentTimeMillis)
+    Future.successful(user.copy(id = id, createdAt = now))
+  }
+
+  override def preUpdate(user: User): Future[User] = {
+    val now = BSONDateTime(System.currentTimeMillis)
+    Future.successful(user.copy(updatedAt = now))
+  }
 
   def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("userName" -> userName))
 
@@ -20,17 +33,21 @@ class UserTable(database: Database, collection: BSONCollection)(implicit executo
 }
 
 object UserBSONFormat {
-  implicit object UserBSONReader extends BSONDocumentReader[User] {
+  implicit object Reader extends BSONDocumentReader[User] {
     def read(doc: BSONDocument) = User(
-      id = doc.getAs[BSONObjectID]("_id"),
-      userName = doc.getAs[String]("userName").get
+      id = doc.getAs[BSONObjectID]("_id").get,
+      userName = doc.getAs[String]("userName").get,
+      createdAt = doc.getAs[BSONDateTime]("createdAt").get,
+      updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
     )
   }
 
-  implicit object UserBSONWriter extends BSONDocumentWriter[User] {
+  implicit object Writer extends BSONDocumentWriter[User] {
     def write(obj: User): BSONDocument = BSONDocument(
       "_id" -> obj.id,
-      "userName" -> obj.userName
+      "userName" -> obj.userName,
+      "createdAt" -> obj.createdAt,
+      "updatedAt" -> obj.updatedAt
     )
   }
 }
