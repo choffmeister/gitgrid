@@ -1,6 +1,6 @@
 {
   "name": "gitgrid",
-  "version": "0.0.3",
+  "version": "0.0.4-SNAPSHOT",
   "devDependencies": {
     "coffee-script": "^1.7.1",
     "connect": "^2.21.0",
