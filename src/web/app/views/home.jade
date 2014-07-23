@@ -1,5 +1,4 @@
-h1 Projects
-ul
-  li(ng-repeat="project in projects")
-    span.glyphicon.glyphicon-book
-    a(ng-href="/{{project.ownerName}}/{{project.name}}") {{project.ownerName}}/{{project.name}}
+ul.list-group
+  li.list-group-item(ui-click-link="/{{project.ownerName}}/{{project.name}}", ng-repeat="project in projects")
+    span.glyphicon.glyphicon-book(style="margin-right: 5px;")
+    span {{project.ownerName}}/{{project.name}}
