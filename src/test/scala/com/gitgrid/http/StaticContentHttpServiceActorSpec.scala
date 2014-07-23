@@ -65,9 +65,9 @@ class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils {
       res1.status === OK
       res1.entity.asString must contain("console.log('app')");
 
+      req(httpService, GET, "/assets/image.png").status === NotFound
       req(httpService, GET, "/scripts/unknown.js").status === NotFound
       req(httpService, GET, "/styles/style.css").status === NotFound
-      req(httpService, GET, "/vendor/vendor.js").status === NotFound
       req(httpService, GET, "/views/view.html").status === NotFound
     }
   }

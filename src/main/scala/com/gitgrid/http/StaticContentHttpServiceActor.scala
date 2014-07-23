@@ -18,7 +18,7 @@ class StaticContentHttpServiceActor(cfg: Config) extends Actor with HttpService 
       pathSingleSlash(index) ~
       path("index.html")(index) ~
       assets ~
-      pathPrefixTest(!("scripts" | "styles" | "vendor" | "views"))(index)
+      pathPrefixTest(!("assets" | "scripts" | "styles" | "views"))(index)
     case _ =>
       reject()
   }

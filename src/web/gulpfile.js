@@ -3,10 +3,10 @@ var argv = require('yargs').argv,
     coffee = require('gulp-coffee'),
     concat = require('gulp-concat'),
     connect = require('connect'),
-    filter = require('gulp-filter'),
     gif = require('gulp-if'),
     gulp = require('gulp'),
     gutil = require('gulp-util'),
+    ignore = require('gulp-ignore'),
     jade = require('gulp-jade'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
@@ -69,17 +69,24 @@ gulp.task('coffee', function () {
     .pipe(livereload({ auto: false }));
 });
 
-gulp.task('vendor', function () {
-  var filters = {
-    js: filter('**/*.js')
-  };
-
-  return gulp.src(bower(), { base: 'bower_components' })
-    .pipe(filters.js)
+gulp.task('vendor-scripts', function () {
+  return gulp.src([
+      config.src('../bower_components/jquery/dist/jquery.js'),
+      config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
+      config.src('../bower_components/angular/angular.js'),
+      config.src('../bower_components/angular-route/angular-route.js')
+    ])
+    .pipe(concat('scripts/vendor.js'))
     .pipe(gif(!config.debug, uglify({ preserveComments: 'some' })))
-    .pipe(filters.js.restore())
-    .pipe(gulp.dest(config.dest('vendor')));
+    .pipe(gulp.dest(config.dest()));
 });
+
+gulp.task('vendor-assets', function () {
+  return gulp.src(bower(), { base: 'bower_components' })
+    .pipe(gulp.dest(config.dest('assets')));
+});
+
+gulp.task('vendor', ['vendor-scripts', 'vendor-assets']);
 
 gulp.task('watch', ['compile'], function () {
   livereload.listen({ auto: true });

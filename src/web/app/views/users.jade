@@ -1,3 +1,4 @@
 ul
   li(ng-repeat="user in users")
+    span.glyphicon.glyphicon-user
     a(ng-href="/{{user.userName}}") {{user.userName}}
