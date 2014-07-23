@@ -192,6 +192,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName} deny access to ungranted projects with correct HTTP return code" in new TestApiHttpService {
+      Get("/api/projects/user0/project0") ~> sealedRoute ~> check { status === NotFound }
+
       Get("/api/projects/user1/project0") ~> sealedRoute ~> check { status === Unauthorized }
       Get("/api/projects/user1/project1") ~> sealedRoute ~> check { status === Unauthorized }
       Get("/api/projects/user1/project3") ~> sealedRoute ~> check { status === OK }

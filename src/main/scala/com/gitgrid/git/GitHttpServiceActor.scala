@@ -24,7 +24,6 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
   import GitHttpServiceConstants._
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(db)
-  val authorizer = new GitGridAuthorizer(db)
 
   def receive = {
     case _: Http.Connected =>
