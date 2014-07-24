@@ -6,6 +6,8 @@ import java.io.File
 case class Config(
   httpInterface: String,
   httpPort: Int,
+  httpAuthBasicRealm: String,
+  httpAuthBearerTokenServerSecret: Seq[Byte],
   mongoDbServers: List[String],
   mongoDbDatabaseName: String,
   repositoriesDir: File,
@@ -19,6 +21,8 @@ object Config {
     Config(
       httpInterface = raw.getString("gitgrid.http.interface"),
       httpPort = raw.getInt("gitgrid.http.port"),
+      httpAuthBasicRealm = raw.getString("gitgrid.http.auth.basic.realm"),
+      httpAuthBearerTokenServerSecret = raw.getString("gitgrid.http.auth.bearerToken.serverSecret").getBytes("UTF-8").toSeq,
       mongoDbServers = List(raw.getString("gitgrid.mongodb.host") + ":" + raw.getInt("gitgrid.mongodb.port")),
       mongoDbDatabaseName = raw.getString("gitgrid.mongodb.database"),
       repositoriesDir = new File(raw.getString("gitgrid.repositoriesDir")),

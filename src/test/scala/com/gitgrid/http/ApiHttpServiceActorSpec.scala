@@ -58,51 +58,21 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "POST /auth/logout handle logout requests" in new TestApiHttpService {
-      Post("/api/auth/logout") ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-    }
+    "POST /auth/login provide a valid bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
+        val token = responseAs[AuthenticationResponse].token.get
 
-    "POST /auth/log(in|out) set and unset session cookie" in new TestApiHttpService {
-      await(db.sessions.all) must haveSize(0)
-      Get("/api/auth/state") ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-
-      val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
-        val cookie = getCookie(headers)
-        cookie must beSome
-        cookie.get.name === "gitgrid-sid"
-        cookie.get.expires must beNone
-        cookie.get.content
-      }
-
-      await(db.sessions.all) must haveSize(1)
-      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beSome(user1)
-      }
-
-      Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        val cookie = getCookie(headers)
-        cookie must beSome
-        cookie.get.name === "gitgrid-sid"
-        cookie.get.expires must beSome
-        cookie.get.expires.get.clicks must beLessThan(System.currentTimeMillis)
-      }
-
-      await(db.sessions.all) must haveSize(0)
-      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
+        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
+          val user = responseAs[AuthenticationResponse].user
+          user must beSome
+          user.get.userName == "user1"
+        }
       }
     }
 
     "POST /auth/register create a new user account" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[AuthenticationResponse].user must beNone }
 
       Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
         status === OK
@@ -114,13 +84,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
 
       await(db.users.all) must haveSize(3)
-
-      Post("/api/auth/login", UserPass("user3", "pass3")) ~> route ~> check {
-        status === OK
-        val res = responseAs[AuthenticationResponse]
-        res.user must beSome
-        res.user.get.userName === "user3"
-      }
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[AuthenticationResponse].user.get.userName === "user3" }
     }
 
     "POST /auth/register fail on duplicate user name" in new TestApiHttpService {

@@ -9,7 +9,7 @@ import spray.httpx._
 import spray.json._
 import spray.routing.authentication.UserPass
 
-trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
+trait DateJsonProtocol extends DefaultJsonProtocol {
   implicit object DateFormat extends JsonFormat[Date] {
     def write(date: Date) = JsNumber(date.getTime)
     def read(value: JsValue) =
@@ -18,7 +18,9 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
         case _ => deserializationError(s"Date time ticks expected. Got '$value'")
       }
   }
+}
 
+trait BSONJsonProtocol extends DefaultJsonProtocol {
   implicit object BSONObjectIDFormat extends JsonFormat[BSONObjectID] {
     def write(id: BSONObjectID) = JsString(id.stringify)
     def read(value: JsValue) =
@@ -36,14 +38,9 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
         case _ => deserializationError(s"Date time ticks expected. Got '$value'")
       }
   }
+}
 
-  implicit val userFormat = jsonFormat4(User)
-  implicit val projectFormat = jsonFormat9(Project)
-
-  implicit val userPassFormat = jsonFormat2(UserPass)
-  implicit val authenticationResponseFormat = jsonFormat2(AuthenticationResponse)
-  implicit val registrationRequestFormat = jsonFormat2(RegistrationRequest)
-
+trait GitJsonProtocol extends DefaultJsonProtocol with DateJsonProtocol {
   implicit val gitRefFormat = jsonFormat2(GitRef)
   implicit object GitObjectTypeFormat extends JsonFormat[GitObjectType] {
     def write(t: GitObjectType) =
@@ -69,4 +66,18 @@ trait JsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val gitTreeEntryFormat = jsonFormat4(GitTreeEntry)
   implicit val gitTreeFormat = jsonFormat2(GitTree)
   implicit val gitBlobFormat = jsonFormat1(GitBlob)
+}
+
+trait JsonProtocol extends DefaultJsonProtocol
+  with DateJsonProtocol
+  with BSONJsonProtocol
+  with GitJsonProtocol
+  with SprayJsonSupport
+{
+  implicit val userFormat = jsonFormat4(User)
+  implicit val projectFormat = jsonFormat9(Project)
+
+  implicit val userPassFormat = jsonFormat2(UserPass)
+  implicit val authenticationResponseFormat = jsonFormat3(AuthenticationResponse)
+  implicit val registrationRequestFormat = jsonFormat2(RegistrationRequest)
 }
