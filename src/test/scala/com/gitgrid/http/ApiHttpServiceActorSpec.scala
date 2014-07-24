@@ -3,6 +3,7 @@ package com.gitgrid.http
 import java.util.Date
 import akka.testkit._
 import com.gitgrid._
+import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
@@ -54,18 +55,6 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Post("/api/auth/login", AuthenticationRequest("user", "pass")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
-      }
-    }
-
-    "POST /auth/login provide a valid bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
-        val token = responseAs[AuthenticationResponse].token.get
-
-        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
-          val user = responseAs[AuthenticationResponse].user
-          user must beSome
-          user.get.userName == "user1"
-        }
       }
     }
 
@@ -259,14 +248,40 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
   }
 
-  "ApiHttpServiceActor reject invalid bearer tokens" should {
-    "POST /auth/login provide a valid bearer token" in new TestApiHttpService {
+  "ApiHttpServiceActor handle bearer tokens" should {
+    "accept a valid bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
+        val token = responseAs[AuthenticationResponse].token.get
+
+        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
+          val user = responseAs[AuthenticationResponse].user
+          user must beSome
+          user.get.userName == "user1"
+        }
+      }
+    }
+
+    "reject an expired bearer token" in new TestApiHttpService {
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
         val token = responseAs[AuthenticationResponse].token.get
 
         Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
           val user = responseAs[AuthenticationResponse].user
           user must beNone
+        }
+      }
+    }
+
+    "renew an expired bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
+        val tokenStr = responseAs[AuthenticationResponse].token.get
+        val token = BearerTokenHandler.deserialize(tokenStr)
+        token.expiresAt.get.getTime() must beLessThan(System.currentTimeMillis)
+
+        Get("/api/auth/renew") ~> addHeader("Authorization", "Bearer " + tokenStr) ~> route ~> check {
+          val token2Str = responseAs[AuthenticationResponse].token.get
+          val token2 = BearerTokenHandler.deserialize(token2Str)
+          token2.expiresAt.get.getTime() must beGreaterThan(System.currentTimeMillis)
         }
       }
     }

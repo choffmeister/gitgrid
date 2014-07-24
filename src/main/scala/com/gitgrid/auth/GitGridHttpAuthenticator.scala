@@ -20,13 +20,13 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: Execution
   val basicAuthenticator = new BasicHttpAuthenticator[User](cfg.httpAuthBasicRealm, userPassAuthenticator)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = {
-    authenticateByBearerToken(ctx).flatMap {
+    authenticateByBearerToken(ctx, false).flatMap {
       case Right(user) => acceptF(user)
       case _ => authenticateByBasicHttp(ctx)
     }
   }
 
-  def authenticateByBearerToken(ctx: RequestContext): Future[Authentication[User]] = {
+  def authenticateByBearerToken(ctx: RequestContext, allowExpiration: Boolean): Future[Authentication[User]] = {
     ctx.request.headers.find(_.is("authorization")) match {
       case Some(h) if h.value.toLowerCase.startsWith("bearer ") =>
         val token = BearerTokenHandler.deserialize(h.value.substring(7))
@@ -34,8 +34,8 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: Execution
         val expired = BearerTokenHandler.expired(token)
         (valid, expired) match {
           case (false, _) => rejectF(TokenManipulatedRejection, Nil)
-          case (true, true) => rejectF(TokenExpiredRejection, Nil)
-          case (true, false) => db.users.find(BSONObjectID(token.userId)).map {
+          case (true, true) if !allowExpiration => rejectF(TokenExpiredRejection, Nil)
+          case (true, _) => db.users.find(BSONObjectID(token.userId)).map {
             case Some(user) => accept(user)
             case _ => reject(AuthenticationFailedRejection(CredentialsRejected, Nil), Nil)
           }
