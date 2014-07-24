@@ -12,7 +12,9 @@ case class UserPassword(
   hashSalt: String = "",
   hashAlgorithm: String = "",
   createdAt: BSONDateTime = BSONDateTime(0)
-) extends BaseModel
+) extends BaseModel {
+  require(hash.length > 1, "Password must not be empty")
+}
 
 class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
   implicit val reader = UserPasswordBSONFormat.Reader

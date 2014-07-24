@@ -10,7 +10,9 @@ case class User(
   userName: String = "",
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)
-) extends BaseModel
+) extends BaseModel {
+  require(userName.length > 3, "User names must be at least 3 characters long")
+}
 
 class UserTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[User](database, collection) {
   implicit val reader = UserBSONFormat.Reader
