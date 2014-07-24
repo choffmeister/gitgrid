@@ -13,7 +13,6 @@ class BearerTokenSpec extends Specification {
       val s1 = Array[Byte](0, 1, 2)
       val s2 = Array[Byte](0, 1, 3)
       val t1 = sign(generate(user1), s1)
-      println(serialize(t1))
       val t2 = deserialize(serialize(t1))
       validate(t2, s2) === false
     }
