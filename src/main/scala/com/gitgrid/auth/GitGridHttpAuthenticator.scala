@@ -17,7 +17,7 @@ case object TokenExpiredRejection extends Rejection
 class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: ExecutionContext) extends ContextAuthenticator[User] {
   val userManager = new UserManager(db)
   val userPassAuthenticator = new GitGridUserPassAuthenticator(userManager)
-  val basicAuthenticator = new BasicHttpAuthenticator[User](cfg.httpAuthBasicRealm, userPassAuthenticator)
+  val basicAuthenticator = new BasicHttpAuthenticator[User](cfg.httpAuthRealm, userPassAuthenticator)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = {
     authenticateByBearerToken(ctx, false).flatMap {
