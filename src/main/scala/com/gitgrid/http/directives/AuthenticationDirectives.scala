@@ -9,7 +9,7 @@ import spray.httpx.SprayJsonSupport
 import spray.json.DefaultJsonProtocol
 import spray.routing.Directives._
 import spray.routing._
-import spray.routing.authentication.UserPass
+import spray.routing.authentication._
 import spray.routing.directives.AuthMagnet
 
 trait AuthenticationDirectives {
@@ -32,43 +32,4 @@ trait AuthenticationDirectives {
         res => authorize(res)
       }
     }
-
-  def formsLogin(auth: GitGridHttpAuthenticator): Directive1[Option[User]] = {
-    implicit val stringFormat = DefaultJsonProtocol.StringJsonFormat
-    implicit val userPassFormat = DefaultJsonProtocol.jsonFormat2(UserPass)
-    implicit val userPassUnmarshaller = SprayJsonSupport.sprayJsonUnmarshaller[UserPass](userPassFormat)
-
-    entity(as[UserPass]).flatMap { userPass =>
-      val future = auth.userPassAuthenticator(Some(userPass)).flatMap {
-        case Some(user) => auth.sessionManager.createSession(user.id).map(session => Some(user, session))
-        case _ => Future.successful(Option.empty[(User, Session)])
-      }
-
-      onSuccess(future).flatMap {
-        case Some((user, session)) => createSessionCookie(session, auth.cookieName, auth.cookiePath).hflatMap { case _ => hprovide(Some(user) :: HNil) }
-        case _ => provide(None)
-      }
-    }
-  }
-
-  def formsLogout(auth: GitGridHttpAuthenticator): Directive0 = {
-    extract(ctx => ctx).flatMap { ctx =>
-      val future = ctx.request.cookies.find(c => c.name == auth.cookieName).map(_.content) match {
-        case Some(sessionId) => auth.sessionManager.revokeSession(sessionId)
-        case _ => Future.successful()
-      }
-
-      onSuccess(future).flatMap {
-        case _ => removeSessionCookie(auth.cookieName, auth.cookiePath)
-      }
-    }
-  }
-
-  def createSessionCookie(session: Session, cookieName: String, cookiePath: String = "/"): Directive0 = {
-    setCookie(HttpCookie(cookieName, session.sessionId, expires = None, path = Some(cookiePath)))
-  }
-
-  def removeSessionCookie(cookieName: String, cookiePath: String = "/"): Directive0 = {
-    deleteCookie(cookieName, path = cookiePath)
-  }
 }

@@ -58,46 +58,15 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "POST /auth/logout handle logout requests" in new TestApiHttpService {
-      Post("/api/auth/logout") ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-    }
+    "POST /auth/login provide a valid bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
+        val token = responseAs[AuthenticationResponse].token.get
 
-    "POST /auth/log(in|out) set and unset session cookie" in new TestApiHttpService {
-      await(db.sessions.all) must haveSize(0)
-      Get("/api/auth/state") ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-
-      val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
-        val cookie = getCookie(headers)
-        cookie must beSome
-        cookie.get.name === "gitgrid-sid"
-        cookie.get.expires must beNone
-        cookie.get.content
-      }
-
-      await(db.sessions.all) must haveSize(1)
-      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beSome(user1)
-      }
-
-      Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        val cookie = getCookie(headers)
-        cookie must beSome
-        cookie.get.name === "gitgrid-sid"
-        cookie.get.expires must beSome
-        cookie.get.expires.get.clicks must beLessThan(System.currentTimeMillis)
-      }
-
-      await(db.sessions.all) must haveSize(0)
-      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
+        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
+          val user = responseAs[AuthenticationResponse].user
+          user must beSome
+          user.get.userName == "user1"
+        }
       }
     }
 

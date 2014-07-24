@@ -23,7 +23,7 @@ import spray.routing.RequestContext
 class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLogging {
   import GitHttpServiceConstants._
   implicit val executor = context.dispatcher
-  val authenticator = new GitGridHttpAuthenticator(db)
+  val authenticator = new GitGridHttpAuthenticator(cfg, db)
 
   def receive = {
     case _: Http.Connected =>

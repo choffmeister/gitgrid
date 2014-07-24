@@ -78,6 +78,6 @@ trait JsonProtocol extends DefaultJsonProtocol
   implicit val projectFormat = jsonFormat9(Project)
 
   implicit val userPassFormat = jsonFormat2(UserPass)
-  implicit val authenticationResponseFormat = jsonFormat2(AuthenticationResponse)
+  implicit val authenticationResponseFormat = jsonFormat3(AuthenticationResponse)
   implicit val registrationRequestFormat = jsonFormat2(RegistrationRequest)
 }

@@ -1,26 +1,38 @@
 package com.gitgrid.auth
 
+import com.gitgrid.Config
 import com.gitgrid.managers._
 import com.gitgrid.models._
+import reactivemongo.bson._
 import scala.concurrent._
+import spray.http.HttpHeader
 import spray.routing.AuthenticationFailedRejection._
 import spray.routing._
 import spray.routing.authentication._
 
-class GitGridHttpAuthenticator(db: Database)(implicit ec: ExecutionContext) extends ContextAuthenticator[User] {
-  val realm = "gitgrid"
-  val cookieName = "gitgrid-sid"
-  val cookiePath = "/"
-
-  val sessionManager = new SessionManager(db)
+class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: ExecutionContext) extends ContextAuthenticator[User] {
   val userManager = new UserManager(db)
   val userPassAuthenticator = new GitGridUserPassAuthenticator(userManager)
-  val basicAuthenticator = new BasicHttpAuthenticator[User](realm, userPassAuthenticator)
+  val basicAuthenticator = new BasicHttpAuthenticator[User](cfg.httpAuthBasicRealm, userPassAuthenticator)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = {
-    authenticateByBasicHttp(ctx).flatMap {
-      case Right(user) => acceptFuture(user)
-      case _ => authenticateBySession(ctx)
+    authenticateByBearerToken(ctx).flatMap {
+      case Right(user) => acceptF(user)
+      case _ => authenticateByBasicHttp(ctx)
+    }
+  }
+
+  def authenticateByBearerToken(ctx: RequestContext): Future[Authentication[User]] = {
+    ctx.request.headers.find(_.is("authorization")) match {
+      case Some(h) if h.value.toLowerCase.startsWith("bearer ") =>
+        val token = BearerTokenHandler.deserialize(h.value.substring(7))
+        val valid = BearerTokenHandler.validate(token, cfg.httpAuthBearerTokenServerSecret)
+        if (!valid) rejectF(CredentialsRejected, Nil)
+        else db.users.find(BSONObjectID(token.userId)).map {
+          case Some(user) => accept(user)
+          case _ => reject(CredentialsRejected, Nil)
+        }
+      case _ => rejectF(CredentialsMissing, Nil)
     }
   }
 
@@ -28,20 +40,9 @@ class GitGridHttpAuthenticator(db: Database)(implicit ec: ExecutionContext) exte
     basicAuthenticator(ctx)
   }
 
-  def authenticateBySession(ctx: RequestContext): Future[Authentication[User]] = {
-    ctx.request.cookies.find(c => c.name == cookieName).map(_.content) match {
-      case Some(sessionId) =>
-        sessionManager.findUser(sessionId).map {
-          case Some(user) => accept(user)
-          case _ => reject(CredentialsRejected)
-        }
-      case _ => rejectFuture(CredentialsMissing)
-    }
-  }
-
-  private def accept(user: User): Authentication[User] = Right[Rejection, User](user)
-  private def reject(cause: Cause): Authentication[User] = Left[Rejection, User](AuthenticationFailedRejection(cause, Nil))
-  private def acceptFuture(user: User): Future[Authentication[User]] = Future.successful(accept(user))
-  private def rejectFuture(cause: Cause): Future[Authentication[User]] = Future.successful(reject(cause))
+  private def accept(u: User): Authentication[User] = Right[Rejection, User](u)
+  private def reject(c: Cause, ch: List[HttpHeader]): Authentication[User] = Left[Rejection, User](AuthenticationFailedRejection(c, ch))
+  private def acceptF(u: User): Future[Authentication[User]] = Future.successful(accept(u))
+  private def rejectF(c: Cause, ch: List[HttpHeader]): Future[Authentication[User]] = Future.successful(reject(c, ch))
 }
 
