@@ -7,7 +7,7 @@ angular.module("app").factory("authService", ["$http", "$rootScope", "storageSer
     storageService.get("session")?.user or null
 
   login: (userName, password) ->
-    $http.post("/api/auth/login", { user: userName, pass: password })
+    $http.post("/api/auth/login", { userName: userName, password: password })
       .success((res) => if res.user? and res.token?
         @setSession(res.token, res.user)
         flashService.success("Welcome, #{res.user.userName}!")

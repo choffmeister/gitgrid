@@ -10,6 +10,10 @@ import spray.routing.AuthenticationFailedRejection._
 import spray.routing._
 import spray.routing.authentication._
 
+case object TokenMalformedRejection extends Rejection
+case object TokenManipulatedRejection extends Rejection
+case object TokenExpiredRejection extends Rejection
+
 class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: ExecutionContext) extends ContextAuthenticator[User] {
   val userManager = new UserManager(db)
   val userPassAuthenticator = new GitGridUserPassAuthenticator(userManager)
@@ -27,12 +31,16 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: Execution
       case Some(h) if h.value.toLowerCase.startsWith("bearer ") =>
         val token = BearerTokenHandler.deserialize(h.value.substring(7))
         val valid = BearerTokenHandler.validate(token, cfg.httpAuthBearerTokenServerSecret)
-        if (!valid) rejectF(CredentialsRejected, Nil)
-        else db.users.find(BSONObjectID(token.userId)).map {
-          case Some(user) => accept(user)
-          case _ => reject(CredentialsRejected, Nil)
+        val expired = BearerTokenHandler.expired(token)
+        (valid, expired) match {
+          case (false, _) => rejectF(TokenManipulatedRejection, Nil)
+          case (true, true) => rejectF(TokenExpiredRejection, Nil)
+          case (true, false) => db.users.find(BSONObjectID(token.userId)).map {
+            case Some(user) => accept(user)
+            case _ => reject(AuthenticationFailedRejection(CredentialsRejected, Nil), Nil)
+          }
         }
-      case _ => rejectF(CredentialsMissing, Nil)
+      case _ => rejectF(AuthenticationFailedRejection(CredentialsRejected, Nil), Nil)
     }
   }
 
@@ -41,8 +49,8 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit ec: Execution
   }
 
   private def accept(u: User): Authentication[User] = Right[Rejection, User](u)
-  private def reject(c: Cause, ch: List[HttpHeader]): Authentication[User] = Left[Rejection, User](AuthenticationFailedRejection(c, ch))
+  private def reject(r: Rejection, ch: List[HttpHeader]): Authentication[User] = Left[Rejection, User](r)
   private def acceptF(u: User): Future[Authentication[User]] = Future.successful(accept(u))
-  private def rejectF(c: Cause, ch: List[HttpHeader]): Future[Authentication[User]] = Future.successful(reject(c, ch))
+  private def rejectF(r: Rejection, ch: List[HttpHeader]): Future[Authentication[User]] = Future.successful(reject(r, ch))
 }
 

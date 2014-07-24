@@ -2,12 +2,14 @@ package com.gitgrid
 
 import com.typesafe.config.{ConfigFactory, ConfigException, Config => RawConfig}
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 case class Config(
   httpInterface: String,
   httpPort: Int,
   httpAuthBasicRealm: String,
   httpAuthBearerTokenServerSecret: Seq[Byte],
+  httpAuthBearerTokenMaximalLifetime: Long,
   mongoDbServers: List[String],
   mongoDbDatabaseName: String,
   repositoriesDir: File,
@@ -23,6 +25,7 @@ object Config {
       httpPort = raw.getInt("gitgrid.http.port"),
       httpAuthBasicRealm = raw.getString("gitgrid.http.auth.basic.realm"),
       httpAuthBearerTokenServerSecret = raw.getString("gitgrid.http.auth.bearerToken.serverSecret").getBytes("UTF-8").toSeq,
+      httpAuthBearerTokenMaximalLifetime = raw.getDuration("gitgrid.http.auth.bearerToken.maximalLifetime", TimeUnit.MILLISECONDS),
       mongoDbServers = List(raw.getString("gitgrid.mongodb.host") + ":" + raw.getInt("gitgrid.mongodb.port")),
       mongoDbDatabaseName = raw.getString("gitgrid.mongodb.database"),
       repositoriesDir = new File(raw.getString("gitgrid.repositoriesDir")),

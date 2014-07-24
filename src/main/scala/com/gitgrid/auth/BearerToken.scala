@@ -39,12 +39,14 @@ object BearerTokenHandler extends DefaultJsonProtocol with DateJsonProtocol {
 
   def sign(token: BearerToken, secret: Seq[Byte]): BearerToken = token.copy(signature = calcSignature(token, secret))
   def validate(token: BearerToken, secret: Seq[Byte]): Boolean = compareConstantTime(token.signature, calcSignature(token, secret))
+  def expired(token: BearerToken): Boolean = token.expiresAt.map(_.before(now)).getOrElse(false)
   def serialize(token: BearerToken): String = toBase64(token.toJson.toString)
   def deserialize(str: String): BearerToken = JsonParser(fromBase64(str)).convertTo[BearerToken]
 
   private lazy val base64 = Base64.rfc2045
   private def toBase64(str: String): String = base64.encodeToString(str.getBytes("UTF-8"), false)
   private def fromBase64(str: String): String = new String(base64.decode(str), "UTF-8")
+  private def now: Date = new Date(System.currentTimeMillis)
 
   private def compareConstantTime[T](s1: Seq[T], s2: Seq[T]): Boolean = {
     var res = true
