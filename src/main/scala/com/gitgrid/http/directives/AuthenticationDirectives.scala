@@ -10,6 +10,7 @@ import spray.json.DefaultJsonProtocol
 import spray.routing.Directives._
 import spray.routing._
 import spray.routing.authentication._
+import spray.routing.AuthenticationFailedRejection._
 import spray.routing.directives.AuthMagnet
 
 trait AuthenticationDirectives {
@@ -17,8 +18,8 @@ trait AuthenticationDirectives {
 
   def authenticateOption[T](magnet: AuthMagnet[T]): Directive1[Option[T]] = authenticate(magnet)
     .flatMap(user => provide(Some(user)))
-    .recover {
-      case _ => provide(Option.empty[T])
+    .recoverPF {
+      case AuthenticationFailedRejection(cause, ch) :: Nil if cause == CredentialsMissing => provide(Option.empty[T])
     }
 
   def authorizeDetached(check: => Future[Boolean]): Directive0 = onSuccess(check)

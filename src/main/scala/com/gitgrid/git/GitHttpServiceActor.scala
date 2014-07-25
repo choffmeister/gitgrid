@@ -74,7 +74,7 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
 
   private def authorize(sender: ActorRef, req: HttpRequest, accessType: GitAccessType, ownerName: String, projectName: String)(inner: (ActorRef, Option[User], Project) => Any): Unit = {
     val ctx = RequestContext(req, sender, Uri.Path.Empty)
-    val f1 = authenticator.authenticateByBasicHttp(ctx)
+    val f1 = authenticator.basicAuthenticator(ctx)
     val f2 = db.users.findByUserName(ownerName)
     val f3 = db.projects.findByFullQualifiedName(ownerName, projectName)
     val f = f1.zip(f2).zip(f3).map(t => (accessType, t._1._1, t._1._2, t._2))

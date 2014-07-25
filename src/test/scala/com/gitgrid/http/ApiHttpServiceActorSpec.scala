@@ -12,6 +12,7 @@ import reactivemongo.bson.BSONObjectID
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{duration, ExecutionContext}
 import spray.http.StatusCodes._
+import spray.http.HttpHeaders._
 import spray.http._
 import spray.testkit._
 
@@ -60,7 +61,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
     "POST /auth/register create a new user account" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
-      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[AuthenticationResponse].user must beNone }
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> sealedRoute ~> check { status === Unauthorized }
 
       Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
         status === OK
@@ -72,7 +73,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
 
       await(db.users.all) must haveSize(3)
-      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[AuthenticationResponse].user.get.userName === "user3" }
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[User].userName === "user3" }
     }
 
     "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
@@ -254,9 +255,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         val token = responseAs[AuthenticationResponse].token.get
 
         Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
-          val user = responseAs[AuthenticationResponse].user
-          user must beSome
-          user.get.userName == "user1"
+          status === OK
+          responseAs[User].userName == "user1"
         }
       }
     }
@@ -265,9 +265,11 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
         val token = responseAs[AuthenticationResponse].token.get
 
-        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
-          val user = responseAs[AuthenticationResponse].user
-          user must beNone
+        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> sealedRoute ~> check {
+          status === Unauthorized
+          val authenticateHeader = header[`WWW-Authenticate`]
+          authenticateHeader must beSome
+          authenticateHeader.get.value must contain("expired")
         }
       }
     }
@@ -275,13 +277,13 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     "renew an expired bearer token" in new TestApiHttpService {
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
         val tokenStr = responseAs[AuthenticationResponse].token.get
-        val token = BearerTokenHandler.deserialize(tokenStr)
-        token.expiresAt.get.getTime() must beLessThan(System.currentTimeMillis)
 
         Get("/api/auth/renew") ~> addHeader("Authorization", "Bearer " + tokenStr) ~> route ~> check {
           val token2Str = responseAs[AuthenticationResponse].token.get
-          val token2 = BearerTokenHandler.deserialize(token2Str)
-          token2.expiresAt.get.getTime() must beGreaterThan(System.currentTimeMillis)
+
+          Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token2Str) ~> route ~> check {
+            status === OK
+          }
         }
       }
     }

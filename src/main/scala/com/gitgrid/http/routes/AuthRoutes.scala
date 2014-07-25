@@ -5,6 +5,7 @@ import com.gitgrid.Config
 import com.gitgrid.auth._
 import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
+import com.gitgrid.http.JsonProtocol
 import spray.routing.authentication._
 import spray.routing.Route
 import scala.concurrent._
@@ -13,8 +14,7 @@ case class AuthenticationRequest(userName: String, password: String, expiresAt: 
 case class AuthenticationResponse(message: String, user: Option[User] = None, token: Option[String] = None)
 case class RegistrationRequest(userName: String, password: String)
 
-class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
-  import BearerTokenHandler._
+class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
   val um = new UserManager(db)
 
   def route =
@@ -29,18 +29,19 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
       }
     } ~
     path("renew") {
-      extract(ctx => ctx) { ctx =>
-        onSuccess(authenticator.authenticateByBearerToken(ctx, true)) {
-          case Right(user) => completeAuthentication(user, None)
-          case Left(rejection) => reject(rejection)
+      extract(ctx => ctx.request) { req =>
+        authenticator.bearerTokenAuthenticator.extractToken(req) match {
+          case Right(token) =>
+            if (!token.validate(cfg.httpAuthBearerTokenServerSecret)) reject()
+            else completeAuthentication(token.payload)
+          case _ => reject()
         }
       }
     } ~
     path("state") {
       get {
-        authenticateOption() {
-          case Some(user) => complete(AuthenticationResponse("Authenticated", Some(user)))
-          case _ => complete(AuthenticationResponse("Unauthenticated"))
+        authenticate() { user =>
+          complete(user)
         }
       }
     } ~
@@ -54,11 +55,12 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
       }
     }
 
-  private def completeAuthentication(user: User, requestedExpiresAt: Option[Date]): Route = {
+  private def completeAuthentication(user: User, requestedExpiresAt: Option[Date] = None): Route = {
     val serverExpiresAt = new Date(System.currentTimeMillis + cfg.httpAuthBearerTokenMaximalLifetime)
     val expiresAt = minDate(serverExpiresAt, requestedExpiresAt)
-    val token = serialize(sign(generate(user, Some(expiresAt)), cfg.httpAuthBearerTokenServerSecret))
-    complete(AuthenticationResponse("Authenticated", Some(user), Some(token)))
+    val token = OAuth2BearerTokenTyped.create(user, expiresAt).sign(cfg.httpAuthBearerTokenServerSecret)
+    val tokenStr = OAuth2BearerTokenSerializer.serialize(token)
+    complete(AuthenticationResponse("Authenticated", Some(user), Some(tokenStr)))
   }
   private def minDate(a: Date, b: Option[Date]): Date = b.map(b => if (a.before(b)) a else b).getOrElse(a)
 }
