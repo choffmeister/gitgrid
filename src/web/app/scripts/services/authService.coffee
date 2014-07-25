@@ -44,25 +44,32 @@ angular.module("app").factory("authService.tokenInjector", ["$injector", ($injec
 ])
 
 angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", ($injector, $q) ->
-  tokenExpired = (res) ->
-    header = res.headers("www-authenticate")
-    res.status == 401 and header.indexOf("Bearer ") == 0 and header.indexOf("token expired") >= 0
-
   responseError: (res) ->
-    renewCounter = res.config.renewCounter or 0
+    authService = $injector.get("authService")
+    flashService = $injector.get("flashService")
+    if res.status == 401
+      ah = res.headers("www-authenticate")
+      renewCounter = res.config.renewCounter or 0
+      if ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0 and ah.indexOf("token expired") >= 0 and renewCounter < 1
+          deferred = $q.defer()
+          config = angular.extend(res.config, { renewCounter: renewCounter + 1 })
+          $http = $injector.get("$http")
+          $http.get("/api/auth/renew").then(deferred.resolve, deferred.reject)
 
-    if tokenExpired(res) and renewCounter < 1
-      deferred = $q.defer()
-      config = angular.extend(res.config, { renewCounter: renewCounter + 1})
-      $http = $injector.get("$http")
-      $http.get("/api/auth/renew").then(deferred.resolve, deferred.reject)
-      authService = $injector.get("authService")
-
-      deferred.promise.then (res2) ->
-        if res2.status == 200
-          newToken = res2.data.token
-          authService.setSession(newToken, authService.getUser())
-          $http(res.config)
+          deferred.promise.then (res2) ->
+            if res2.status == 200
+              newToken = res2.data.token
+              authService.setSession(newToken, authService.getUser())
+              $http(res.config)
+            else
+              authService.unsetSession()
+              flashService.error("Your session has ended")
+      else if ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0
+        authService.unsetSession()
+        flashService.error("Your session has ended")
+        $q.reject(res)
+      else
+        $q.reject(res)
     else
       $q.reject(res)
 ])
