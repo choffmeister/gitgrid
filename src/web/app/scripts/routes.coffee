@@ -2,7 +2,7 @@ angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProv
   $routeProvider
     .when "/", { templateUrl: "/views/home.html", controller: "homeController" }
     .when "/login", { templateUrl: "/views/login.html", controller: "loginController" }
-    .when "/logout", { templateUrl: "/views/logout.html", controller: "logoutController" }
+    .when "/logout", { resolve: { logout: ["authService", (authService) -> authService.logout()] }, redirectTo: "/" }
     .when "/register", { templateUrl: "/views/register.html", controller: "registerController" }
     .when "/users", { templateUrl: "/views/users.html", controller: "usersController" }
     .when "/new", { templateUrl: "/views/createproject.html", controller: "createProjectController" }
