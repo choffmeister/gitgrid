@@ -3,7 +3,3 @@ angular.module("app").factory("httpErrorLogger", ["$q", "flashService", ($q, fla
     flashService.error("There was an HTTP error!")
     $q.reject(res)
 ])
-
-angular.module("app").config(["$httpProvider", ($httpProvider) ->
-  $httpProvider.interceptors.push("httpErrorLogger")
-])

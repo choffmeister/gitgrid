@@ -22,31 +22,47 @@ angular.module("app").factory("authService", ["$http", "$rootScope", "storageSer
   setSession: (bt, u) ->
     storageService.set("session",
       isAuthenticated: true
-      user: u
       bearerToken: bt
+      user: u
     )
     $rootScope.user = u
   unsetSession: () ->
     storageService.set("session",
       isAuthenticated: false
-      user: null
       bearerToken: null
+      user: null
     )
     $rootScope.user = null
 ])
 
-angular.module("app").factory("authService.tokenInjector", ['$injector', ($injector) ->
+angular.module("app").factory("authService.tokenInjector", ["$injector", ($injector) ->
   request: (config) ->
     authService = $injector.get("authService")
     if (authService.isAuthenticated())
-      config.headers['Authorization'] = "Bearer #{authService.getBearerToken()}"
+      config.headers["Authorization"] = "Bearer #{authService.getBearerToken()}"
     config
 ])
 
-angular.module("app").config(["$httpProvider", ($httpProvider) ->
-  $httpProvider.interceptors.push("authService.tokenInjector")
-])
+angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", ($injector, $q) ->
+  tokenExpired = (res) ->
+    header = res.headers("www-authenticate")
+    res.status == 401 and header.indexOf("Bearer ") == 0 and header.indexOf("token expired") >= 0
 
-angular.module("app").run(["authService", (authService) ->
-  authService.initSession()
+  responseError: (res) ->
+    renewCounter = res.config.renewCounter or 0
+
+    if tokenExpired(res) and renewCounter < 1
+      deferred = $q.defer()
+      config = angular.extend(res.config, { renewCounter: renewCounter + 1})
+      $http = $injector.get("$http")
+      $http.get("/api/auth/renew").then(deferred.resolve, deferred.reject)
+      authService = $injector.get("authService")
+
+      deferred.promise.then (res2) ->
+        if res2.status == 200
+          newToken = res2.data.token
+          authService.setSession(newToken, authService.getUser())
+          $http(res.config)
+    else
+      $q.reject(res)
 ])
