@@ -20,6 +20,9 @@
     "angular-route": {
       "main": []
     },
+    "angular-animate": {
+      "main": []
+    },
     "bootstrap": {
       "main": [
         "dist/fonts/glyphicons-halflings-regular.eot",
