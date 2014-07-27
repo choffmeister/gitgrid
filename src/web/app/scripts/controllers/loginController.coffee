@@ -1,7 +1,6 @@
-angular.module("app").controller("loginController", ["$scope", "$location", "authService", ($scope, $location, authService) ->
+angular.module("app").controller("loginController", ["$scope", "$location", "authService", "flashService", ($scope, $location, authService, flashService) ->
   $scope.userName = ""
   $scope.password = ""
-  $scope.message = null
   $scope.busy = false
 
   $scope.login = () -> if not $scope.busy
@@ -10,19 +9,13 @@ angular.module("app").controller("loginController", ["$scope", "$location", "aut
       .success((res) ->
         $scope.password = ""
         if res.user?
-          $scope.message = null
           $location.path("/")
         else
-          $scope.message =
-            type: "warn"
-            text: res.message
+          flashService.warning("The credendials are invalid.")
         $scope.busy = false
       )
       .error((err) ->
         $scope.password = ""
-        $scope.message =
-          type: "error"
-          text: "An unknown error occured"
         $scope.busy = false
       )
 ])
