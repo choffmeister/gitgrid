@@ -109,7 +109,7 @@ class OAuth2BearerTokenAuthenticator[U](val realm: String, val serverSecret: Seq
 
   def extractToken(credentials: Option[HttpCredentials]): Either[Error, OAuth2BearerTokenTyped[U]] = {
     credentials match {
-      case Some(OAuth2BearerToken(tokenStr)) =>
+      case Some(OAuth2BearerToken(tokenStr)) if tokenStr != "-" =>
         try {
           Right(OAuth2BearerTokenSerializer.deserialize[U](tokenStr))
         } catch {
