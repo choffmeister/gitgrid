@@ -64,7 +64,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       await(db.users.all) must haveSize(2)
       Get("/api/auth/state") ~> auth("user3", "pass3") ~> sealedRoute ~> check { status === Unauthorized }
 
-      Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
+      Post("/api/auth/register", RegistrationRequest("user3", "a3@b3.cd", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
         res.id !== BSONObjectID("00" * 12)
@@ -78,7 +78,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
-      Post("/api/auth/register", RegistrationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/register", RegistrationRequest("user1","a1@b1.cd", "pass1")) ~> sealedRoute ~> check {
         status === InternalServerError
       }
     }
