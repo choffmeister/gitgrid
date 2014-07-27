@@ -14,7 +14,7 @@ import scala.concurrent._
 
 case class AuthenticationRequest(userName: String, password: String, expiresAt: Option[Date] = None)
 case class AuthenticationResponse(message: String, user: Option[User] = None, token: Option[String] = None)
-case class RegistrationRequest(userName: String, password: String)
+case class RegistrationRequest(userName: String, email: String, password: String)
 
 class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
   val um = new UserManager(db)
@@ -49,8 +49,8 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
     } ~
     path("register") {
       post {
-        entity(as[RegistrationRequest]) { registration =>
-          onSuccess(um.createUser(User(userName = registration.userName), registration.password)) { user =>
+        entity(as[RegistrationRequest]) { reg =>
+          onSuccess(um.createUser(User(userName = reg.userName, email = reg.email), reg.password)) { user =>
             complete(user)
           }
         }

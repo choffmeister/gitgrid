@@ -74,10 +74,10 @@ trait JsonProtocol extends DefaultJsonProtocol
   with GitJsonProtocol
   with SprayJsonSupport
 {
-  implicit val userFormat = jsonFormat4(User)
+  implicit val userFormat = jsonFormat5(User)
   implicit val projectFormat = jsonFormat9(Project)
 
   implicit val authenticationRequestFormat = jsonFormat3(AuthenticationRequest)
   implicit val authenticationResponseFormat = jsonFormat3(AuthenticationResponse)
-  implicit val registrationRequestFormat = jsonFormat2(RegistrationRequest)
+  implicit val registrationRequestFormat = jsonFormat3(RegistrationRequest)
 }

@@ -12,8 +12,8 @@ trait EmptyTestEnvironment extends Scope with AsyncUtils {
 }
 
 trait TestEnvironment extends EmptyTestEnvironment {
-  val user1 = await(um.createUser(User(userName = "user1"), "pass1"))
-  val user2 = await(um.createUser(User(userName = "user2"), "pass2"))
+  val user1 = await(um.createUser(User(userName = "user1", email = "a1@b1.cd"), "pass1"))
+  val user2 = await(um.createUser(User(userName = "user2", email = "a2@b2.cd"), "pass2"))
   val project1 = await(pm.createProject(Project(ownerId = user1.id, name = "project1", public = false)))
   val project2 = await(pm.createProject(Project(ownerId = user2.id, name = "project2", public = false)))
   val project3 = await(pm.createProject(Project(ownerId = user1.id, name = "project3", public = true)))

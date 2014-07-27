@@ -7,8 +7,8 @@ import org.specs2.mutable._
 class UserManagerSpec extends Specification with AsyncUtils {
   "UserManager" should {
     "set and validate password" in new EmptyTestEnvironment {
-      val u1 = await(db.users.insert(User(userName = "user1")))
-      val u2 = await(db.users.insert(User(userName = "user2")))
+      val u1 = await(db.users.insert(User(userName = "user1", email = "a1@b1.cd")))
+      val u2 = await(db.users.insert(User(userName = "user2", email = "a2@b2.cd")))
 
       await(um.changeUserPassword(u1, "pass1-old"))
       await(um.changeUserPassword(u2, "pass2-old"))

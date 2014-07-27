@@ -4,12 +4,9 @@ angular.module("app").controller("loginController", ["$scope", "$location", "aut
   $scope.message = null
 
   $scope.login = () ->
-    userName = $scope.userName
-    password = $scope.password
-    $scope.password = ""
-
-    authService.login(userName, password)
+    authService.login($scope.userName, $scope.password)
       .success((res) ->
+        $scope.password = ""
         if res.user?
           $scope.message = null
           $location.path("/")
@@ -19,6 +16,7 @@ angular.module("app").controller("loginController", ["$scope", "$location", "aut
             text: res.message
       )
       .error((err) ->
+        $scope.password = ""
         $scope.message =
           type: "error"
           text: "An unknown error occured"
