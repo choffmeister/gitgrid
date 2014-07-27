@@ -17,20 +17,5 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit executionCont
   val basicAuthenticator = new EnhancedBasicHttpAuthenticator[User](cfg.httpAuthRealm, userPassAuthenticator)
   val authenticator = EnhancedHttpAuthenticator.combine(bearerTokenAuthenticator, basicAuthenticator)
 
-  def apply(ctx: RequestContext): Future[Authentication[User]] = authenticator(ctx).map {
-    // filter out HTTP basic challenges to prevent interactive window in browsers
-    case Left(AuthenticationFailedRejection(c, ch)) =>
-      Left(AuthenticationFailedRejection(c, ch.map {
-        case `WWW-Authenticate`(ch) =>
-          `WWW-Authenticate`(ch.filter {
-            case HttpChallenge("Basic", _, _) => false
-            case _ => true
-          })
-        case x => x
-      } filter {
-        case `WWW-Authenticate`(Nil) => false
-        case _ => true
-      }))
-    case x => x
-  }
+  def apply(ctx: RequestContext): Future[Authentication[User]] = authenticator(ctx)
 }

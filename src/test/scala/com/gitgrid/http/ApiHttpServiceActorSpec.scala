@@ -252,9 +252,9 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   "ApiHttpServiceActor handle bearer tokens" should {
     "accept a valid bearer token" in new TestApiHttpService {
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
-        val token = responseAs[AuthenticationResponse].token.get
+        val tokenStr = responseAs[AuthenticationResponse].token.get
 
-        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> route ~> check {
+        Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
           status === OK
           responseAs[User].userName == "user1"
         }
@@ -263,9 +263,9 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
     "reject an expired bearer token" in new TestApiHttpService {
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
-        val token = responseAs[AuthenticationResponse].token.get
+        val tokenStr = responseAs[AuthenticationResponse].token.get
 
-        Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token) ~> sealedRoute ~> check {
+        Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> sealedRoute ~> check {
           status === Unauthorized
           val authenticateHeader = header[`WWW-Authenticate`]
           authenticateHeader must beSome
@@ -278,13 +278,46 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
         val tokenStr = responseAs[AuthenticationResponse].token.get
 
-        Get("/api/auth/renew") ~> addHeader("Authorization", "Bearer " + tokenStr) ~> route ~> check {
+        Get("/api/auth/renew") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
           val token2Str = responseAs[AuthenticationResponse].token.get
 
-          Get("/api/auth/state") ~> addHeader("Authorization", "Bearer " + token2Str) ~> route ~> check {
+          Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(token2Str))) ~> route ~> check {
             status === OK
           }
         }
+      }
+    }
+
+    "respond with correct HTTP challenge headers" in new TestApiHttpService {
+      def extractAuthHeaders(headers: List[HttpHeader]) =
+        headers.filter(_.isInstanceOf[`WWW-Authenticate`]).map(_.asInstanceOf[`WWW-Authenticate`])
+
+      Get("/api/auth/state") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
+      }
+
+      Get("/api/auth/state") ~> addHeader("X-WWW-Authenticate-Filter", "Bearer") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
+      }
+
+      Get("/api/projects/user1/unknown-project") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
+      }
+
+      Get("/api/projects/user1/unknown-project") ~> addHeader("X-WWW-Authenticate-Filter", "Bearer") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
       }
     }
   }

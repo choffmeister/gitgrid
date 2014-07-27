@@ -100,21 +100,24 @@ class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: E
     }
 
   def authorizeProject: Directive[::[Option[User], ::[Project, HNil]]] = {
-    val d = for {
-      user <- authenticateOption()
-      ownerName <- pathPrefix(Segment)
-      projectName <- pathPrefix(Segment)
-      owner <- onSuccess(db.users.findByUserName(ownerName))
-      project <- onSuccess(db.projects.findByFullQualifiedName(ownerName, projectName))
-    } yield (user, ownerName, projectName, owner, project)
+    extract(ctx => ctx).flatMap { ctx =>
+      val d = for {
+        ownerName <- pathPrefix(Segment)
+        projectName <- pathPrefix(Segment)
+        user <- onSuccess(authenticator(ctx))
+        owner <- onSuccess(db.users.findByUserName(ownerName))
+        project <- onSuccess(db.projects.findByFullQualifiedName(ownerName, projectName))
+      } yield (ownerName, projectName, user, owner, project)
 
-    d.flatMap {
-      case (_, _, _, None, _) => reject
-      case (Some(u), _, _, Some(o), Some(p)) if o.id == u.id => hprovide(Some(u) :: p :: HNil)
-      case (Some(u), on, _, _, None) if u.userName == on => reject
-      case (u, _, _, _, Some(p)) if p.public => hprovide(u :: p :: HNil)
-      case (Some(u), _, _, _, _) => reject(AuthorizationFailedRejection)
-      case (None, _, _, _, _) => reject(AuthenticationFailedRejection(AuthenticationFailedRejection.CredentialsMissing, Nil))
+      d.flatMap {
+        case (_, _, _, None, _) => reject
+        case (_, _, Right(u), Some(o), Some(p)) if o.id == u.id => hprovide(Some(u) :: p :: HNil)
+        case (on, _, Right(u), _, None) if u.userName == on => reject
+        case (_, _, Right(u), _, Some(p)) if p.public => hprovide(Some(u) :: p :: HNil)
+        case (_, _, Left(r), _, Some(p)) if p.public => hprovide(None :: p :: HNil)
+        case (_, _, Right(u), _, _) => reject(AuthorizationFailedRejection)
+        case (_, _, Left(r), _, _) => reject(r)
+      }
     }
   }
 

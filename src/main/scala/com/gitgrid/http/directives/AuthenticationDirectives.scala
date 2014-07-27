@@ -2,6 +2,7 @@ package com.gitgrid.http.directives
 
 import com.gitgrid.auth._
 import com.gitgrid.models._
+import spray.http.HttpHeaders.`WWW-Authenticate`
 import scala.concurrent._
 import shapeless.HNil
 import spray.http._
@@ -33,4 +34,18 @@ trait AuthenticationDirectives {
         res => authorize(res)
       }
     }
+
+  def filterHttpChallenges(cond: HttpChallenge => Boolean): Directive0 = mapRejections { r =>
+    r.map {
+      case AuthenticationFailedRejection(c, ch) =>
+        AuthenticationFailedRejection(c, ch.map {
+          case `WWW-Authenticate`(ch) => `WWW-Authenticate`(ch.filter(cond))
+          case x => x
+        } filter {
+          case `WWW-Authenticate`(Nil) => false
+          case x => true
+        })
+      case r => r
+    }
+  }
 }

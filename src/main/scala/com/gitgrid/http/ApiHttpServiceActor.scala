@@ -1,12 +1,14 @@
 package com.gitgrid.http
 
 import akka.actor._
-import com.gitgrid.auth._
 import com.gitgrid.Config
-import com.gitgrid.http.directives.AuthenticationDirectives
+import com.gitgrid.http.directives._
 import com.gitgrid.http.routes._
 import com.gitgrid.models._
+import spray.http._
+import spray.http.OAuth2BearerToken
 import spray.routing._
+import spray.util._
 
 class ApiHttpServiceActor(val cfg: Config, val db: Database) extends Actor with ActorLogging with HttpService with AuthenticationDirectives {
   implicit val actorRefFactory = context
@@ -16,13 +18,23 @@ class ApiHttpServiceActor(val cfg: Config, val db: Database) extends Actor with 
   val usersRoutes = new UsersRoutes(cfg, db)
   val projectsRoutes = new ProjectsRoutes(cfg, db)
 
-  val a = new GitGridHttpAuthenticator(cfg, db)
-
   def receive = runRoute(route)
   def route = pathPrefix("api") {
-    pathPrefix("auth")(authRoutes.route) ~
-    pathPrefix("users")(usersRoutes.route) ~
-    pathPrefix("projects")(projectsRoutes.route) ~
+    filterHttpChallengesByExtensionHeader {
+      pathPrefix("auth")(authRoutes.route) ~
+      pathPrefix("users")(usersRoutes.route) ~
+      pathPrefix("projects")(projectsRoutes.route)
+    } ~
     path("ping")(complete("pong"))
+  }
+
+  def filterHttpChallengesByExtensionHeader: Directive0 = extract(ctx => ctx.request.headers).flatMap { headers =>
+    headers.find(_.lowercaseName == "x-www-authenticate-filter") match {
+      case Some(HttpHeader(_, value)) =>
+        val filter = value.split(" ").filter(_ != "").map(_.toLowerCase).toSeq
+        filterHttpChallenges(c => filter.contains(c.scheme.toLowerCase))
+      case _ =>
+        pass
+    }
   }
 }
