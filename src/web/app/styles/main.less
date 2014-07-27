@@ -8,8 +8,18 @@ body {
 
 #flash-messages {
   position: fixed;
-  bottom: 0;
-  right: 0; z-index: 10000;
+  left: 6px;
+  bottom: 6px;
+  z-index: 10000;
+
+  div > div {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    margin-top: 6px;
+  }
 }
 
 .avatar {
