@@ -12,7 +12,8 @@
     "angular-route": "~1.2.20",
     "bootstrap": "~3.2.0",
     "jquery": "~2.1.1",
-    "lodash": "~2.4.1"
+    "lodash": "~2.4.1",
+    "selectize": "~0.10.1"
   },
   "overrides": {
     "angular": {
@@ -36,6 +37,15 @@
       "main": []
     },
     "lodash": {
+      "main": []
+    },
+    "microplugin": {
+      "main": []
+    },
+    "selectize": {
+      "main": []
+    },
+    "sifter": {
       "main": []
     }
   }
