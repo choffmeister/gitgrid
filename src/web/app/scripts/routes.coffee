@@ -9,7 +9,11 @@ angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProv
     .when "/about", { templateUrl: "/views/about.html" }
 
     .when "/:userName", { templateUrl: "/views/showuser.html", controller: "showUserController" }
+
     .when "/:ownerName/:projectName", { templateUrl: "/views/showproject.html", controller: "showProjectController" }
+    .when "/:ownerName/:projectName/tree/:ref", { templateUrl: "/views/showprojecttree.html", controller: "showProjectTreeController" }
+    .when "/:ownerName/:projectName/tree/:ref/:path*", { templateUrl: "/views/showprojecttree.html", controller: "showProjectTreeController" }
+    .when "/:ownerName/:projectName/blob/:ref/:path*", { templateUrl: "/views/showprojectblob.html", controller: "showProjectBlobController" }
 
     .otherwise { templateUrl: "/views/notfound.html" }
 

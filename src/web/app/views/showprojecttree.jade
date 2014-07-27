@@ -1,0 +1,13 @@
+ol.breadcrumb
+  li: a(ng-href="/{{ownerName}}/{{projectName}}/tree/{{ref}}") [root]
+  li(ng-repeat="pathSegment in pathSegments2 | skipRight:1")
+    a(ng-href="/{{ownerName}}/{{projectName}}/tree/{{ref}}/{{pathSegment.path}}") {{pathSegment.name}}
+  li {{pathSegments2[pathSegments2.length - 1].name}}
+
+ul.list-group
+  li.list-group-item(ui-click-link="/{{ownerName}}/{{projectName}}/tree/{{ref}}/{{combinePaths(path, entry.name)}}", ng-repeat="entry in tree.entries | filter:{objectType:'tree'}")
+    span.glyphicon.glyphicon-folder-close(style="margin-right: 5px;")
+    span {{entry.name}}
+  li.list-group-item(ui-click-link="/{{ownerName}}/{{projectName}}/blob/{{ref}}/{{combinePaths(path, entry.name)}}", ng-repeat="entry in tree.entries | filter:{objectType:'blob'}")
+    span.glyphicon.glyphicon-file(style="margin-right: 5px;")
+    span {{entry.name}}

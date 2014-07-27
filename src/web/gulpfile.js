@@ -72,6 +72,7 @@ gulp.task('coffee', function () {
 gulp.task('vendor-scripts', function () {
   return gulp.src([
       config.src('../bower_components/jquery/dist/jquery.js'),
+      config.src('../bower_components/lodash/dist/lodash.js'),
       config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
       config.src('../bower_components/angular/angular.js'),
       config.src('../bower_components/angular-animate/angular-animate.js'),
@@ -99,7 +100,7 @@ gulp.task('watch', ['compile'], function () {
 gulp.task('connect', function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
-    .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot|manifest))$ /index.html [L]']))
+    .use(rewrite(['!(^/(assets|scripts|styles|views)/) /index.html [L]']))
     .use(connect.static(config.dest()))
     .listen(config.port, next)
 });
