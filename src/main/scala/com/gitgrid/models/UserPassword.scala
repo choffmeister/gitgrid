@@ -9,9 +9,7 @@ import scala.concurrent._
 case class UserPassword(
   id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
-  hash: Seq[Byte] = Seq.empty,
-  hashSalt: Seq[Byte] = Seq.empty,
-  hashAlgorithm: String = "",
+  password: String = "",
   createdAt: BSONDateTime = BSONDateTime(0)
 ) extends BaseModel
 
@@ -38,9 +36,7 @@ object UserPasswordBSONFormat {
     def read(doc: BSONDocument) = UserPassword(
       id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
-      hash = base64ToBytes(doc.getAs[String]("hash").get).toSeq,
-      hashSalt = base64ToBytes(doc.getAs[String]("hashSalt").get).toSeq,
-      hashAlgorithm = doc.getAs[String]("hashAlgorithm").get,
+      password = doc.getAs[String]("password").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get
     )
   }
@@ -49,9 +45,7 @@ object UserPasswordBSONFormat {
     def write(obj: UserPassword): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
-      "hash" -> bytesToBase64(obj.hash.toArray),
-      "hashSalt" -> bytesToBase64(obj.hashSalt.toArray),
-      "hashAlgorithm" -> obj.hashAlgorithm,
+      "password" -> obj.password,
       "createdAt" -> obj.createdAt
     )
   }

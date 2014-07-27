@@ -44,5 +44,15 @@ class UserManagerSpec extends Specification with AsyncUtils {
       await(um.authenticateUser("user1", "pass2")) === None
       await(um.authenticateUser("user2", "pass1")) === None
     }
+
+    "work with all available hash algorithms" in new TestEnvironment {
+      Thread.sleep(100L)
+      await(um.changeUserPassword(user1, "pass-1", `Plain`))
+      await(um.validateUserPassword(user1, "pass-1")) === true
+
+      Thread.sleep(100L)
+      await(um.changeUserPassword(user1, "pass-2", `PBKDF2-HMAC-SHA1`))
+      await(um.validateUserPassword(user1, "pass-2")) === true
+    }
   }
 }
