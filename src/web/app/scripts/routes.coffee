@@ -7,6 +7,7 @@ angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProv
     .when "/users", { templateUrl: "/views/users.html", controller: "usersController" }
     .when "/new", { templateUrl: "/views/createproject.html", controller: "createProjectController" }
     .when "/about", { templateUrl: "/views/about.html" }
+    .when "/_test-ui", { templateUrl: "/views/_test-ui.html" }
 
     .when "/:userName", { templateUrl: "/views/showuser.html", controller: "showUserController" }
 

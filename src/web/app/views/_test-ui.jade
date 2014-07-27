@@ -1,0 +1,15 @@
+h3 ui-selectize(multiplicity="single")
+div.row(ng-init="name = 'hello'")
+  div.col-md-6
+    ui-selectize(multiplicity="single", placeholder="Type here...", value="name")
+    ui-selectize(multiplicity="single", placeholder="Type here...", value="name")
+  div.col-md-6
+    pre {{name | json}}
+
+h3 ui-selectize(multiplicity="multi")
+div.row(ng-init="tags = ['scala','javascript']")
+  div.col-md-6
+    ui-selectize(multiplicity="multi",placeholder="Type here...", value="tags")
+    ui-selectize(multiplicity="multi",placeholder="Type here...", value="tags")
+  div.col-md-6
+    pre {{tags | json}}
