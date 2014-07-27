@@ -1,27 +1,29 @@
-.fade {
-  @speed: 0.65s;
+.animation(@name, @duration) {
+  -webkit-animation: @name @duration;
+  -moz-animation: @name @duration;
+  -ms-animation: @name @duration;
+  animation: @name @duration;
+}
 
-  &.ng-enter,
-  &.ng-leave {
-    -webkit-transition: all @speed ease;
-    -moz-transition: all @speed ease;
-    -o-transition: all @speed ease;
-    transition: all @speed ease;
-  }
+.fade {
+  @speed: 0.75s;
+  opacity: 1.0;
 
   &.ng-enter {
-    opacity: 0;
+    .animation(fadeIn @speed);
   }
 
   &.ng-enter-active {
-    opacity: 1;
+    opacity: 1.0;
+    pointer-events: none;
   }
 
   &.ng-leave {
-    opacity: 1;
+    .animation(fadeOut @speed);
   }
 
   &.ng-leave-active {
-    opacity: 0;
+    opacity: 0.0;
+    pointer-events: none;
   }
 }
