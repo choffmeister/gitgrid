@@ -305,6 +305,20 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
         authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
       }
+
+      Get("/api/projects/user1/unknown-project") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
+      }
+
+      Get("/api/projects/user1/unknown-project") ~> addHeader(`Authorization`(OAuth2BearerToken("-"))) ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
+      }
     }
   }
 
