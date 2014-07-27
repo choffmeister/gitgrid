@@ -72,6 +72,7 @@ gulp.task('coffee', function () {
 gulp.task('vendor-scripts', function () {
   return gulp.src([
       config.src('../bower_components/jquery/dist/jquery.js'),
+      config.src('../bower_components/lodash/dist/lodash.js'),
       config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
       config.src('../bower_components/angular/angular.js'),
       config.src('../bower_components/angular-animate/angular-animate.js'),

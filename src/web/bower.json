@@ -11,7 +11,8 @@
     "angular-animate": "~1.2.20",
     "angular-route": "~1.2.20",
     "bootstrap": "~3.2.0",
-    "jquery": "~2.1.1"
+    "jquery": "~2.1.1",
+    "lodash": "~2.4.1"
   },
   "overrides": {
     "angular": {
@@ -32,6 +33,9 @@
       ]
     },
     "jquery": {
+      "main": []
+    },
+    "lodash": {
       "main": []
     }
   }
