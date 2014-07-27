@@ -1,6 +1,6 @@
 h1 Login
 form(ng-submit="login()")
   pre(ng-show="!!message") {{ message | json }}
-  input-text(label="Username", value="userName")
-  input-password(label="Password", value="password")
+  ui-textbox(label="Username", value="userName")
+  ui-password(label="Password", value="password")
   input.btn.btn-primary(type="submit", value="Login")
