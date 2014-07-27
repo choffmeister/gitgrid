@@ -99,7 +99,7 @@ gulp.task('watch', ['compile'], function () {
 gulp.task('connect', function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
-    .use(rewrite(['!(\.(html|css|js|png|jpg|gif|ttf|woff|svg|eot|manifest))$ /index.html [L]']))
+    .use(rewrite(['!(^/(assets|scripts|styles|views)/) /index.html [L]']))
     .use(connect.static(config.dest()))
     .listen(config.port, next)
 });
