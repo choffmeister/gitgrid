@@ -299,7 +299,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
       }
 
-      Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken("-"))) ~> sealedRoute ~> check {
+      Get("/api/auth/state") ~> addHeader("X-WWW-Authenticate-Filter", "Bearer") ~> sealedRoute ~> check {
         status === Unauthorized
         val authHeaders = extractAuthHeaders(headers)
         authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
@@ -313,7 +313,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
       }
 
-      Get("/api/projects/user1/unknown-project") ~> addHeader(`Authorization`(OAuth2BearerToken("-"))) ~> sealedRoute ~> check {
+      Get("/api/projects/user1/unknown-project") ~> addHeader("X-WWW-Authenticate-Filter", "Bearer") ~> sealedRoute ~> check {
         status === Unauthorized
         val authHeaders = extractAuthHeaders(headers)
         authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1

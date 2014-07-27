@@ -38,9 +38,9 @@ angular.module("app").factory("authService", ["$http", "$rootScope", "storageSer
 angular.module("app").factory("authService.tokenInjector", ["$injector", ($injector) ->
   request: (config) ->
     authService = $injector.get("authService")
-    config.headers["Authorization"] = switch authService.isAuthenticated()
-      when true then "Bearer #{authService.getBearerToken()}"
-      when false then "Bearer -"
+    if authService.isAuthenticated()
+      config.headers["Authorization"] = "Bearer #{authService.getBearerToken()}"
+    config.headers["X-WWW-Authenticate-Filter"] = "Bearer"
     config
 ])
 
