@@ -3,6 +3,7 @@ angular.module("app").directive("uiCheckbox", () ->
   replace: true
   scope:
     value: "="
+    disabled: "="
     label: "@"
   templateUrl: "/scripts/directives/uiCheckboxDirective.html"
 )

@@ -1,9 +1,11 @@
 angular.module("app").controller("loginController", ["$scope", "$location", "authService", ($scope, $location, authService) ->
-  $scope.userName = "user1"
-  $scope.password = "pass1"
+  $scope.userName = ""
+  $scope.password = ""
   $scope.message = null
+  $scope.busy = false
 
-  $scope.login = () ->
+  $scope.login = () -> if not $scope.busy
+    $scope.busy = true
     authService.login($scope.userName, $scope.password)
       .success((res) ->
         $scope.password = ""
@@ -14,11 +16,13 @@ angular.module("app").controller("loginController", ["$scope", "$location", "aut
           $scope.message =
             type: "warn"
             text: res.message
+        $scope.busy = false
       )
       .error((err) ->
         $scope.password = ""
         $scope.message =
           type: "error"
           text: "An unknown error occured"
+        $scope.busy = false
       )
 ])

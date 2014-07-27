@@ -3,6 +3,7 @@ angular.module("app").directive("uiPassword", () ->
   replace: true
   scope:
     value: "="
+    disabled: "="
     label: "@"
     placeholder: "@"
   templateUrl: "/scripts/directives/uiPasswordDirective.html"

@@ -3,6 +3,7 @@ angular.module("app").directive("uiTextbox", () ->
   replace: true
   scope:
     value: "="
+    disabled: "="
     label: "@"
     placeholder: "@"
   templateUrl: "/scripts/directives/uiTextboxDirective.html"

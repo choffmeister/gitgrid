@@ -3,6 +3,7 @@ angular.module("app").directive("uiTextarea", () ->
   replace: true
   scope:
     value: "="
+    disabled: "="
     label: "@"
     placeholder: "@"
     rows: "@"
