@@ -14,7 +14,7 @@ angular.module("app").factory("authService", ["$http", "$rootScope", "storageSer
       )
   logout: () ->
     @unsetSession()
-    flashService.clear()
+    flashService.success("Goodbye!")
 
   initSession: () ->
     if @isAuthenticated()
