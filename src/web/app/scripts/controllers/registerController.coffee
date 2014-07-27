@@ -1,4 +1,4 @@
-angular.module("app").controller("registerController", ["$scope", "$location", "restService", ($scope, $location, restService) ->
+angular.module("app").controller("registerController", ["$scope", "$location", "flashService", "restService", ($scope, $location, flashService, restService) ->
   $scope.userName = ""
   $scope.email = ""
   $scope.password = ""
@@ -7,6 +7,7 @@ angular.module("app").controller("registerController", ["$scope", "$location", "
   $scope.register = () ->
     restService.register($scope.userName, $scope.email, $scope.password)
       .success((res) ->
+        flashService.success("Your registration was successful.")
         $scope.password = ""
         $location.path("/login")
       )
