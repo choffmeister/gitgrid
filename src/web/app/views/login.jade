@@ -1,6 +1,9 @@
 h1 Login
-form(ng-submit="login()")
-  pre(ng-show="!!message") {{ message | json }}
-  ui-textbox(label="Username", value="userName")
-  ui-password(label="Password", value="password")
-  input.btn.btn-primary(type="submit", value="Login")
+p
+  form(role="form", ng-submit="login()")
+    pre(ng-show="!!message") {{ message | json }}
+    ui-textbox(label="Username", value="userName")
+    ui-password(label="Password", value="password")
+    input.btn.btn-primary(type="submit", value="Login")
+p
+  | You have no account yet? Then <a ng-href="/register">Register</a> now. It's free!

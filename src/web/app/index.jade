@@ -17,7 +17,6 @@ html(ng-app="app")
         div.flash-message(ng-click="dropFlashMessage(flashMessage)") {{flashMessage.title}}
     nav-menu(id="nav-main", brand="GitGrid")
       ul.nav.navbar-nav
-        nav-entry(label="'Register'", url="'/register'", ng-hide="user")
         nav-entry(label="'Create project'", url="'/new'", ng-show="user")
         nav-entry(label="'Users'", url="'/users'")
         nav-entry(label="'About'", url="'/about'")
