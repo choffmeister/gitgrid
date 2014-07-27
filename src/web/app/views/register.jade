@@ -2,5 +2,6 @@ h1 Register
 form(ng-submit="register()")
   pre(ng-show="!!message") {{ message | json }}
   ui-textbox(label="Username", value="userName")
+  ui-textbox(label="E-Mail", value="email")
   ui-password(label="Password", value="password")
   input.btn.btn-primary(type="submit", value="Register")
