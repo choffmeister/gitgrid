@@ -287,6 +287,15 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         }
       }
     }
+
+    "respond with correct HTTP challenge headers" in new TestApiHttpService {
+      Get("/api/auth/state") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = headers.filter(_.isInstanceOf[`WWW-Authenticate`]).map(_.asInstanceOf[`WWW-Authenticate`])
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
+      }
+    }
   }
 
   def auth(userName: String, password: String) =
