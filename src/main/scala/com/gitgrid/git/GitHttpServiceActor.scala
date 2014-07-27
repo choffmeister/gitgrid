@@ -1,27 +1,24 @@
 package com.gitgrid.git
 
+import java.io._
+
 import akka.actor._
 import com.gitgrid.Config
 import com.gitgrid.auth._
 import com.gitgrid.models._
-import java.io._
-import org.eclipse.jgit.transport.{UploadPack, ReceivePack}
-import spray.routing.authentication.Authentication
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
+import org.eclipse.jgit.transport.{ReceivePack, UploadPack}
 import spray.can._
-import spray.http.CacheDirectives._
-import spray.http.CacheDirectives.`max-age`
+import spray.http.CacheDirectives.{`max-age`, _}
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.encoding._
-import spray.routing.AuthenticationFailedRejection
-import spray.routing.RequestContext
+import spray.routing.{AuthenticationFailedRejection, RequestContext}
+
+import scala.util.{Failure, Success}
 
 class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLogging {
-  import GitHttpServiceConstants._
+  import com.gitgrid.git.GitHttpServiceConstants._
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(cfg, db)
 

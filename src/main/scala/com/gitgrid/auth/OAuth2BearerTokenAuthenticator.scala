@@ -8,7 +8,6 @@ import spray.http.HttpHeaders._
 import spray.http._
 import spray.json._
 import spray.routing._
-import spray.routing.authentication._
 import spray.util._
 
 import scala.concurrent._

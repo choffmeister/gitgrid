@@ -1,13 +1,15 @@
 package com.gitgrid.http.routes
 
 import java.util.Date
+
 import com.gitgrid.Config
 import com.gitgrid.auth._
+import com.gitgrid.http.JsonProtocol
 import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
-import com.gitgrid.http.JsonProtocol
-import spray.routing.authentication._
 import spray.routing.Route
+import spray.routing.authentication._
+
 import scala.concurrent._
 
 case class AuthenticationRequest(userName: String, password: String, expiresAt: Option[Date] = None)

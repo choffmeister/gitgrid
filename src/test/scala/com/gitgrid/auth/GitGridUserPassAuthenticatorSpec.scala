@@ -3,7 +3,7 @@ package com.gitgrid.auth
 import com.gitgrid._
 import com.gitgrid.models._
 import org.specs2.mutable.Specification
-import reactivemongo.bson.{BSONObjectID, BSONDateTime}
+import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import spray.routing.authentication.UserPass
 
 class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {

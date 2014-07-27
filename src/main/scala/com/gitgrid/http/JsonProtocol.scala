@@ -1,13 +1,13 @@
 package com.gitgrid.http
 
+import java.util.Date
+
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models._
-import java.util.Date
 import reactivemongo.bson._
 import spray.httpx._
 import spray.json._
-import spray.routing.authentication.UserPass
 
 trait DateJsonProtocol extends DefaultJsonProtocol {
   implicit object DateFormat extends JsonFormat[Date] {

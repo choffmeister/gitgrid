@@ -1,13 +1,8 @@
 package com.gitgrid.managers
 
 import com.gitgrid._
-import com.gitgrid.auth.GitGridUserPassAuthenticator
 import com.gitgrid.models.User
-import com.gitgrid.models.UserPassword
 import org.specs2.mutable._
-import reactivemongo.bson.BSONDateTime
-import scala.Some
-import spray.routing.authentication.UserPass
 
 class UserManagerSpec extends Specification with AsyncUtils {
   "UserManager" should {

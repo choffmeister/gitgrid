@@ -2,10 +2,12 @@ package com.gitgrid.managers
 
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+
 import com.gitgrid.models._
-import com.gitgrid.utils.NonceGenerator
 import com.gitgrid.utils.BinaryStringConverter._
+import com.gitgrid.utils.NonceGenerator
 import reactivemongo.bson._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserManager(db: Database)(implicit ec: ExecutionContext) {

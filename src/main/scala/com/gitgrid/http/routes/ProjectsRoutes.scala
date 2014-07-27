@@ -1,13 +1,15 @@
 package com.gitgrid.http.routes
 
+import java.io.File
+
 import com.gitgrid.Config
 import com.gitgrid.git._
 import com.gitgrid.managers._
 import com.gitgrid.models._
-import spray.routing._
-import scala.concurrent._
 import shapeless._
-import java.io.File
+import spray.routing._
+
+import scala.concurrent._
 
 class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
   val pm = new ProjectManager(cfg, db)

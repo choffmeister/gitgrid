@@ -1,18 +1,14 @@
 package com.gitgrid.http.directives
 
-import com.gitgrid.auth._
-import com.gitgrid.models._
-import spray.http.HttpHeaders.`WWW-Authenticate`
-import scala.concurrent._
 import shapeless.HNil
+import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http._
-import spray.httpx.SprayJsonSupport
-import spray.json.DefaultJsonProtocol
+import spray.routing.AuthenticationFailedRejection._
 import spray.routing.Directives._
 import spray.routing._
-import spray.routing.authentication._
-import spray.routing.AuthenticationFailedRejection._
 import spray.routing.directives.AuthMagnet
+
+import scala.concurrent._
 
 trait AuthenticationDirectives {
   implicit val executor: ExecutionContext
@@ -46,6 +42,16 @@ trait AuthenticationDirectives {
           case x => true
         })
       case r => r
+    }
+  }
+
+  def filterHttpChallengesByExtensionHeader: Directive0 = extract(ctx => ctx.request.headers).flatMap { headers =>
+    headers.find(_.lowercaseName == "x-www-authenticate-filter") match {
+      case Some(HttpHeader(_, value)) =>
+        val filter = value.split(" ").filter(_ != "").map(_.toLowerCase).toSeq
+        filterHttpChallenges(c => filter.contains(c.scheme.toLowerCase))
+      case _ =>
+        pass
     }
   }
 }

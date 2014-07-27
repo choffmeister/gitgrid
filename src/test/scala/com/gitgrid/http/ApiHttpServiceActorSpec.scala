@@ -1,20 +1,21 @@
 package com.gitgrid.http
 
 import java.util.Date
+
 import akka.testkit._
 import com.gitgrid._
-import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
 import org.specs2.mutable._
 import reactivemongo.bson.BSONObjectID
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{duration, ExecutionContext}
-import spray.http.StatusCodes._
 import spray.http.HttpHeaders._
+import spray.http.StatusCodes._
 import spray.http._
 import spray.testkit._
+
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, duration}
 
 class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils with JsonProtocol {
   override implicit val executor = ExecutionContext.Implicits.global

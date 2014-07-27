@@ -2,6 +2,7 @@ package com.gitgrid.git
 
 import java.io._
 import java.util.Date
+
 import org.eclipse.jgit.lib._
 
 abstract class GitObject {

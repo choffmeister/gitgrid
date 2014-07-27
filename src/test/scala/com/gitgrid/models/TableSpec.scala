@@ -3,8 +3,8 @@ package com.gitgrid.models
 import com.gitgrid._
 import org.specs2.mutable._
 import reactivemongo.api.collections.default.BSONCollection
-import reactivemongo.api.indexes._
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 class TableSpec extends Specification with AsyncUtils {

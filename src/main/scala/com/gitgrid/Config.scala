@@ -1,8 +1,9 @@
 package com.gitgrid
 
-import com.typesafe.config.{ConfigFactory, ConfigException, Config => RawConfig}
 import java.io.File
 import java.util.concurrent.TimeUnit
+
+import com.typesafe.config.{ConfigException, ConfigFactory, Config => RawConfig}
 
 case class Config(
   httpInterface: String,

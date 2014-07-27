@@ -1,9 +1,9 @@
 package com.gitgrid.models
 
-import com.gitgrid.utils.BinaryStringConverter._
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 case class UserPassword(

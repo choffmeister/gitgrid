@@ -1,14 +1,13 @@
 package com.gitgrid.auth
 
 import com.gitgrid.Config
+import com.gitgrid.http.JsonProtocol
 import com.gitgrid.managers._
 import com.gitgrid.models._
-import com.gitgrid.http.JsonProtocol
-import spray.http.HttpChallenge
-import spray.http.HttpHeaders.`WWW-Authenticate`
-import scala.concurrent._
 import spray.routing._
 import spray.routing.authentication._
+
+import scala.concurrent._
 
 class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit executionContext: ExecutionContext) extends ContextAuthenticator[User] with JsonProtocol {
   val userManager = new UserManager(db)

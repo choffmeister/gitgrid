@@ -3,6 +3,7 @@ package com.gitgrid.models
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 case class User(

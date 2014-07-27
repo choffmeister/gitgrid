@@ -1,10 +1,12 @@
 package com.gitgrid.managers
 
+import java.io.File
+
 import com.gitgrid.Config
 import com.gitgrid.git.GitRepository
 import com.gitgrid.models._
-import java.io.File
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {

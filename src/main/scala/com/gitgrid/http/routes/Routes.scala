@@ -5,8 +5,9 @@ import com.gitgrid.auth._
 import com.gitgrid.http.JsonProtocol
 import com.gitgrid.http.directives._
 import com.gitgrid.models._
-import scala.concurrent.ExecutionContext
 import spray.routing._
+
+import scala.concurrent.ExecutionContext
 
 trait Routes extends Directives with AuthenticationDirectives with ExtractionDirectives with JsonProtocol {
   implicit val cfg: Config
