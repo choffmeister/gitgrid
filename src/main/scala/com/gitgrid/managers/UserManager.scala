@@ -1,6 +1,9 @@
 package com.gitgrid.managers
 
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import com.gitgrid.models._
+import com.gitgrid.utils.NonceGenerator
 import reactivemongo.bson._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,7 +27,7 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
     }
   }
 
-  def changeUserPassword(user: User, newPassword: String, hashAlgorithm: String = "plain"): Future[UserPassword] = {
+  def changeUserPassword(user: User, newPassword: String, hashAlgorithm: String = "pbkdf2-sha1-10000-128"): Future[UserPassword] = {
     val now = BSONDateTime(System.currentTimeMillis)
     val hashSalt = generateSalt(hashAlgorithm)
     val hash = calculateHash(newPassword, hashSalt, hashAlgorithm)
@@ -45,13 +48,18 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
     }
   }
 
-  def generateSalt(hashAlgorithm: String): String = hashAlgorithm match {
-    case "plain" => ""
+  def generateSalt(hashAlgorithm: String): Seq[Byte] = hashAlgorithm match {
+    case "plain" => Seq.empty[Byte]
+    case "pbkdf2-sha1-10000-128" => NonceGenerator.generateBytes(128)
     case _ => throw new Exception(s"Unknown hash algorithm $hashAlgorithm")
   }
 
-  def calculateHash(password: String, hashSalt: String, hashAlgorithm: String): String = hashAlgorithm match {
-    case "plain" => password
+  def calculateHash(password: String, hashSalt: Seq[Byte], hashAlgorithm: String): Seq[Byte] = hashAlgorithm match {
+    case "plain" => password.getBytes("UTF-8")
+    case "pbkdf2-sha1-10000-128" =>
+      val spec = new PBEKeySpec(password.toCharArray, hashSalt.toArray, 10000, 128)
+      val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+      skf.generateSecret(spec).getEncoded().toSeq
     case _ => throw new Exception(s"Unknown hash algorithm $hashAlgorithm")
   }
 }

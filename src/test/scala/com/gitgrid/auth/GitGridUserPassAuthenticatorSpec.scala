@@ -28,11 +28,11 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
       val upa = new GitGridUserPassAuthenticator(um)
 
       val u1 = await(db.users.insert(User(userName = "user1")))
-      val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id, hash = "pass1-old", hashAlgorithm = "plain")))
-      val p1b = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u1.id, hash = "pass1-new", hashAlgorithm = "plain")))
+      val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id, hash = "pass1-old".getBytes("UTF-8"), hashAlgorithm = "plain")))
+      val p1b = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u1.id, hash = "pass1-new".getBytes("UTF-8"), hashAlgorithm = "plain")))
       val u2 = await(db.users.insert(User(userName = "user2")))
-      val p2a = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u2.id, hash = "pass2-old", hashAlgorithm = "plain")))
-      val p2b = await(db.userPasswords.insert(UserPassword(createdAt = tomorrow, userId = u2.id, hash = "pass2-new", hashAlgorithm = "plain")))
+      val p2a = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u2.id, hash = "pass2-old".getBytes("UTF-8"), hashAlgorithm = "plain")))
+      val p2b = await(db.userPasswords.insert(UserPassword(createdAt = tomorrow, userId = u2.id, hash = "pass2-new".getBytes("UTF-8"), hashAlgorithm = "plain")))
 
       await(upa(Some(UserPass("user1", "pass1-new")))) === Some(u1)
       await(upa(Some(UserPass("user2", "pass2-new")))) === Some(u2)

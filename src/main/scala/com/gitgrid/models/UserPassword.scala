@@ -1,5 +1,6 @@
 package com.gitgrid.models
 
+import com.gitgrid.utils.BinaryStringConverter._
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
@@ -8,13 +9,11 @@ import scala.concurrent._
 case class UserPassword(
   id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
-  hash: String = "",
-  hashSalt: String = "",
+  hash: Seq[Byte] = Seq.empty,
+  hashSalt: Seq[Byte] = Seq.empty,
   hashAlgorithm: String = "",
   createdAt: BSONDateTime = BSONDateTime(0)
-) extends BaseModel {
-  require(hash.length > 1, "Password must not be empty")
-}
+) extends BaseModel
 
 class UserPasswordTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[UserPassword](database, collection) {
   implicit val reader = UserPasswordBSONFormat.Reader
@@ -39,8 +38,8 @@ object UserPasswordBSONFormat {
     def read(doc: BSONDocument) = UserPassword(
       id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
-      hash = doc.getAs[String]("hash").get,
-      hashSalt = doc.getAs[String]("hashSalt").get,
+      hash = base64ToBytes(doc.getAs[String]("hash").get).toSeq,
+      hashSalt = base64ToBytes(doc.getAs[String]("hashSalt").get).toSeq,
       hashAlgorithm = doc.getAs[String]("hashAlgorithm").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get
     )
@@ -50,8 +49,8 @@ object UserPasswordBSONFormat {
     def write(obj: UserPassword): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
-      "hash" -> obj.hash,
-      "hashSalt" -> obj.hashSalt,
+      "hash" -> bytesToBase64(obj.hash.toArray),
+      "hashSalt" -> bytesToBase64(obj.hashSalt.toArray),
       "hashAlgorithm" -> obj.hashAlgorithm,
       "createdAt" -> obj.createdAt
     )
