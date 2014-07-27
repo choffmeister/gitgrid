@@ -1,2 +1,8 @@
-h1 Show user
-pre {{user | json}}
+div.row
+  div.col-md-8
+    pre {{user | json}}
+  div.col-md-4
+    ul.list-group
+      li.list-group-item(ui-click-link="/{{project.ownerName}}/{{project.name}}", ng-repeat="project in projects")
+        span.glyphicon.glyphicon-book(style="margin-right: 5px;")
+        span {{project.ownerName}}/{{project.name}}
