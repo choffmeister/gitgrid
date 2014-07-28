@@ -1,4 +1,4 @@
-angular.module("app", ["ngAnimate", "ngRoute"])
+angular.module("app", ["ngRoute", "angular-loading-bar"])
 
 angular.module("app").config(["$httpProvider", ($httpProvider) ->
   $httpProvider.interceptors.push("httpErrorLogger")
