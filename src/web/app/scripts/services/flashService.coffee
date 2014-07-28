@@ -1,13 +1,33 @@
-angular.module("app").factory("flashService", ["$rootScope", ($rootScope) ->
+angular.module("app").factory("flashService", ["$timeout", "$rootScope", ($timeout, $rootScope) ->
   $rootScope.flashMessages = []
   $rootScope.dropFlashMessage = (flashMessage) ->
     index = $rootScope.flashMessages.indexOf(flashMessage)
     $rootScope.flashMessages.splice(index, 1) if index >= 0
 
-  success: (title, message) -> $rootScope.flashMessages.push({ type: "success", title: title, message: message })
-  info: (title, message) -> $rootScope.flashMessages.push({ type: "info", title: title, message: message })
-  warning: (title, message) -> $rootScope.flashMessages.push({ type: "warning", title: title, message: message })
-  error: (title, message) -> $rootScope.flashMessages.push({ type: "error", title: title, message: message })
+  repeat = (fn, delay) -> $timeout(() ->
+    fn()
+    repeat(fn, delay)
+  , delay)
+
+  clean = () ->
+    now = new Date()
+    old = _.filter($rootScope.flashMessages, (fm) -> now - fm.timeStamp > 10 * 1000)
+    _.each(old, (fm) -> $rootScope.dropFlashMessage(fm))
+
+  msg = (title, message, type) ->
+    $rootScope.flashMessages.push
+      type: type
+      title: title
+      message: message
+      timeStamp: new Date()
+    clean()
+
+  repeat(clean, 100)
+
+  success: (title, message) -> msg(title, message, "success")
+  info: (title, message) -> msg(title, message, "info")
+  warning: (title, message) -> msg(title, message, "warning")
+  error: (title, message) -> msg(title, message, "error")
 
   clear: () -> $rootScope.flashMessages.length = 0
 ])
