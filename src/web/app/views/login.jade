@@ -1,8 +1,8 @@
 h1 Login
 p
   form(role="form", ng-submit="login()")
-    ui-textbox(label="Username", value="userName", disabled="busy")
-    ui-password(label="Password", value="password", disabled="busy")
+    ui-textbox(label="Username", ng-model="userName", ng-disabled="busy", ui-focus-init, ui-focus-on="focusUserName")
+    ui-password(label="Password", ng-model="password", ng-disabled="busy", ui-focus-on="focusPassword")
     input.btn.btn-primary(type="submit", value="Login", ng-disabled="busy")
 p
   | You have no account yet? Then <a ng-href="/register">Register</a> now. It's free!
