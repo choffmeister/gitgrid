@@ -3,16 +3,19 @@ angular.module("app").directive("uiGravatar", () ->
   replace: true
   scope:
     email: "="
-    size: "@"
   link: ($scope, element, attrs) ->
-    generateLink = (email, size) ->
-      if email?
-        protocol = window.location.protocol
-        density = window.devicePixelRatio or 1
-        md5 = CryptoJS.MD5(email)
-        "#{protocol}//www.gravatar.com/avatar/#{md5}.jpg?s=#{size * density}&d=identicon"
-      else
-        ""
-    $scope.$watch "email", (newValue) -> $scope.imageUrl = generateLink(newValue, $scope.size)
+    currentSize = 0
+    reloadTreshold = 1.5
+    updateImageUrl = () ->
+      if $scope.email?
+        newSize = Math.max(element.width(), element.height())
+        if newSize > currentSize * reloadTreshold
+          currentSize = newSize
+          protocol = window.location.protocol
+          density = window.devicePixelRatio or 1
+          md5 = CryptoJS.MD5($scope.email)
+          $scope.imageUrl = "#{protocol}//www.gravatar.com/avatar/#{md5}.jpg?s=#{currentSize * density}&d=mm"
+    $(window).on "resize", () -> updateImageUrl()
+    $scope.$watch "email", () -> updateImageUrl()
   templateUrl: "/scripts/directives/uiGravatarDirective.html"
 )

@@ -1,9 +1,9 @@
 div.row
-  div.col-md-8
+  div.col-md-3
+    div: ui-gravatar(email="user.email", width="100%")
     h1 {{user.userName}}
-    div: ui-gravatar(email="user.email", size="128")
+  div.col-md-9
     pre {{user | json}}
-  div.col-md-4
     ul.list-group
       li.list-group-item(ui-click-link="/{{project.ownerName}}/{{project.name}}", ng-repeat="project in projects")
         span.glyphicon.glyphicon-book(style="margin-right: 5px;")
