@@ -1,9 +1,10 @@
-angular.module("app").controller("showProjectTreeController", ["$scope", "$routeParams", "restService", ($scope, $routeParams, restService) ->
+angular.module("app").controller("showProjectTreeController", ["$scope", "$routeParams", "$data", ($scope, $routeParams, $data) ->
   $scope.ownerName = $routeParams.ownerName
   $scope.projectName = $routeParams.projectName
   $scope.ref = $routeParams.ref
   $scope.path = $routeParams.path or ""
   $scope.pathSegments = $scope.path.split("/")
+  $scope.tree = $data.tree.data
 
   $scope.combinePaths = (paths...) ->
     combineTwoPaths = (path1, path2) ->
@@ -26,7 +27,8 @@ angular.module("app").controller("showProjectTreeController", ["$scope", "$route
       path: $scope.combinePaths(x.join("/"))
     )
     .value()
+])
 
-  restService.retrieveGitTree($scope.ownerName, $scope.projectName, $scope.ref, $scope.path)
-    .success((tree) -> $scope.tree = tree)
+angular.module("app").factory("showProjectTreeController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+  tree: restService.retrieveGitTree($routeParams.ownerName, $routeParams.projectName, $routeParams.ref, $routeParams.path or "")
 ])

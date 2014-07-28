@@ -1,6 +1,9 @@
-angular.module("app").controller("showUserController", ["$scope", "$routeParams", "restService", ($scope, $routeParams, restService) ->
-  restService.retrieveUser($routeParams.userName)
-    .success((user) -> $scope.user = user)
-  restService.listProjectsForOwner($routeParams.userName)
-    .success((projects) -> $scope.projects = projects)
+angular.module("app").controller("showUserController", ["$scope", "$data", ($scope, $data) ->
+  $scope.user = $data.user.data
+  $scope.projects = $data.projects.data
+])
+
+angular.module("app").factory("showUserController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+  user: restService.retrieveUser($routeParams.userName)
+  projects: restService.listProjectsForOwner($routeParams.userName)
 ])

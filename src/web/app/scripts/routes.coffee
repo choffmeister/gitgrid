@@ -1,21 +1,33 @@
 angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProvider, $locationProvider) ->
-  $routeProvider
-    .when "/", { templateUrl: "/views/home.html", controller: "homeController" }
-    .when "/login", { templateUrl: "/views/login.html", controller: "loginController" }
-    .when "/logout", { resolve: { logout: ["authService", (authService) -> authService.logout()] }, redirectTo: "/" }
-    .when "/register", { templateUrl: "/views/register.html", controller: "registerController" }
-    .when "/users", { templateUrl: "/views/users.html", controller: "usersController" }
-    .when "/new", { templateUrl: "/views/createproject.html", controller: "createProjectController" }
-    .when "/about", { templateUrl: "/views/about.html" }
+  route = (url, tmplUrl, ctrlName) ->
+    $routeProvider.when url,
+      templateUrl: tmplUrl + ".html"
+      controller: ctrlName or null
+      resolve:
+        $data: ["$injector", "$q", "$route", ($injector, $q, $route) ->
+          angular.module("app").value("$routeParams", $route.current.params)
+          inj = angular.injector(["app"])
 
-    .when "/:userName", { templateUrl: "/views/showuser.html", controller: "showUserController" }
+          switch inj.has("#{ctrlName}$Data")
+            when true then $q.all(inj.get("#{ctrlName}$Data"))
+            else undefined
+        ]
 
-    .when "/:ownerName/:projectName", { templateUrl: "/views/showproject.html", controller: "showProjectController" }
-    .when "/:ownerName/:projectName/tree/:ref", { templateUrl: "/views/showprojecttree.html", controller: "showProjectTreeController" }
-    .when "/:ownerName/:projectName/tree/:ref/:path*", { templateUrl: "/views/showprojecttree.html", controller: "showProjectTreeController" }
-    .when "/:ownerName/:projectName/blob/:ref/:path*", { templateUrl: "/views/showprojectblob.html", controller: "showProjectBlobController" }
+  route("/", "/views/home", "homeController")
+  route("/login", "/views/login", "loginController")
+  route("/register", "/views/register", "registerController")
+  route("/new", "/views/createproject", "createProjectController")
+  route("/about", "/views/about")
 
-    .otherwise { templateUrl: "/views/notfound.html" }
+  route("/users", "/views/users", "usersController")
+  route("/:userName", "/views/showuser", "showUserController")
 
+  route("/:ownerName/:projectName", "/views/showproject", "showProjectController")
+  route("/:ownerName/:projectName/tree/:ref", "/views/showprojecttree", "showProjectTreeController")
+  route("/:ownerName/:projectName/tree/:ref/:path*", "/views/showprojecttree", "showProjectTreeController")
+  route("/:ownerName/:projectName/blob/:ref/:path*", "/views/showprojectblob", "showProjectBlobController")
+
+  $routeProvider.when "/logout", { resolve: { logout: ["authService", (authService) -> authService.logout()] }, redirectTo: "/" }
+  $routeProvider.otherwise { templateUrl: "/views/notfound.html" }
   $locationProvider.html5Mode(true)
 ])

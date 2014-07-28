@@ -1,9 +1,10 @@
-angular.module("app").controller("showProjectBlobController", ["$scope", "$routeParams", "restService", ($scope, $routeParams, restService) ->
+angular.module("app").controller("showProjectBlobController", ["$scope", "$routeParams", "$data", ($scope, $routeParams, $data) ->
   $scope.ownerName = $routeParams.ownerName
   $scope.projectName = $routeParams.projectName
   $scope.ref = $routeParams.ref
   $scope.path = $routeParams.path or ""
   $scope.pathSegments = $scope.path.split("/")
+  $scope.blobRaw = $data.blobRaw.data
 
   $scope.combinePaths = (paths...) ->
     combineTwoPaths = (path1, path2) ->
@@ -26,7 +27,8 @@ angular.module("app").controller("showProjectBlobController", ["$scope", "$route
       path: $scope.combinePaths(x.join("/"))
     )
     .value()
+])
 
-  restService.retrieveGitBlobRaw($scope.ownerName, $scope.projectName, $scope.ref, $scope.path)
-    .success((blobRaw) -> $scope.blobRaw = blobRaw)
+angular.module("app").factory("showProjectBlobController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+  blobRaw: restService.retrieveGitBlobRaw($routeParams.ownerName, $routeParams.projectName, $routeParams.ref, $routeParams.path or "")
 ])
