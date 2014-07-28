@@ -36,7 +36,7 @@ class UserManager(db: Database)(implicit ec: ExecutionContext) {
       createdAt = BSONDateTime(System.currentTimeMillis),
       password = algorithm match {
         case `Plain` => `Plain`(newPassword)
-        case `PBKDF2-HMAC-SHA1` => `PBKDF2-HMAC-SHA1`(10000, 128, newPassword)
+        case `PBKDF2-HMAC-SHA1` => `PBKDF2-HMAC-SHA1`(100000, 128, newPassword)
       }
     ))
   }
