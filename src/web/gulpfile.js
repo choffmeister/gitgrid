@@ -16,6 +16,7 @@ var argv = require('yargs').argv,
     rename = require('gulp-rename'),
     replace = require('gulp-replace'),
     rewrite = require('connect-modrewrite'),
+    templates = require('gulp-angular-templatecache'),
     uglify = require('gulp-uglify'),
     url = require('url');
 
@@ -30,8 +31,8 @@ var config = {
   port: argv.port || 9000
 };
 
-gulp.task('jade', function () {
-  return gulp.src(config.src('**/*.jade'))
+gulp.task('jade-index', function () {
+  return gulp.src(config.src('index.jade'))
     .pipe(jade({ pretty: config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);
@@ -41,6 +42,22 @@ gulp.task('jade', function () {
     .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
+
+gulp.task('jade-other', ['jade-index'], function () {
+  return gulp.src(config.src('**/*.jade'))
+    .pipe(jade({ pretty: config.debug }))
+    .on('error', function (err) {
+      gutil.log(err.message);
+      gutil.beep();
+      this.end();
+    })
+    .pipe(templates('scripts/templates.js', { module: 'app', root: '/' }))
+    .pipe(gif(!config.debug, uglify()))
+    .pipe(gulp.dest(config.dest()))
+    .pipe(livereload({ auto: false }));
+});
+
+gulp.task('jade', ['jade-index', 'jade-other']);
 
 gulp.task('less', function () {
   return gulp.src(config.src('styles/main.less'))
