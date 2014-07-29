@@ -4,4 +4,4 @@ ol.breadcrumb
     a(ng-href="/{{ownerName}}/{{projectName}}/tree/{{ref}}/{{pathSegment.path}}") {{pathSegment.name}}
   li {{pathSegments2[pathSegments2.length - 1].name}}
 
-pre {{blobRaw}}
+hljs(source="blobRaw")
