@@ -3,6 +3,7 @@ var argv = require('yargs').argv,
     coffee = require('gulp-coffee'),
     concat = require('gulp-concat'),
     connect = require('connect'),
+    exec = require('exec-sync'),
     gif = require('gulp-if'),
     gulp = require('gulp'),
     gutil = require('gulp-util'),
@@ -28,7 +29,8 @@ var config = {
   dest: function (p) {
     return path.join(argv.target || 'target', p || '');
   },
-  port: argv.port || 9000
+  port: argv.port || 9000,
+  version: argv.dist ? exec('git describe') : 'dev'
 };
 
 gulp.task('jade-index', function () {
@@ -39,6 +41,7 @@ gulp.task('jade-index', function () {
       gutil.beep();
       this.end();
     })
+    .pipe(replace('%%version%%', config.version))
     .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
