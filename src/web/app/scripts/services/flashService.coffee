@@ -4,23 +4,28 @@ angular.module("app").service("flashService", ["$timeout", "$rootScope", ($timeo
     index = $rootScope.flashMessages.indexOf(flashMessage)
     $rootScope.flashMessages.splice(index, 1) if index >= 0
 
+  defer = (fn) -> $timeout(() ->
+    fn()
+  , 0)
+
   repeat = (fn, delay) -> $timeout(() ->
     fn()
     repeat(fn, delay)
   , delay)
 
   clean = () ->
-    now = new Date()
-    old = _.filter($rootScope.flashMessages, (fm) -> now - fm.timeStamp > 10 * 1000)
-    _.each(old, (fm) -> $rootScope.dropFlashMessage(fm))
+    defer () ->
+      now = new Date()
+      old = _.filter($rootScope.flashMessages, (fm) -> now - fm.timeStamp > 10 * 1000)
+      _.each(old, (fm) -> $rootScope.dropFlashMessage(fm))
 
   msg = (title, message, type) ->
-    $rootScope.flashMessages.push
-      type: type
-      title: title
-      message: message
-      timeStamp: new Date()
-    clean()
+    defer () ->
+      $rootScope.flashMessages.push
+        type: type
+        title: title
+        message: message
+        timeStamp: new Date()
 
   repeat(clean, 100)
 
