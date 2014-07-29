@@ -3,9 +3,9 @@ package com.gitgrid
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import spray.http._
 import spray.http.HttpHeaders.Authorization
 import spray.http.HttpMethods._
+import spray.http._
 
 trait RequestUtils extends AsyncUtils {
   def req(req: HttpRequest)(implicit httpActor: ActorRef, timeout: Timeout): HttpResponse = {

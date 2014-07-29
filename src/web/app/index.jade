@@ -11,19 +11,21 @@ html(ng-app="app")
     link(rel="stylesheet", href="/styles/main.css")
     script(type="text/javascript", src="/scripts/vendor.js")
     script(type="text/javascript", src="/scripts/app.js")
+    script(type="text/javascript", src="/scripts/templates.js")
   body
     div(id="flash-messages")
-      div(ng-repeat="flashMessage in flashMessages") {{flashMessage.title}}
-    navigation-menu(id="nav-main", brand="GitGrid")
+      div.fade(ng-repeat="flashMessage in flashMessages")
+        div.flash-message(ng-click="dropFlashMessage(flashMessage)") {{flashMessage.title}}
+    nav-menu(id="nav-main", brand="GitGrid")
       ul.nav.navbar-nav
-        navigation-entry(label="'Register'", url="'/register'", ng-hide="user")
-        navigation-entry(label="'Create project'", url="'/new'", ng-show="user")
-        navigation-entry(label="'Users'", url="'/users'")
-        navigation-entry(label="'About'", url="'/about'")
+        nav-entry(label="'Create project'", url="'/new'", ng-show="user")
+        nav-entry(label="'Users'", url="'/users'")
+        nav-entry(label="'About'", url="'/about'")
       ul.nav.navbar-nav.navbar-right
-        navigation-entry(label="'Login'", url="'/login'", ng-hide="user")
-        navigation-sub-menu(label="user.userName", ng-show="user")
-          navigation-entry(label="'Profile'", url="'/'")
-          navigation-divider
-          navigation-entry(label="'Logout'", url="'/logout'")
-    div.container-fluid(ng-view)
+        nav-entry(label="'Login'", url="'/login'", ng-hide="user")
+        nav-sub-menu(label="user.userName", ng-show="user")
+          nav-entry(label="'Profile'", url="'/'")
+          nav-divider
+          nav-entry(label="'Logout'", url="'/logout'")
+    div.container-fluid
+      ng-view

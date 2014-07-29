@@ -1,11 +1,12 @@
 {
   "name": "gitgrid",
-  "version": "0.0.3",
+  "version": "0.0.4-SNAPSHOT",
   "devDependencies": {
     "coffee-script": "^1.7.1",
     "connect": "^2.21.0",
     "connect-modrewrite": "^0.7.6",
     "gulp": "^3.6.2",
+    "gulp-angular-templatecache": "^1.2.1",
     "gulp-coffee": "^2.0.1",
     "gulp-concat": "^2.2.0",
     "gulp-if": "^1.2.0",

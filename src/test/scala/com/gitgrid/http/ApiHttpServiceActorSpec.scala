@@ -1,5 +1,7 @@
 package com.gitgrid.http
 
+import java.util.Date
+
 import akka.testkit._
 import com.gitgrid._
 import com.gitgrid.git._
@@ -7,13 +9,13 @@ import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
 import org.specs2.mutable._
 import reactivemongo.bson.BSONObjectID
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{duration, ExecutionContext}
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.routing.authentication.UserPass
 import spray.testkit._
+
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, duration}
 
 class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with AsyncUtils with JsonProtocol {
   override implicit val executor = ExecutionContext.Implicits.global
@@ -30,72 +32,29 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActor authentication routes" should {
     "POST /auth/login accept authentication request with valid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", UserPass("user1", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user === Some(user1)
       }
 
-      Post("/api/auth/login", UserPass("user2", "pass2")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", AuthenticationRequest("user2", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user === Some(user2)
       }
     }
 
     "POST /auth/login reject authentication request with invalid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", UserPass("user1", "pass2")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass2")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
 
-      Post("/api/auth/login", UserPass("user2", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/login", AuthenticationRequest("user2", "pass1")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
 
-      Post("/api/auth/login", UserPass("user", "pass")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-    }
-
-    "POST /auth/logout handle logout requests" in new TestApiHttpService {
-      Post("/api/auth/logout") ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-    }
-
-    "POST /auth/log(in|out) set and unset session cookie" in new TestApiHttpService {
-      await(db.sessions.all) must haveSize(0)
-      Get("/api/auth/state") ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-
-      val sessionId = Post("/api/auth/login", UserPass("user1", "pass1")) ~> route ~> check {
-        val cookie = getCookie(headers)
-        cookie must beSome
-        cookie.get.name === "gitgrid-sid"
-        cookie.get.expires must beNone
-        cookie.get.content
-      }
-
-      await(db.sessions.all) must haveSize(1)
-      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beSome(user1)
-      }
-
-      Post("/api/auth/logout") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
-        val cookie = getCookie(headers)
-        cookie must beSome
-        cookie.get.name === "gitgrid-sid"
-        cookie.get.expires must beSome
-        cookie.get.expires.get.clicks must beLessThan(System.currentTimeMillis)
-      }
-
-      await(db.sessions.all) must haveSize(0)
-      Get("/api/auth/state") ~> addHeader(HttpHeaders.Cookie(HttpCookie("gitgrid-sid", sessionId))) ~> route ~> check {
+      Post("/api/auth/login", AuthenticationRequest("user", "pass")) ~> sealedRoute ~> check {
         status === OK
         responseAs[AuthenticationResponse].user must beNone
       }
@@ -103,8 +62,9 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
     "POST /auth/register create a new user account" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> sealedRoute ~> check { status === Unauthorized }
 
-      Post("/api/auth/register", RegistrationRequest("user3", "pass3")) ~> route ~> check {
+      Post("/api/auth/register", RegistrationRequest("user3", "a3@b3.cd", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
         res.id !== BSONObjectID("00" * 12)
@@ -114,17 +74,11 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
 
       await(db.users.all) must haveSize(3)
-
-      Post("/api/auth/login", UserPass("user3", "pass3")) ~> route ~> check {
-        status === OK
-        val res = responseAs[AuthenticationResponse]
-        res.user must beSome
-        res.user.get.userName === "user3"
-      }
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[User].userName === "user3" }
     }
 
     "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
-      Post("/api/auth/register", RegistrationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+      Post("/api/auth/register", RegistrationRequest("user1","a1@b1.cd", "pass1")) ~> sealedRoute ~> check {
         status === InternalServerError
       }
     }
@@ -296,16 +250,81 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
   }
 
-  def auth(userName: String, password: String) =
-    addHeader(HttpHeaders.Authorization(BasicHttpCredentials(userName, password)))
+  "ApiHttpServiceActor handle bearer tokens" should {
+    "accept a valid bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
+        val tokenStr = responseAs[AuthenticationResponse].token.get
 
-  def getCookie(headers: List[HttpHeader]): Option[HttpCookie] = {
-    val header = headers.find(h => h.name.toLowerCase == "set-cookie")
-    header match {
-      case Some(header) => Some(header.asInstanceOf[`Set-Cookie`].cookie)
-      case _ => None
+        Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
+          status === OK
+          responseAs[User].userName == "user1"
+        }
+      }
+    }
+
+    "reject an expired bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
+        val tokenStr = responseAs[AuthenticationResponse].token.get
+
+        Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> sealedRoute ~> check {
+          status === Unauthorized
+          val authenticateHeader = header[`WWW-Authenticate`]
+          authenticateHeader must beSome
+          authenticateHeader.get.value must contain("expired")
+        }
+      }
+    }
+
+    "renew an expired bearer token" in new TestApiHttpService {
+      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
+        val tokenStr = responseAs[AuthenticationResponse].token.get
+
+        Get("/api/auth/renew") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
+          val token2Str = responseAs[AuthenticationResponse].token.get
+
+          Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(token2Str))) ~> route ~> check {
+            status === OK
+          }
+        }
+      }
+    }
+
+    "respond with correct HTTP challenge headers" in new TestApiHttpService {
+      def extractAuthHeaders(headers: List[HttpHeader]) =
+        headers.filter(_.isInstanceOf[`WWW-Authenticate`]).map(_.asInstanceOf[`WWW-Authenticate`])
+
+      Get("/api/auth/state") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
+      }
+
+      Get("/api/auth/state") ~> addHeader("X-WWW-Authenticate-Filter", "Bearer") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
+      }
+
+      Get("/api/projects/user1/unknown-project") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 1
+      }
+
+      Get("/api/projects/user1/unknown-project") ~> addHeader("X-WWW-Authenticate-Filter", "Bearer") ~> sealedRoute ~> check {
+        status === Unauthorized
+        val authHeaders = extractAuthHeaders(headers)
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "bearer") > 0) === 1
+        authHeaders.count(_.challenges.count(_.scheme.toLowerCase == "basic") > 0) === 0
+      }
     }
   }
+
+  def auth(userName: String, password: String) =
+    addHeader(HttpHeaders.Authorization(BasicHttpCredentials(userName, password)))
 }
 
 trait TestApiHttpService extends TestActorSystem with TestEnvironment {

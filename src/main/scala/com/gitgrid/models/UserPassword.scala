@@ -3,14 +3,13 @@ package com.gitgrid.models
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 case class UserPassword(
   id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
-  hash: String = "",
-  hashSalt: String = "",
-  hashAlgorithm: String = "",
+  password: String = "",
   createdAt: BSONDateTime = BSONDateTime(0)
 ) extends BaseModel
 
@@ -37,9 +36,7 @@ object UserPasswordBSONFormat {
     def read(doc: BSONDocument) = UserPassword(
       id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
-      hash = doc.getAs[String]("hash").get,
-      hashSalt = doc.getAs[String]("hashSalt").get,
-      hashAlgorithm = doc.getAs[String]("hashAlgorithm").get,
+      password = doc.getAs[String]("password").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get
     )
   }
@@ -48,9 +45,7 @@ object UserPasswordBSONFormat {
     def write(obj: UserPassword): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
-      "hash" -> obj.hash,
-      "hashSalt" -> obj.hashSalt,
-      "hashAlgorithm" -> obj.hashAlgorithm,
+      "password" -> obj.password,
       "createdAt" -> obj.createdAt
     )
   }

@@ -1,26 +1,29 @@
-angular.module("app").controller("loginController", ["$scope", "$location", "authService", ($scope, $location, authService) ->
-  $scope.userName = "user1"
-  $scope.password = "pass1"
-  $scope.message = null
+angular.module("app").controller("loginController", ["$scope", "$location", "authService", "flashService", ($scope, $location, authService, flashService) ->
+  $scope.userName = ""
+  $scope.password = ""
+  $scope.busy = false
 
-  $scope.login = () ->
-    userName = $scope.userName
-    password = $scope.password
-    $scope.password = ""
-
-    authService.login(userName, password)
+  $scope.login = () -> if not $scope.busy
+    $scope.busy = true
+    authService.login($scope.userName, $scope.password)
       .success((res) ->
-        if res.user?
-          $scope.message = null
-          $location.path("/")
+        if not res.user?
+          $scope.password = ""
+          $scope.busy = false
+          $scope.focus()
+          flashService.warning("The credendials are invalid.")
         else
-          $scope.message =
-            type: "warn"
-            text: res.message
+          $location.path("/")
       )
       .error((err) ->
-        $scope.message =
-          type: "error"
-          text: "An unknown error occured"
+        $scope.password = ""
+        $scope.busy = false
+        $scope.focus()
       )
+
+  $scope.focus = () ->
+    if $scope.userName == "" or not $scope.userName
+      $scope.$broadcast("focusUserName")
+    else
+      $scope.$broadcast("focusPassword")
 ])

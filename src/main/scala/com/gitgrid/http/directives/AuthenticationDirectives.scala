@@ -1,24 +1,22 @@
 package com.gitgrid.http.directives
 
-import com.gitgrid.auth._
-import com.gitgrid.models._
-import scala.concurrent._
 import shapeless.HNil
+import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http._
-import spray.httpx.SprayJsonSupport
-import spray.json.DefaultJsonProtocol
+import spray.routing.AuthenticationFailedRejection._
 import spray.routing.Directives._
 import spray.routing._
-import spray.routing.authentication.UserPass
 import spray.routing.directives.AuthMagnet
+
+import scala.concurrent._
 
 trait AuthenticationDirectives {
   implicit val executor: ExecutionContext
 
   def authenticateOption[T](magnet: AuthMagnet[T]): Directive1[Option[T]] = authenticate(magnet)
     .flatMap(user => provide(Some(user)))
-    .recover {
-      case _ => provide(Option.empty[T])
+    .recoverPF {
+      case AuthenticationFailedRejection(cause, ch) :: Nil if cause == CredentialsMissing => provide(Option.empty[T])
     }
 
   def authorizeDetached(check: => Future[Boolean]): Directive0 = onSuccess(check)
@@ -33,42 +31,27 @@ trait AuthenticationDirectives {
       }
     }
 
-  def formsLogin(auth: GitGridHttpAuthenticator): Directive1[Option[User]] = {
-    implicit val stringFormat = DefaultJsonProtocol.StringJsonFormat
-    implicit val userPassFormat = DefaultJsonProtocol.jsonFormat2(UserPass)
-    implicit val userPassUnmarshaller = SprayJsonSupport.sprayJsonUnmarshaller[UserPass](userPassFormat)
-
-    entity(as[UserPass]).flatMap { userPass =>
-      val future = auth.userPassAuthenticator(Some(userPass)).flatMap {
-        case Some(user) => auth.sessionManager.createSession(user.id).map(session => Some(user, session))
-        case _ => Future.successful(Option.empty[(User, Session)])
-      }
-
-      onSuccess(future).flatMap {
-        case Some((user, session)) => createSessionCookie(session, auth.cookieName, auth.cookiePath).hflatMap { case _ => hprovide(Some(user) :: HNil) }
-        case _ => provide(None)
-      }
+  def filterHttpChallenges(cond: HttpChallenge => Boolean): Directive0 = mapRejections { r =>
+    r.map {
+      case AuthenticationFailedRejection(c, ch) =>
+        AuthenticationFailedRejection(c, ch.map {
+          case `WWW-Authenticate`(ch) => `WWW-Authenticate`(ch.filter(cond))
+          case x => x
+        } filter {
+          case `WWW-Authenticate`(Nil) => false
+          case x => true
+        })
+      case r => r
     }
   }
 
-  def formsLogout(auth: GitGridHttpAuthenticator): Directive0 = {
-    extract(ctx => ctx).flatMap { ctx =>
-      val future = ctx.request.cookies.find(c => c.name == auth.cookieName).map(_.content) match {
-        case Some(sessionId) => auth.sessionManager.revokeSession(sessionId)
-        case _ => Future.successful()
-      }
-
-      onSuccess(future).flatMap {
-        case _ => removeSessionCookie(auth.cookieName, auth.cookiePath)
-      }
+  def filterHttpChallengesByExtensionHeader: Directive0 = extract(ctx => ctx.request.headers).flatMap { headers =>
+    headers.find(_.lowercaseName == "x-www-authenticate-filter") match {
+      case Some(HttpHeader(_, value)) =>
+        val filter = value.split(" ").filter(_ != "").map(_.toLowerCase).toSeq
+        filterHttpChallenges(c => filter.contains(c.scheme.toLowerCase))
+      case _ =>
+        pass
     }
-  }
-
-  def createSessionCookie(session: Session, cookieName: String, cookiePath: String = "/"): Directive0 = {
-    setCookie(HttpCookie(cookieName, session.sessionId, expires = None, path = Some(cookiePath)))
-  }
-
-  def removeSessionCookie(cookieName: String, cookiePath: String = "/"): Directive0 = {
-    deleteCookie(cookieName, path = cookiePath)
   }
 }

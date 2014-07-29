@@ -1,4 +1,4 @@
-angular.module("app").controller("createProjectController", ["$scope", "$location", "restService", ($scope, $location, restService) ->
+angular.module("app").controller("createProjectController", ["$scope", "$location", "flashService", "restService", ($scope, $location, flashService, restService) ->
   $scope.name = ""
   $scope.description = ""
   $scope.isPublic = false
@@ -6,7 +6,10 @@ angular.module("app").controller("createProjectController", ["$scope", "$locatio
 
   $scope.create = () ->
     restService.createProject($scope.name, $scope.description, $scope.isPublic)
-      .success((res) -> $location.path("/#{res.ownerName}/#{res.name}").replace(true))
+      .success((res) ->
+        flashService.success("You created a new project.")
+        $location.path("/#{res.ownerName}/#{res.name}").replace(true)
+      )
       .error((err) ->
         $scope.message =
           type: "error"

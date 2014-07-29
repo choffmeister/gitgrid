@@ -1,9 +1,10 @@
 package com.gitgrid.http.directives
 
 import com.gitgrid.models._
-import scala.concurrent.ExecutionContext
 import spray.routing.Directive1
 import spray.routing.Directives._
+
+import scala.concurrent.ExecutionContext
 
 trait ExtractionDirectives {
   implicit val db: Database

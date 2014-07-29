@@ -1,6 +1,6 @@
 angular.module("app").factory("restService", ["$http", "authService", ($http, authService) ->
-  register: (userName, password) ->
-    $http.post("/api/auth/register", { userName: userName, password: password })
+  register: (userName, email, password) ->
+    $http.post("/api/auth/register", { userName: userName, email: email, password: password })
   listUsers: () ->
     $http.get("/api/users")
   retrieveUser: (userName) ->
@@ -21,5 +21,17 @@ angular.module("app").factory("restService", ["$http", "authService", ($http, au
       public: isPublic,
       createdAt: 0,
       updatedAt: 0
+    )
+  listGitCommits: (ownerName, projectName) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/commits")
+  listGitBranches: (ownerName, projectName) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/branches")
+  retrieveGitTree: (ownerName, projectName, ref, path) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/tree/#{ref}/#{path}")
+  retrieveGitBlob: (ownerName, projectName, ref, path) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/blob/#{ref}/#{path}")
+  retrieveGitBlobRaw: (ownerName, projectName, ref, path) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/blob-raw/#{ref}/#{path}",
+      transformResponse: (res) -> res
     )
 ])

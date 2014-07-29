@@ -1,3 +1,7 @@
-angular.module("app").controller("homeController", ["$scope", "restService", ($scope, restService) ->
-  restService.listProjects().success((projects) -> $scope.projects = projects)
+angular.module("app").controller("homeController", ["$scope", "$data", ($scope, $data) ->
+  $scope.projects = $data.projects.data
+])
+
+angular.module("app").factory("homeController$Data", ["restService", (restService) ->
+  projects: restService.listProjects()
 ])

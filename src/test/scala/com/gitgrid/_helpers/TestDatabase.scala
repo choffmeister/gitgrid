@@ -1,8 +1,10 @@
 package com.gitgrid
 
 import java.util.UUID
+
 import com.gitgrid.models.Database
 import reactivemongo.api._
+
 import scala.concurrent.ExecutionContext
 
 class TestDatabase(val mongoDbDatabase: DefaultDB, val collectionNamePrefix: String = "")(implicit ec: ExecutionContext) extends Database(mongoDbDatabase, collectionNamePrefix)

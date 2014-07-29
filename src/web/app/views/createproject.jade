@@ -1,7 +1,7 @@
 h1 Create project
 form(ng-submit="create()")
   pre(ng-show="!!message") {{ message | json }}
-  input-text(label="Name", value="name")
-  input-textarea(label="Description", value="description", rows="5")
-  input-checkbox(label="Public?" value="isPublic")
+  ui-textbox(label="Name", ng-model="name")
+  ui-textarea(label="Description", rows="5", ng-model="description")
+  ui-checkbox(label="Public?" ng-model="isPublic")
   input.btn.btn-primary(type="submit", value="Create")

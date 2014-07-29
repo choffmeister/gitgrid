@@ -3,6 +3,7 @@ package com.gitgrid.models
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 case class Project(
@@ -15,7 +16,9 @@ case class Project(
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0),
   pushedAt: Option[BSONDateTime] = None
-) extends BaseModel
+) extends BaseModel {
+  require(name.length > 3, "Project names must be at least 3 characters long")
+}
 
 class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
   implicit val reader = ProjectBSONFormat.Reader

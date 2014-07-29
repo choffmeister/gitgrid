@@ -1,9 +1,9 @@
 package com.gitgrid.models
 
-import com.gitgrid.Config
 import reactivemongo.api._
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
+
 import scala.concurrent._
 
 abstract class BaseModel {
@@ -32,7 +32,6 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
 class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
   lazy val users = new UserTable(this, mongoDbDatabase(collectionNamePrefix + "users"))
   lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "userPasswords"))
-  lazy val sessions = new SessionTable(this, mongoDbDatabase(collectionNamePrefix + "sessions"))
   lazy val projects = new ProjectTable(this, mongoDbDatabase(collectionNamePrefix + "projects"))
 }
 

@@ -1,17 +1,34 @@
 angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProvider, $locationProvider) ->
-  $routeProvider
-    .when "/", { templateUrl: "/views/home.html", controller: "homeController" }
-    .when "/login", { templateUrl: "/views/login.html", controller: "loginController" }
-    .when "/logout", { templateUrl: "/views/logout.html", controller: "logoutController" }
-    .when "/register", { templateUrl: "/views/register.html", controller: "registerController" }
-    .when "/users", { templateUrl: "/views/users.html", controller: "usersController" }
-    .when "/new", { templateUrl: "/views/createproject.html", controller: "createProjectController" }
-    .when "/about", { templateUrl: "/views/about.html" }
+  route = (url, templateUrl, controller, opts) ->
+    options =
+      templateUrl: templateUrl + ".html"
+      controller: controller
+      resolve:
+        $data: ["$injector", "$q", "$route", ($injector, $q, $route) ->
+          angular.module("app").value("$routeParams", $route.current.params)
+          inj = angular.injector(["app"])
 
-    .when "/:userName", { templateUrl: "/views/showuser.html", controller: "showUserController" }
-    .when "/:ownerName/:projectName", { templateUrl: "/views/showproject.html", controller: "showProjectController" }
+          switch inj.has("#{controller}$Data")
+            when true then $q.all(inj.get("#{controller}$Data"))
+            else undefined
+        ]
+    $routeProvider.when url, _.extend({}, options, opts)
 
-    .otherwise { templateUrl: "/views/notfound.html" }
+  route("/", "/views/home", "homeController")
+  route("/login", "/views/login", "loginController")
+  route("/logout", undefined, undefined, { resolve: { logout: ["authService", (authService) -> authService.logout()] }, redirectTo: "/" })
+  route("/register", "/views/register", "registerController")
+  route("/new", "/views/createproject", "createProjectController")
+  route("/about", "/views/about")
 
+  route("/users", "/views/users", "usersController")
+  route("/:userName", "/views/showuser", "showUserController")
+
+  route("/:ownerName/:projectName", "/views/showproject", "showProjectController")
+  route("/:ownerName/:projectName/tree/:ref", "/views/showprojecttree", "showProjectTreeController")
+  route("/:ownerName/:projectName/tree/:ref/:path*", "/views/showprojecttree", "showProjectTreeController")
+  route("/:ownerName/:projectName/blob/:ref/:path*", "/views/showprojectblob", "showProjectBlobController")
+
+  $routeProvider.otherwise({ templateUrl: "/views/notfound.html" })
   $locationProvider.html5Mode(true)
 ])

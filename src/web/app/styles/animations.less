@@ -1,0 +1,19 @@
+.animation(@name, @duration) {
+  -webkit-animation: @name @duration;
+  -moz-animation: @name @duration;
+  -ms-animation: @name @duration;
+  animation: @name @duration;
+}
+
+.fade {
+  @speed: 0.75s;
+  opacity: 1.0;
+
+  &.ng-enter {
+    .animation(fadeIn @speed);
+  }
+
+  &.ng-leave {
+    .animation(fadeOut @speed);
+  }
+}

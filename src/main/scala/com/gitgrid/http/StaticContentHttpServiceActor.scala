@@ -2,7 +2,6 @@ package com.gitgrid.http
 
 import akka.actor._
 import com.gitgrid.Config
-import spray.http._
 import spray.routing._
 
 class StaticContentHttpServiceActor(cfg: Config) extends Actor with HttpService {

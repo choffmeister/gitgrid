@@ -1,11 +1,13 @@
 package com.gitgrid.git
 
 import java.io._
+
 import org.eclipse.jgit.api._
 import org.eclipse.jgit.lib._
 import org.eclipse.jgit.revwalk._
 import org.eclipse.jgit.storage.file._
 import org.eclipse.jgit.treewalk._
+
 import scala.collection.JavaConversions._
 
 class GitRepository(val dir: File) {

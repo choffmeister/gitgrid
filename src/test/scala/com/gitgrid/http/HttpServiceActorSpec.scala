@@ -1,12 +1,10 @@
 package com.gitgrid.http
 
-import akka.pattern._
 import akka.testkit._
 import com.gitgrid._
 import org.specs2.mutable._
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http._
 
 class HttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "HttpServiceActor" should {

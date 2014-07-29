@@ -3,7 +3,7 @@ package com.gitgrid.auth
 import com.gitgrid._
 import com.gitgrid.models._
 import org.specs2.mutable.Specification
-import reactivemongo.bson.{BSONObjectID, BSONDateTime}
+import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import spray.routing.authentication.UserPass
 
 class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
@@ -27,12 +27,12 @@ class GitGridUserPassAuthenticatorSpec extends Specification with AsyncUtils {
     "only accept most recent password" in new EmptyTestEnvironment {
       val upa = new GitGridUserPassAuthenticator(um)
 
-      val u1 = await(db.users.insert(User(userName = "user1")))
-      val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id, hash = "pass1-old", hashAlgorithm = "plain")))
-      val p1b = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u1.id, hash = "pass1-new", hashAlgorithm = "plain")))
-      val u2 = await(db.users.insert(User(userName = "user2")))
-      val p2a = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u2.id, hash = "pass2-old", hashAlgorithm = "plain")))
-      val p2b = await(db.userPasswords.insert(UserPassword(createdAt = tomorrow, userId = u2.id, hash = "pass2-new", hashAlgorithm = "plain")))
+      val u1 = await(db.users.insert(User(userName = "user1", email = "a1@b1.cd")))
+      val p1a = await(db.userPasswords.insert(UserPassword(createdAt = yesterday, userId = u1.id, password = "plain:pass1-old")))
+      val p1b = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u1.id, password = "plain:pass1-new")))
+      val u2 = await(db.users.insert(User(userName = "user2", email = "a2@b2.cd")))
+      val p2a = await(db.userPasswords.insert(UserPassword(createdAt = now, userId = u2.id, password = "plain:pass2-old")))
+      val p2b = await(db.userPasswords.insert(UserPassword(createdAt = tomorrow, userId = u2.id, password = "plain:pass2-new")))
 
       await(upa(Some(UserPass("user1", "pass1-new")))) === Some(u1)
       await(upa(Some(UserPass("user2", "pass2-new")))) === Some(u2)
