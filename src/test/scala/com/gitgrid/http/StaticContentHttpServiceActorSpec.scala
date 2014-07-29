@@ -10,52 +10,47 @@ import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
 
-class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils {
+class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "StaticContentHttpServiceActor" should {
     "serve index.html" in new TestActorSystem with TestEnvironment {
       ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
-      val httpService = TestActorRef(new HttpServiceActor(cfg, db))
+      implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
-      val res1 = req(httpService, GET, "/")
+      val res1 = req(GET, "/")
       res1.status === OK
       res1.entity.asString must contain("<title>GitGrid</title>")
 
-      val res2 = req(httpService, GET, "/index.html")
+      val res2 = req(GET, "/index.html")
       res2.status === OK
       res2.entity.asString must contain("<title>GitGrid</title>")
     }
 
     "server index.html for GET requests to non-existent files" in new TestActorSystem with TestEnvironment {
       ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
-      val httpService = TestActorRef(new HttpServiceActor(cfg, db))
+      implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
-      val res1 = req(httpService, GET, "/login")
+      val res1 = req(GET, "/login")
       res1.status === OK
       res1.entity.asString must contain("<title>GitGrid</title>")
 
-      val res2 = req(httpService, GET, "/logout")
+      val res2 = req(GET, "/logout")
       res2.status === OK
       res2.entity.asString must contain("<title>GitGrid</title>")
 
-      val res3 = req(httpService, GET, "/user1/proj1")
+      val res3 = req(GET, "/user1/proj1")
       res3.status === OK
       res3.entity.asString must contain("<title>GitGrid</title>")
     }
 
     "serve static content" in new TestActorSystem with TestEnvironment {
       ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
-      val httpService = TestActorRef(new HttpServiceActor(cfg, db))
+      implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
-      val res1 = req(httpService, GET, "/app/app.js")
+      val res1 = req(GET, "/app/app.js")
       res1.status === OK
       res1.entity.asString must contain("console.log('app')");
 
-      req(httpService, GET, "/app/unknown.txt").status === NotFound
+      req(GET, "/app/unknown.txt").status === NotFound
     }
   }
-
-  def req(httpActor: ActorRef, req: HttpRequest)(implicit timeout: Timeout): HttpResponse =
-    await(httpActor ? req).asInstanceOf[HttpResponse]
-  def req(httpActor: ActorRef, method: HttpMethod, uri: String)(implicit timeout: Timeout): HttpResponse =
-    req(httpActor, HttpRequest(method = method, uri = Uri(uri)))
 }
