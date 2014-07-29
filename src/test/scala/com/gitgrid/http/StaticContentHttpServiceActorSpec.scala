@@ -16,44 +16,25 @@ class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils wi
       ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
       implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
-      val res1 = req(GET, "/")
-      res1.status === OK
-      res1.entity.asString must contain("<title>GitGrid</title>")
-
-      val res2 = req(GET, "/index.html")
-      res2.status === OK
-      res2.entity.asString must contain("<title>GitGrid</title>")
+      req(GET, "/").entity.asString must contain("<title>GitGrid</title>")
+      req(GET, "/index.html").entity.asString must contain("<title>GitGrid</title>")
     }
 
     "server index.html for GET requests to non-existent files" in new TestActorSystem with TestEnvironment {
       ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
       implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
-      val res1 = req(GET, "/login")
-      res1.status === OK
-      res1.entity.asString must contain("<title>GitGrid</title>")
-
-      val res2 = req(GET, "/logout")
-      res2.status === OK
-      res2.entity.asString must contain("<title>GitGrid</title>")
-
-      val res3 = req(GET, "/user1/proj1")
-      res3.status === OK
-      res3.entity.asString must contain("<title>GitGrid</title>")
-
-      val res4 = req(GET, "/app2/app.js")
-      res4.status === OK
-      res4.entity.asString must contain("<title>GitGrid</title>")
+      req(GET, "/login").entity.asString must contain("<title>GitGrid</title>")
+      req(GET, "/logout").entity.asString must contain("<title>GitGrid</title>")
+      req(GET, "/user1/proj1").entity.asString must contain("<title>GitGrid</title>")
+      req(GET, "/app2/app.js").entity.asString must contain("<title>GitGrid</title>")
     }
 
     "serve static content" in new TestActorSystem with TestEnvironment {
       ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
       implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
-      val res1 = req(GET, "/app/app.js")
-      res1.status === OK
-      res1.entity.asString must contain("console.log('app')");
-
+      req(GET, "/app/app.js").entity.asString must contain("console.log('app')");
       req(GET, "/app/unknown.txt").status === NotFound
     }
   }
