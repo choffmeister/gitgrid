@@ -170,6 +170,12 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActor GIT routes" should {
     "GET /projects/{userName}/{projectName}/git/branches list branches" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/branches") ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val response = responseAs[List[GitRef]]
+        response must beEmpty
+      }
+
       Get("/api/projects/user2/project2/git/branches") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[List[GitRef]]
@@ -178,6 +184,12 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tags list tags" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/tags") ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val response = responseAs[List[GitRef]]
+        response must beEmpty
+      }
+
       Get("/api/projects/user2/project2/git/tags") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[List[GitRef]]
@@ -187,13 +199,21 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/commits list commits" in new TestApiHttpService {
-      Get("/api/projects/user2/project2/git/commits") ~> auth("user2", "pass2") ~> route ~> check {
+      Get("/api/projects/user1/project1/git/commits/master") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
+      Get("/api/projects/user2/project2/git/commits/master") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[List[GitCommit]]
       }
     }
 
     "GET /projects/{userName}/{projectName}/git/commit/{id} return specific commit" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/commit/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/commit/bf3c1e0ca32e74080b6378506827b9cbc28bbffb") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitCommit]
@@ -201,6 +221,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tree/{id} return specific tree" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/tree/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/tree/aae19ad8d143bbe2f70858e8cd641847822c9080") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
@@ -208,6 +232,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob/{id} return specific blob" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/blob/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob/bb228175807fabf88754bf44be67fc19aaaff686") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitBlob]
@@ -215,6 +243,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob-raw/{id} return specific blob content" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/blob-raw/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob-raw/bb228175807fabf88754bf44be67fc19aaaff686") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         responseAs[String] must contain("Version 0.1")
@@ -222,6 +254,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tree/{ref}/ return specific tree" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/tree/unknownbranch/") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/tree/master/") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
@@ -229,6 +265,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tree/{ref}/{path} return specific tree" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/tree/master/unknownfolder") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/tree/master/src") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
@@ -236,6 +276,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob/{ref}/{path} return specific blob" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/blob/master/unknownfile.txt") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob/master/README.md") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitBlob]
@@ -243,6 +287,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob-raw/{ref}/{path} return specific blob content" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/blob-raw/master/unknownfile.txt") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob-raw/master/README.md") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         responseAs[String] must contain("Version 0.1")
