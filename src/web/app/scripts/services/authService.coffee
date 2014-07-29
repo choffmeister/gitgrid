@@ -1,4 +1,4 @@
-angular.module("app").factory("authService", ["$http", "$rootScope", "storageService", "flashService", ($http, $rootScope, storageService, flashService) ->
+angular.module("app").service("authService", ["$http", "$rootScope", "storageService", "flashService", ($http, $rootScope, storageService, flashService) ->
   isAuthenticated: () ->
     storageService.get("session")?.isAuthenticated or false
   getBearerToken: () ->

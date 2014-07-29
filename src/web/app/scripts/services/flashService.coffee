@@ -1,4 +1,4 @@
-angular.module("app").factory("flashService", ["$timeout", "$rootScope", ($timeout, $rootScope) ->
+angular.module("app").service("flashService", ["$timeout", "$rootScope", ($timeout, $rootScope) ->
   $rootScope.flashMessages = []
   $rootScope.dropFlashMessage = (flashMessage) ->
     index = $rootScope.flashMessages.indexOf(flashMessage)
