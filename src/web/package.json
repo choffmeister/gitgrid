@@ -1,6 +1,6 @@
 {
   "name": "gitgrid",
-  "version": "0.0.4-SNAPSHOT",
+  "private": true,
   "devDependencies": {
     "coffee-script": "^1.7.1",
     "connect": "^2.21.0",
@@ -22,6 +22,5 @@
     "main-bower-files": "^1.0.0",
     "proxy-middleware": "^0.5.0",
     "yargs": "^1.2.1"
-  },
-  "private": true
+  }
 }

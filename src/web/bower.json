@@ -1,11 +1,6 @@
 {
   "name": "gitgrid",
-  "version": "0.0.4-SNAPSHOT",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components"
-  ],
+  "private": true,
   "dependencies": {
     "angular": "~1.2.20",
     "angular-animate": "~1.2.20",
