@@ -18,8 +18,8 @@ class StaticContentHttpServiceActor(cfg: Config) extends Actor with HttpService 
       pathSingleSlash(index) ~
       path("index.html")(index) ~
       path("cache.manifest")(cache) ~
-      pathPrefixTest("app")(app) ~
-      pathPrefixTest(!"app")(index)
+      pathPrefixTest(("app" ~ Slash))(app) ~
+      pathPrefixTest(!("app" ~ Slash))(index)
     case _ =>
       reject()
   }

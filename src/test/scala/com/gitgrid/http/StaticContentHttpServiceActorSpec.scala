@@ -40,6 +40,10 @@ class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils wi
       val res3 = req(GET, "/user1/proj1")
       res3.status === OK
       res3.entity.asString must contain("<title>GitGrid</title>")
+
+      val res4 = req(GET, "/app2/app.js")
+      res4.status === OK
+      res4.entity.asString must contain("<title>GitGrid</title>")
     }
 
     "serve static content" in new TestActorSystem with TestEnvironment {
