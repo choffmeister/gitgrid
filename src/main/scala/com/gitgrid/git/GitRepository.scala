@@ -50,8 +50,16 @@ class GitRepository(val dir: File) {
     page(new Git(jgit).tagList().call(), drop, take).map(ref => GitRef(ref.getName, ref.getObjectId.getName)).toList
   }
 
-  def commits(drop: Option[Int] = None, take: Option[Int] = None): List[GitCommit] = {
-    page(new Git(jgit).log().call(), drop, take).map(convertGitCommit(_)).toList
+  def commits(id: String, drop: Option[Int] = None, take: Option[Int] = None): List[GitCommit] = {
+    val git = new Git(jgit)
+    val cmd = git.log().add(ObjectId.fromString(id))
+    val cmd2 = (drop, take) match {
+      case (Some(d), Some(t)) => cmd.setSkip(d).setMaxCount(t)
+      case (Some(d), None) => cmd.setSkip(d)
+      case (None, Some(t)) => cmd.setMaxCount(t)
+      case (None, None) => cmd
+    }
+    cmd2.call().map(convertGitCommit).toList
   }
 
   def tree(id: String): GitTree = {

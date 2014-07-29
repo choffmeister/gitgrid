@@ -17,8 +17,8 @@ class ProjectsGitRoutes(val cfg: Config, val db: Database)(implicit val executor
     path("tags") {
       complete(gitRepository(project)(repo => repo.tags()))
     } ~
-    path("commits") {
-      complete(gitRepository(project)(repo => repo.commits()))
+    path("commits" / Segment) { refOrSha =>
+      complete(gitRepository(project)(repo => repo.commits(repo.resolve(refOrSha))))
     } ~
     path("commit" / Segment) { refOrSha =>
       complete(gitRepository(project)(repo => repo.commit(repo.resolve(refOrSha))))
