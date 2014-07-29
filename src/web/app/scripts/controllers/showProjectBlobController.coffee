@@ -29,6 +29,6 @@ angular.module("app").controller("showProjectBlobController", ["$scope", "$route
     .value()
 ])
 
-angular.module("app").factory("showProjectBlobController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+angular.module("app").factory("showProjectBlobController$Data", ["restService", (restService) -> ($routeParams) ->
   blobRaw: restService.retrieveGitBlobRaw($routeParams.ownerName, $routeParams.projectName, $routeParams.ref, $routeParams.path or "")
 ])
