@@ -14,6 +14,7 @@ case class Config(
   httpAuthRealm: String,
   httpAuthBearerTokenServerSecret: Seq[Byte],
   httpAuthBearerTokenMaximalLifetime: FiniteDuration,
+  passwordsStorageDefaultAlgorithm: String = "pbkdf2:hmac-sha1:10000:128",
   mongoDbServers: List[String],
   mongoDbDatabaseName: String,
   repositoriesDir: File,

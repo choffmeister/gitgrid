@@ -17,7 +17,7 @@ case class AuthenticationResponse(message: String, user: Option[User] = None, to
 case class RegistrationRequest(userName: String, email: String, password: String)
 
 class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
-  val um = new UserManager(db)
+  val um = new UserManager(cfg, db)
 
   def route =
     path("login") {
