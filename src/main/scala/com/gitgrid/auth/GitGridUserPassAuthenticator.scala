@@ -17,7 +17,7 @@ class GitGridUserPassAuthenticator(cfg: Config, um: UserManager)(implicit ec: Ex
       case None =>
         Future.successful(Option.empty[User])
     }
-    val delay = after[Option[User]](cfg.httpLoginDelay, SimpleScheduler.instance)(future(None))
+    val delay = after[Option[User]](cfg.passwordsValidationDelay, SimpleScheduler.instance)(future(None))
     val delayedAuth = Future.sequence(auth :: delay :: Nil).map(_(0))
     delayedAuth
   }
