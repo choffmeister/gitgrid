@@ -96,6 +96,8 @@ gulp.task('vendor-scripts', function () {
       config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
       config.src('../bower_components/angular/angular.js'),
       config.src('../bower_components/angular-animate/angular-animate.js'),
+      config.src('../bower_components/angular-highlightjs/angular-highlightjs.js'),
+      config.src('../bower_components/highlightjs/highlight.pack.js'),
       config.src('../bower_components/angular-loading-bar/build/loading-bar.js'),
       config.src('../bower_components/angular-route/angular-route.js'),
       config.src('../bower_components/cryptojslib/rollups/md5.js')

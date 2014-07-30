@@ -1,4 +1,4 @@
-angular.module("app", ["ngRoute", "angular-loading-bar"])
+angular.module("app", ["ngRoute", "angular-loading-bar", "hljs"])
 
 angular.module("app").config(["$httpProvider", ($httpProvider) ->
   $httpProvider.interceptors.push("httpErrorLogger")
@@ -16,4 +16,12 @@ angular.module("app").run(["$rootScope", ($rootScope) ->
 
 angular.module("app").run(["authService", (authService) ->
   authService.initSession()
+])
+
+angular.module("app").config(["hljsServiceProvider", (hljsServiceProvider) ->
+  hljsServiceProvider.setOptions(
+    tabReplace: '    '
+    # disable auto language detection
+    languages: []
+  )
 ])
