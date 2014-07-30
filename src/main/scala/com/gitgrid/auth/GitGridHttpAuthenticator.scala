@@ -11,7 +11,7 @@ import scala.concurrent._
 
 class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit executionContext: ExecutionContext) extends ContextAuthenticator[User] with JsonProtocol {
   val userManager = new UserManager(db)
-  val userPassAuthenticator =  new GitGridUserPassAuthenticator(userManager)
+  val userPassAuthenticator =  new GitGridUserPassAuthenticator(cfg, userManager)
   val bearerTokenAuthenticator = new OAuth2BearerTokenAuthenticator[User](cfg.httpAuthRealm, cfg.httpAuthBearerTokenServerSecret)
   val basicAuthenticator = new EnhancedBasicHttpAuthenticator[User](cfg.httpAuthRealm, userPassAuthenticator)
   val authenticator = EnhancedHttpAuthenticator.combine(bearerTokenAuthenticator, basicAuthenticator)

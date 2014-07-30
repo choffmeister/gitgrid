@@ -58,7 +58,7 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
     }
 
   private def completeAuthentication(user: User, requestedExpiresAt: Option[Date] = None): Route = {
-    val serverExpiresAt = new Date(System.currentTimeMillis + cfg.httpAuthBearerTokenMaximalLifetime)
+    val serverExpiresAt = new Date(System.currentTimeMillis + cfg.httpAuthBearerTokenMaximalLifetime.toMillis)
     val expiresAt = minDate(serverExpiresAt, requestedExpiresAt)
     val token = OAuth2BearerTokenTyped.create(user, expiresAt).sign(cfg.httpAuthBearerTokenServerSecret)
     val tokenStr = OAuth2BearerTokenSerializer.serialize(token)
