@@ -7,10 +7,14 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
     storageService.get("session")?.user or null
 
   login: (userName, password) ->
-    $http.post("/api/auth/login", { userName: userName, password: password })
-      .success((res) => if res.user? and res.token?
-        @setSession(res.token, res.user)
-        flashService.success("Welcome, #{res.user.userName}!")
+    credentials = btoa("#{userName}:#{password}")
+    authHeader = { Authorization: "Basic #{credentials}"}
+    $http.get("/api/auth/token/create", headers: authHeader)
+      .success((res) =>
+        token = res.access_token
+        user = JSON.parse(atob(token)).data
+        @setSession(token, user)
+        flashService.success("Welcome, #{user.userName}!")
       )
   logout: () ->
     @unsetSession()
@@ -55,11 +59,11 @@ angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", 
           deferred = $q.defer()
           config = angular.extend(res.config, { renewCounter: renewCounter + 1 })
           $http = $injector.get("$http")
-          $http.get("/api/auth/renew").then(deferred.resolve, deferred.reject)
+          $http.get("/api/auth/token/renew").then(deferred.resolve, deferred.reject)
 
           deferred.promise.then (res2) ->
             if res2.status == 200
-              newToken = res2.data.token
+              newToken = res2.data.access_token
               authService.setSession(newToken, authService.getUser())
               $http(res.config)
             else
