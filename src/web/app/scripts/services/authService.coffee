@@ -69,7 +69,7 @@ angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", 
             else
               authService.unsetSession()
               flashService.error("Your session has ended")
-      else if ah? and ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0 and ah.indexOf("token malformed") >= 0
+      else if ah? and ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0 and ah.indexOf("token is malformed") >= 0
         authService.unsetSession()
         flashService.error("Your session token is malformed")
         res.config.preventErrorLogging = true
@@ -80,8 +80,6 @@ angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", 
         res.config.preventErrorLogging = true
         $q.reject(res)
       else
-        flashService.error("You are not allowed to access this route")
-        res.config.preventErrorLogging = true
         $q.reject(res)
     else
       $q.reject(res)
