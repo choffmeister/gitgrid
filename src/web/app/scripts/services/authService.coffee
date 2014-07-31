@@ -51,7 +51,7 @@ angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", 
     if res.status == 401
       ah = res.headers("www-authenticate")
       renewCounter = res.config.renewCounter or 0
-      if ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0 and ah.indexOf("token expired") >= 0 and renewCounter < 1
+      if ah? and ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0 and ah.indexOf("token expired") >= 0 and renewCounter < 1
           deferred = $q.defer()
           config = angular.extend(res.config, { renewCounter: renewCounter + 1 })
           $http = $injector.get("$http")
@@ -65,7 +65,7 @@ angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", 
             else
               authService.unsetSession()
               flashService.error("Your session has ended")
-      else if ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0
+      else if ah? and ah.indexOf("Bearer ") == 0 and ah.indexOf("invalid_token") >= 0
         authService.unsetSession()
         flashService.error("Your session has ended")
         $q.reject(res)
