@@ -5,7 +5,6 @@ import java.util.Date
 import com.gitgrid.Config
 import com.gitgrid.auth._
 import com.gitgrid.http.JsonProtocol
-import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
 import spray.routing.Route
 import spray.routing.authentication._
@@ -16,11 +15,8 @@ import scala.concurrent._
  * See http://tools.ietf.org/html/rfc6749.
  */
 case class OAuth2AccessTokenResponse(tokenType: String, accessToken: String, expiresIn: Long)
-case class RegistrationRequest(userName: String, email: String, password: String)
 
 class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
-  val um = new UserManager(cfg, db)
-
   def route =
     pathPrefix("token") {
       path("create") {
@@ -43,15 +39,6 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
       get {
         authenticate() { user =>
           complete(user)
-        }
-      }
-    } ~
-    path("register") {
-      post {
-        entity(as[RegistrationRequest]) { reg =>
-          onSuccess(um.createUser(User(userName = reg.userName, email = reg.email), reg.password)) { user =>
-            complete(user)
-          }
         }
       }
     }

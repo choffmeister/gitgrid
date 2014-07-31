@@ -59,12 +59,23 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         status === Unauthorized
       }
     }
+  }
 
-    "POST /auth/register create a new user account" in new TestApiHttpService {
+  "ApiHttpServiceActor user routes" should {
+    "GET /users list users" in new TestApiHttpService {
+      Get("/api/users") ~> route ~> check { responseAs[List[User]] === List(user1, user2) }
+    }
+
+    "GET /users/{userName} return specific user" in new TestApiHttpService {
+      Get("/api/users/user1") ~> route ~> check { responseAs[User] === user1 }
+      Get("/api/users/user0") ~> sealedRoute ~> check { status === NotFound }
+    }
+
+    "POST /users/register create a new user account" in new TestApiHttpService {
       await(db.users.all) must haveSize(2)
       Get("/api/auth/state") ~> auth("user3", "pass3") ~> sealedRoute ~> check { status === Unauthorized }
 
-      Post("/api/auth/register", RegistrationRequest("user3", "a3@b3.cd", "pass3")) ~> route ~> check {
+      Post("/api/users/register", RegistrationRequest("user3", "a3@b3.cd", "pass3")) ~> route ~> check {
         status === OK
         val res = responseAs[User]
         res.id !== BSONObjectID("00" * 12)
@@ -77,21 +88,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[User].userName === "user3" }
     }
 
-    "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
-      Post("/api/auth/register", RegistrationRequest("user1","a1@b1.cd", "pass1")) ~> sealedRoute ~> check {
+    "POST /users/register fail on duplicate user name" in new TestApiHttpService {
+      Post("/api/users/register", RegistrationRequest("user1","a1@b1.cd", "pass1")) ~> sealedRoute ~> check {
         status === InternalServerError
       }
-    }
-  }
-
-  "ApiHttpServiceActor user routes" should {
-    "GET /users list users" in new TestApiHttpService {
-      Get("/api/users") ~> route ~> check { responseAs[List[User]] === List(user1, user2) }
-    }
-
-    "GET /users/{userName} return specific user" in new TestApiHttpService {
-      Get("/api/users/user1") ~> route ~> check { responseAs[User] === user1 }
-      Get("/api/users/user0") ~> sealedRoute ~> check { status === NotFound }
     }
   }
 
