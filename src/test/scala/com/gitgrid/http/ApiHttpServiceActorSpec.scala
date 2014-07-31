@@ -4,6 +4,7 @@ import java.util.Date
 
 import akka.testkit._
 import com.gitgrid._
+import com.gitgrid.auth.OAuth2BearerTokenSerializer
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
@@ -31,32 +32,31 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActor authentication routes" should {
-    "POST /auth/login accept authentication request with valid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+    "POST /auth/token/create accept authentication request with valid credentials" in new TestApiHttpService {
+      Get("/api/auth/token/create") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(user1)
+        val res = responseAs[OAuth2AccessTokenResponse]
+        OAuth2BearerTokenSerializer.deserialize[User](res.accessToken).payload === user1
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass2")) ~> sealedRoute ~> check {
+      Get("/api/auth/token/create") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(user2)
+        val res = responseAs[OAuth2AccessTokenResponse]
+        OAuth2BearerTokenSerializer.deserialize[User](res.accessToken).payload === user2
       }
     }
 
-    "POST /auth/login reject authentication request with invalid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass2")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
+    "POST /auth/token/create reject authentication request with invalid credentials" in new TestApiHttpService {
+      Get("/api/auth/token/create") ~> auth("user1", "pass2") ~> sealedRoute ~> check {
+        status === Unauthorized
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass1")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
+      Get("/api/auth/token/create") ~> auth("user2", "pass1") ~> sealedRoute ~> check {
+        status === Unauthorized
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user", "pass")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
+      Get("/api/auth/token/create") ~> auth("user", "pass") ~> sealedRoute ~> check {
+        status === Unauthorized
       }
     }
 
@@ -300,8 +300,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActor handle bearer tokens" should {
     "accept a valid bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
-        val tokenStr = responseAs[AuthenticationResponse].token.get
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val tokenStr = responseAs[OAuth2AccessTokenResponse].accessToken
 
         Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
           status === OK
@@ -311,8 +311,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "reject an expired bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
-        val tokenStr = responseAs[AuthenticationResponse].token.get
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val res = responseAs[OAuth2AccessTokenResponse]
+        val tokenStr = res.accessToken
+        Thread.sleep(res.expiresIn * 1000 + 500)
 
         Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> sealedRoute ~> check {
           status === Unauthorized
@@ -324,11 +326,13 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "renew an expired bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
-        val tokenStr = responseAs[AuthenticationResponse].token.get
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val res = responseAs[OAuth2AccessTokenResponse]
+        val tokenStr = res.accessToken
+        Thread.sleep(res.expiresIn * 1000 + 500)
 
-        Get("/api/auth/renew") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
-          val token2Str = responseAs[AuthenticationResponse].token.get
+        Get("/api/auth/token/renew") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
+          val token2Str = responseAs[OAuth2AccessTokenResponse].accessToken
 
           Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(token2Str))) ~> route ~> check {
             status === OK
