@@ -100,7 +100,8 @@ gulp.task('vendor-scripts', function () {
       config.src('../bower_components/highlightjs/highlight.pack.js'),
       config.src('../bower_components/angular-loading-bar/build/loading-bar.js'),
       config.src('../bower_components/angular-route/angular-route.js'),
-      config.src('../bower_components/cryptojslib/rollups/md5.js')
+      config.src('../bower_components/cryptojslib/components/core.js'),
+      config.src('../bower_components/cryptojslib/components/md5.js')
     ])
     .pipe(concat('app/vendor.js'))
     .pipe(gif(!config.debug, uglify({ preserveComments: 'some' })))
