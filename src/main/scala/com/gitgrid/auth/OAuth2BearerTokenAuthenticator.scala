@@ -48,7 +48,8 @@ object OAuth2BearerTokenTyped {
 }
 
 object OAuth2BearerTokenSerializer extends DefaultJsonProtocol {
-  import com.gitgrid.utils.BinaryStringConverter._
+  import com.gitgrid.utils.HexStringConverter._
+  import com.gitgrid.utils.Base64StringConverter._
 
   private class ContainerFormat[A](implicit payloadFormat: JsonFormat[A]) extends JsonFormat[OAuth2BearerTokenTyped[A]] {
     def write(token: OAuth2BearerTokenTyped[A]) = JsObject(
