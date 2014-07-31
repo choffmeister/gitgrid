@@ -5,7 +5,7 @@ angular.module("app").controller("registerController", ["$scope", "$location", "
   $scope.message = null
 
   $scope.register = () ->
-    restService.register($scope.userName, $scope.email, $scope.password)
+    restService.registerUser($scope.userName, $scope.email, $scope.password)
       .success((res) ->
         flashService.success("Your registration was successful.")
         $scope.password = ""

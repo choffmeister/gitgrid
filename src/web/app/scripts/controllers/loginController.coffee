@@ -7,18 +7,13 @@ angular.module("app").controller("loginController", ["$scope", "$location", "aut
     $scope.busy = true
     authService.login($scope.userName, $scope.password)
       .success((res) ->
-        if not res.user?
-          $scope.password = ""
-          $scope.busy = false
-          $scope.focus()
-          flashService.warning("The credendials are invalid.")
-        else
-          $location.path("/")
+        $location.path("/")
       )
       .error((err) ->
         $scope.password = ""
         $scope.busy = false
         $scope.focus()
+        flashService.warning("The credendials are invalid.")
       )
 
   $scope.focus = () ->

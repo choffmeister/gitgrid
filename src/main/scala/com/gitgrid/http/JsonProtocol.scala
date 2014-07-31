@@ -68,16 +68,30 @@ trait GitJsonProtocol extends DefaultJsonProtocol with DateJsonProtocol {
   implicit val gitBlobFormat = jsonFormat1(GitBlob)
 }
 
+trait AuthJsonProtocol extends DefaultJsonProtocol {
+  implicit object OAuth2AccessTokenResponseFormat extends RootJsonFormat[OAuth2AccessTokenResponse] {
+    def write(res: OAuth2AccessTokenResponse) = JsObject(
+      "token_type" -> JsString(res.tokenType),
+      "access_token" -> JsString(res.accessToken),
+      "expires_in" -> JsNumber(res.expiresIn)
+    )
+    def read(value: JsValue) =
+      value.asJsObject.getFields("token_type", "access_token", "expires_in") match {
+        case Seq(JsString(tokenType), JsString(accessToken), JsNumber(expiresIn)) =>
+          OAuth2AccessTokenResponse(tokenType, accessToken, expiresIn.toLong)
+        case _ => throw new DeserializationException("OAuth2 token response expected")
+      }
+  }
+}
+
 trait JsonProtocol extends DefaultJsonProtocol
   with DateJsonProtocol
   with BSONJsonProtocol
+  with AuthJsonProtocol
   with GitJsonProtocol
   with SprayJsonSupport
 {
   implicit val userFormat = jsonFormat5(User)
-  implicit val projectFormat = jsonFormat9(Project)
-
-  implicit val authenticationRequestFormat = jsonFormat3(AuthenticationRequest)
-  implicit val authenticationResponseFormat = jsonFormat3(AuthenticationResponse)
   implicit val registrationRequestFormat = jsonFormat3(RegistrationRequest)
+  implicit val projectFormat = jsonFormat9(Project)
 }
