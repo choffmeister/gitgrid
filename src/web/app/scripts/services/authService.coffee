@@ -9,7 +9,7 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
   login: (userName, password) ->
     credentials = btoa("#{userName}:#{password}")
     authHeader = { Authorization: "Basic #{credentials}"}
-    $http.get("/api/auth/token/create", headers: authHeader)
+    $http.get("/api/auth/token/create", { headers: authHeader, preventErrorLogging: true })
       .success((res) =>
         token = res.access_token
         user = JSON.parse(atob(token)).data
