@@ -11,10 +11,8 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
     authHeader = { Authorization: "Basic #{credentials}"}
     $http.get("/api/auth/token/create", { headers: authHeader, preventErrorLogging: true })
       .success((res) =>
-        token = res.access_token
-        user = JSON.parse(atob(token)).data
-        @setSession(token, user)
-        flashService.success("Welcome, #{user.userName}!")
+        @setSession(res.access_token)
+        flashService.success("Welcome, #{@getUser().userName}!")
       )
   logout: () ->
     @unsetSession()
@@ -23,13 +21,14 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
   initSession: () ->
     if @isAuthenticated()
       @setSession(@getBearerToken(), @getUser())
-  setSession: (bt, u) ->
+  setSession: (token) ->
+    user = JSON.parse(atob(token)).data
     storageService.set("session",
       isAuthenticated: true
-      bearerToken: bt
-      user: u
+      bearerToken: token
+      user: user
     )
-    $rootScope.user = u
+    $rootScope.user = user
   unsetSession: () ->
     storageService.set("session",
       isAuthenticated: false
@@ -42,7 +41,6 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
 angular.module("app").factory("authService.tokenInjector", ["$injector", ($injector) ->
   request: (config) ->
     authService = $injector.get("authService")
-    console.log(config)
     if authService.isAuthenticated() and not config.headers["Authorization"]?
       config.headers["Authorization"] = "Bearer #{authService.getBearerToken()}"
     config.headers["X-WWW-Authenticate-Filter"] = "Bearer"
@@ -65,7 +63,8 @@ angular.module("app").factory("authService.tokenRefresher", ["$injector", "$q", 
           deferred.promise.then (res2) ->
             if res2.status == 200
               newToken = res2.data.access_token
-              authService.setSession(newToken, authService.getUser())
+              authService.setSession(res2.data.access_token)
+              delete res.config.headers["Authorization"]
               $http(res.config)
             else
               authService.unsetSession()
