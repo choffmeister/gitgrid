@@ -4,7 +4,7 @@ import java.util.Date
 
 import akka.testkit._
 import com.gitgrid._
-import com.gitgrid.auth.OAuth2BearerTokenSerializer
+import com.gitgrid.auth.JsonWebToken
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
@@ -36,13 +36,13 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       Get("/api/auth/token/create") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
         status === OK
         val res = responseAs[OAuth2AccessTokenResponse]
-        OAuth2BearerTokenSerializer.deserialize[User](res.accessToken).payload === user1
+        JsonWebToken.read(res.accessToken).get._2.subject === user1.id.stringify
       }
 
       Get("/api/auth/token/create") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
         status === OK
         val res = responseAs[OAuth2AccessTokenResponse]
-        OAuth2BearerTokenSerializer.deserialize[User](res.accessToken).payload === user2
+        JsonWebToken.read(res.accessToken).get._2.subject === user2.id.stringify
       }
     }
 

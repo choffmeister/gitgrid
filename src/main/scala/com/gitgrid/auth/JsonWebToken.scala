@@ -13,6 +13,7 @@ case class JoseHeader(
 case class JsonWebToken(
   createdAt: Date,
   expiresAt: Date,
+  subject: String,
   payload: Map[String, JsValue]
 )
 
@@ -42,19 +43,14 @@ object JsonWebToken extends JsonWebTokenProtocol {
     compareConstantTime(signature, signature2)
   }
 
-  def write(header: Header, token: Token, signature: Option[Signature]): String = {
-    val headerAndToken = jtob64(header) + "." + jtob64(token)
-    signature match {
-      case Some(signature) => headerAndToken + "." + btob64(signature)
-      case None => headerAndToken
-    }
+  def write(header: Header, token: Token, signature: Signature): String = {
+    jtob64(header) + "." + jtob64(token) + "." + btob64(signature)
   }
 
-  def read(tokenStr: String): Option[(Header, Token, Option[Signature])] = {
+  def read(tokenStr: String): Option[(Header, Token, Signature)] = {
     try {
       tokenStr.split("\\.").toList match {
-        case List(s1, s2) => Some((b64toj[Header](s1), b64toj[Token](s2), None))
-        case List(s1, s2, s3) => Some((b64toj[Header](s1), b64toj[Token](s2), Some(b64tob(s3))))
+        case List(s1, s2, s3) => Some((b64toj[Header](s1), b64toj[Token](s2), b64tob(s3)))
         case _ => None
       }
     } catch {
@@ -108,7 +104,8 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
     def write(t: JsonWebToken) = {
       val baseValues = List[(String, JsValue)](
         "ts" -> JsNumber(t.createdAt.getTime),
-        "exp" -> JsNumber(t.expiresAt.getTime)
+        "exp" -> JsNumber(t.expiresAt.getTime),
+        "sub" -> JsString(t.subject)
       )
       JsObject(baseValues ++ t.payload)
     }
@@ -118,6 +115,7 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
         JsonWebToken(
           createdAt = new Date(raw.fields("ts").asInstanceOf[JsNumber].value.toLong),
           expiresAt = new Date(raw.fields("exp").asInstanceOf[JsNumber].value.toLong),
+          subject = raw.fields("sub").asInstanceOf[JsString].value,
           payload = raw.fields.filter(f => !knownClaimNames.contains(f._1))
         )
       } catch {
@@ -125,6 +123,6 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
       }
     }
 
-    private def knownClaimNames = List("ts", "exp")
+    private def knownClaimNames = List("ts", "exp", "sub")
   }
 }

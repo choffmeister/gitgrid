@@ -27,9 +27,9 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
       path("renew") {
         extract(ctx => ctx.request) { req =>
           authenticator.bearerTokenAuthenticator.extractToken(req) match {
-            case Right(token) =>
-              if (!token.validate(cfg.httpAuthBearerTokenServerSecret)) reject()
-              else completeWithToken(token.payload)
+            case Right((header, token, signature)) =>
+              if (!JsonWebToken.checkSignature(header, token, signature, cfg.httpAuthBearerTokenServerSecret)) reject()
+              else completeWithToken(token)
             case _ => reject()
           }
         }
@@ -43,10 +43,25 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
       }
     }
 
+  private def completeWithToken(token: JsonWebToken): Route = {
+    val now = System.currentTimeMillis
+    val header = JoseHeader(
+      algorithm = "HS256"
+    )
+    val token2 = token.copy(
+      createdAt = new Date(now),
+      expiresAt = new Date(now + cfg.httpAuthBearerTokenMaximalLifetime.toMillis)
+    )
+    val signature = JsonWebToken.createSignature(header, token2, cfg.httpAuthBearerTokenServerSecret)
+    complete(OAuth2AccessTokenResponse("bearer", JsonWebToken.write(header, token2, signature), cfg.httpAuthBearerTokenMaximalLifetime.toSeconds))
+  }
+
   private def completeWithToken(user: User): Route = {
-    val expiresAt = new Date(System.currentTimeMillis + cfg.httpAuthBearerTokenMaximalLifetime.toMillis)
-    val token = OAuth2BearerTokenTyped.create(user, expiresAt).sign(cfg.httpAuthBearerTokenServerSecret)
-    val tokenStr = OAuth2BearerTokenSerializer.serialize(token)
-    complete(OAuth2AccessTokenResponse("bearer", tokenStr, cfg.httpAuthBearerTokenMaximalLifetime.toSeconds))
+    completeWithToken(JsonWebToken(
+      createdAt = new Date(0),
+      expiresAt = new Date(0),
+      subject = user.id.stringify,
+      payload = Map.empty
+    ))
   }
 }
