@@ -325,6 +325,21 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
+    "reject manipulated bearer token" in new TestApiHttpService {
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val res = responseAs[OAuth2AccessTokenResponse]
+        val tokenStr = res.accessToken
+        val (header, token, signature) = JsonWebToken.read(tokenStr).get
+        val tokenStr2 = JsonWebToken.write(
+          header,
+          token.copy(expiresAt = new Date(token.expiresAt.getTime + 1)),
+          signature
+        )
+
+        Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr2))) ~> sealedRoute ~> check { status === Unauthorized }
+      }
+    }
+
     "renew an expired bearer token" in new TestApiHttpService {
       Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
         val res = responseAs[OAuth2AccessTokenResponse]
