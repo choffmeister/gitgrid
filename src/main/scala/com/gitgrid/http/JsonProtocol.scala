@@ -2,6 +2,7 @@ package com.gitgrid.http
 
 import java.util.Date
 
+import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models._

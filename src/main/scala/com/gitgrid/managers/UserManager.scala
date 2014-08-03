@@ -5,7 +5,7 @@ import javax.crypto.spec.PBEKeySpec
 
 import com.gitgrid.Config
 import com.gitgrid.models._
-import com.gitgrid.utils.BinaryStringConverter._
+import com.gitgrid.utils.Base64StringConverter._
 import com.gitgrid.utils.NonceGenerator
 import reactivemongo.bson._
 
