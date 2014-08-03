@@ -12,7 +12,16 @@ class JsonWebTokenSpec extends Specification {
   "JsonWebToken" should {
     "work" in {
       val jh = JoseHeader(algorithm = "HS256")
-      val t1 = JsonWebToken(createdAt = now, expiresAt = time(60 * 1000), subject = "me", Map("foo" -> JsString("bar"), "apple" -> JsNumber(1)))
+      val t1 = JsonWebToken(
+        createdAt = now,
+        expiresAt = time(60 * 1000),
+        subject = "jwayne",
+        name = "John Wayne",
+        Map(
+          "foo" -> JsString("bar"),
+          "apple" -> JsNumber(1)
+        )
+      )
       val sig = JsonWebToken.createSignature(jh, t1, "secret".getBytes("UTF-8"))
       val s1 = JsonWebToken.write(jh, t1, sig)
       val t2 = JsonWebToken.read(s1).get

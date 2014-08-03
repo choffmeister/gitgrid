@@ -14,6 +14,7 @@ case class JsonWebToken(
   createdAt: Date,
   expiresAt: Date,
   subject: String,
+  name: String,
   payload: Map[String, JsValue]
 )
 
@@ -105,7 +106,8 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
       val baseValues = List[(String, JsValue)](
         "ts" -> JsNumber(t.createdAt.getTime),
         "exp" -> JsNumber(t.expiresAt.getTime),
-        "sub" -> JsString(t.subject)
+        "sub" -> JsString(t.subject),
+        "name" -> JsString(t.name)
       )
       JsObject(baseValues ++ t.payload)
     }
@@ -116,6 +118,7 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
           createdAt = new Date(raw.fields("ts").asInstanceOf[JsNumber].value.toLong),
           expiresAt = new Date(raw.fields("exp").asInstanceOf[JsNumber].value.toLong),
           subject = raw.fields("sub").asInstanceOf[JsString].value,
+          name = raw.fields("name").asInstanceOf[JsString].value,
           payload = raw.fields.filter(f => !knownClaimNames.contains(f._1))
         )
       } catch {
@@ -123,6 +126,6 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
       }
     }
 
-    private def knownClaimNames = List("ts", "exp", "sub")
+    private def knownClaimNames = List("ts", "exp", "sub", "name")
   }
 }

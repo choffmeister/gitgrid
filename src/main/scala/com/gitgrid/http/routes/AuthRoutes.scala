@@ -56,6 +56,7 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
       createdAt = new Date(0),
       expiresAt = new Date(0),
       subject = user.id.stringify,
+      name = user.userName,
       payload = Map.empty
     ))
   }
