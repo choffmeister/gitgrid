@@ -11,11 +11,6 @@ import spray.routing.authentication._
 
 import scala.concurrent._
 
-/**
- * See http://tools.ietf.org/html/rfc6749.
- */
-case class OAuth2AccessTokenResponse(tokenType: String, accessToken: String, expiresIn: Long)
-
 class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
   def route =
     pathPrefix("token") {

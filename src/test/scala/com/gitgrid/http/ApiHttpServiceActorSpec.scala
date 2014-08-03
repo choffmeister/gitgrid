@@ -4,7 +4,7 @@ import java.util.Date
 
 import akka.testkit._
 import com.gitgrid._
-import com.gitgrid.auth.JsonWebToken
+import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}

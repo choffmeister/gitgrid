@@ -11,7 +11,12 @@ import spray.util._
 import scala.concurrent._
 
 /**
- * See http://tools.ietf.org/html/rfc6750.
+ * See http://tools.ietf.org/html/rfc6749
+ */
+case class OAuth2AccessTokenResponse(tokenType: String, accessToken: String, expiresIn: Long)
+
+/**
+ * See http://tools.ietf.org/html/rfc6750
  */
 class OAuth2BearerTokenAuthenticator[U](val realm: String, val serverSecret: Array[Byte], user: String => Future[Option[U]])
     (implicit val executionContext: ExecutionContext, val tokenPayloadFormat: JsonFormat[U]) extends EnhancedHttpAuthenticator[U] {
