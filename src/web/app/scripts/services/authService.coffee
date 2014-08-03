@@ -1,4 +1,6 @@
 angular.module("app").service("authService", ["$http", "$rootScope", "storageService", "flashService", ($http, $rootScope, storageService, flashService) ->
+  parseBase64UrlSafe = (b64) -> atob(b64.replace("-", "+").replace("_", "/"))
+
   isAuthenticated: () ->
     storageService.get("session")?.isAuthenticated or false
   getBearerToken: () ->
@@ -21,11 +23,14 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
   initSession: () ->
     if @isAuthenticated()
       @setSession(@getBearerToken(), @getUser())
-  setSession: (token) ->
-    user = JSON.parse(atob(token)).data
+  setSession: (tokenStr) ->
+    token = JSON.parse(parseBase64UrlSafe(tokenStr.split(".")[1]))
+    user =
+      id: token.sub
+      userName: token.name
     storageService.set("session",
       isAuthenticated: true
-      bearerToken: token
+      bearerToken: tokenStr
       user: user
     )
     $rootScope.user = user
