@@ -7,7 +7,6 @@ import com.gitgrid.auth._
 import com.gitgrid.http.JsonProtocol
 import com.gitgrid.models._
 import spray.routing.Route
-import spray.routing.authentication._
 
 import scala.concurrent._
 

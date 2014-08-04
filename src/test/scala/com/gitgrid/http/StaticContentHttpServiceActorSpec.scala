@@ -1,14 +1,10 @@
 package com.gitgrid.http
 
-import akka.actor._
-import akka.pattern._
 import akka.testkit._
-import akka.util.Timeout
 import com.gitgrid._
 import org.specs2.mutable._
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http._
 
 class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "StaticContentHttpServiceActor" should {
