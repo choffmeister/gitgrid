@@ -3,6 +3,7 @@ package com.gitgrid
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+import com.gitgrid.utils.HexStringConverter._
 import com.typesafe.config.{ConfigException, ConfigFactory, Config => RawConfig}
 
 import scala.concurrent.duration.FiniteDuration
@@ -29,7 +30,7 @@ object Config {
       httpInterface = raw.getString("http.interface"),
       httpPort = raw.getInt("http.port"),
       httpAuthRealm = raw.getString("http.auth.realm"),
-      httpAuthBearerTokenSecret = raw.getString("http.auth.bearer-token.secret").getBytes("UTF-8"),
+      httpAuthBearerTokenSecret = raw.getByteArray("http.auth.bearer-token.secret"),
       httpAuthBearerTokenLifetime = raw.getFiniteDuration("http.auth.bearer-token.lifetime"),
       passwordsValidationDelay = raw.getFiniteDuration("passwords.validation.delay"),
       passwordsStorageDefaultAlgorithm = raw.getString("passwords.storage.default-algorithm"),
@@ -50,6 +51,10 @@ object Config {
     def getFiniteDuration(path: String): FiniteDuration = {
       val unit = TimeUnit.MICROSECONDS
       FiniteDuration(underlying.getDuration(path, unit), unit)
+    }
+
+    def getByteArray(path: String): Array[Byte] = {
+      hex2bytes(underlying.getString(path))
     }
   }
 }
