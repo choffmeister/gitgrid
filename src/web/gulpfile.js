@@ -47,7 +47,7 @@ gulp.task('jade-index', function () {
 });
 
 gulp.task('jade-other', ['jade-index'], function () {
-  return gulp.src(config.src('**/*.jade'))
+  return gulp.src([config.src('**/*.jade'), '!**/index.jade', '!**/partials/**/*.jade'])
     .pipe(jade({ pretty: config.debug }))
     .on('error', function (err) {
       gutil.log(err.message);

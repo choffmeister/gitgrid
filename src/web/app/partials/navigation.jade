@@ -1,0 +1,11 @@
+nav-menu(id="nav-main", brand="GitGrid")
+  ul.nav.navbar-nav
+    nav-entry(label="'Create project'", url="'/new'", ng-show="user")
+    nav-entry(label="'Users'", url="'/users'")
+    nav-entry(label="'About'", url="'/about'")
+  ul.nav.navbar-nav.navbar-right
+    nav-entry(label="'Login'", url="'/login'", ng-hide="user")
+    nav-sub-menu(label="user.userName", ng-show="user")
+      nav-entry(label="'Profile'", url="'/'")
+      nav-divider
+      nav-entry(label="'Logout'", url="'/logout'")

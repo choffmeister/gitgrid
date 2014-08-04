@@ -4,29 +4,14 @@ html(ng-app="app")
     title GitGrid
     meta(charset="utf-8")
     meta(http-equiv="X-UA-Compatible", content="IE=edge")
-    meta(name="viewport", content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
-    meta(name="mobile-web-app-capable", content="yes")
-    meta(name="apple-mobile-web-app-capable", content="yes")
-    meta(name="apple-mobile-web-app-status-bar-style", content="black")
+    include partials/webapp.jade
     link(rel="stylesheet", href="/app/styles.css")
     script(type="text/javascript", src="/app/vendor.js")
     script(type="text/javascript", src="/app/app.js")
     script(type="text/javascript", src="/app/templates.js")
   body
-    div(id="flash-messages")
-      div.fade(ng-repeat="flashMessage in flashMessages")
-        div.flash-message(ng-click="dropFlashMessage(flashMessage)") {{flashMessage.title}}
-    nav-menu(id="nav-main", brand="GitGrid")
-      ul.nav.navbar-nav
-        nav-entry(label="'Create project'", url="'/new'", ng-show="user")
-        nav-entry(label="'Users'", url="'/users'")
-        nav-entry(label="'About'", url="'/about'")
-      ul.nav.navbar-nav.navbar-right
-        nav-entry(label="'Login'", url="'/login'", ng-hide="user")
-        nav-sub-menu(label="user.userName", ng-show="user")
-          nav-entry(label="'Profile'", url="'/'")
-          nav-divider
-          nav-entry(label="'Logout'", url="'/logout'")
+    include partials/flashmessages.jade
+    include partials/navigation.jade
     div.container-fluid
       ng-view
     div#version %%version%%
