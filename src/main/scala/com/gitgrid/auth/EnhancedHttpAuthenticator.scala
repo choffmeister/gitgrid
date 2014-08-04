@@ -2,22 +2,23 @@ package com.gitgrid.auth
 
 import spray.http.HttpHeaders.{Authorization, `WWW-Authenticate`}
 import spray.http._
+import spray.routing.AuthenticationFailedRejection.{CredentialsMissing => Missing, CredentialsRejected => Rejected}
 import spray.routing.authentication._
-import spray.routing.{AuthenticationFailedRejection, RequestContext}
+import spray.routing.{RequestContext, AuthenticationFailedRejection => AuthRejection}
 import spray.util._
 
 import scala.concurrent._
 
 trait EnhancedHttpAuthenticator[U] extends ContextAuthenticator[U] {
-  type EnhancedAuthentication[U] = Future[Either[(AuthenticationFailedRejection.Cause, List[HttpChallenge]), U]]
+  type EnhancedAuthentication[U] = Future[Either[AuthRejection, U]]
   implicit val executionContext: ExecutionContext
 
   def apply(ctx: RequestContext): Future[Authentication[U]] = {
     val authHeader = ctx.request.headers.findByType[`Authorization`]
     val credentials = authHeader.map { case Authorization(c) ⇒ c }
     authenticate(credentials, ctx) map {
-      case Right(user) => Right(user)
-      case Left((cause, challenges)) => Left(AuthenticationFailedRejection(cause, challenges.map(`WWW-Authenticate`(_))))
+      case Right(u) => Right(u)
+      case Left(r) => Left(r)
     }
   }
 
@@ -45,8 +46,12 @@ object EnhancedHttpAuthenticator {
         case Left(r1) => a2.authenticate(credentials, ctx).map {
           case Right(u2) => Right(u2)
           case Left(r2) =>
-            val cause = if (r1._1 == AuthenticationFailedRejection.CredentialsRejected) r1._1 else r2._1
-            Left(cause, r1._2 ++ r2._2)
+            (r1, r2) match {
+              case (AuthRejection(Missing, c1), AuthRejection(Missing, c2)) =>
+                Left(AuthRejection(Missing, c1 ++ c2))
+              case (AuthRejection(_, c1), AuthRejection(_, c2)) =>
+                Left(AuthRejection(Rejected, c1 ++ c2))
+            }
         }
       }
     }
@@ -59,13 +64,13 @@ class EnhancedBasicHttpAuthenticator[U](val realm: String, val userPassAuthentic
       case Some(BasicHttpCredentials(u, p)) =>
         userPassAuthenticator(Some(UserPass(u, p))).map {
           case Some(user) => Right(user)
-          case _ => Left((AuthenticationFailedRejection.CredentialsRejected, challenges))
+          case _ => Left(AuthRejection(Rejected, challenges))
         }
       case _ =>
-        future(Left((AuthenticationFailedRejection.CredentialsMissing, challenges)))
+        future(Left(AuthRejection(Missing, challenges)))
     }
   }
 
-  def challenges = HttpChallenge(scheme = "Basic", realm = realm, params = Map.empty) :: Nil
+  def challenges = `WWW-Authenticate`(HttpChallenge(scheme = "Basic", realm = realm, params = Map.empty)) :: Nil
 }
 

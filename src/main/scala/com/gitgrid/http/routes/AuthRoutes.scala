@@ -3,6 +3,7 @@ package com.gitgrid.http.routes
 import java.util.Date
 
 import com.gitgrid.Config
+import com.gitgrid.auth.OAuth2BearerTokenAuthenticator.TokenManipulated
 import com.gitgrid.auth._
 import com.gitgrid.http.JsonProtocol
 import com.gitgrid.models._
@@ -22,9 +23,11 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
         extract(ctx => ctx.request) { req =>
           authenticator.bearerTokenAuthenticator.extractToken(req) match {
             case Right((header, token, signature)) =>
-              if (!JsonWebToken.checkSignature(header, token, signature, cfg.httpAuthBearerTokenServerSecret)) reject()
-              else completeWithToken(token)
-            case _ => reject()
+              if (!JsonWebToken.checkSignature(header, token, signature, cfg.httpAuthBearerTokenServerSecret))
+                reject(authenticator.bearerTokenAuthenticator.createRejection(TokenManipulated))
+              else
+                completeWithToken(token)
+            case Left(rejection) => reject(rejection)
           }
         }
       }
