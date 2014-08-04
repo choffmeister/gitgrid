@@ -11,8 +11,8 @@ case class Config(
   httpInterface: String,
   httpPort: Int,
   httpAuthRealm: String,
-  httpAuthBearerTokenServerSecret: Array[Byte],
-  httpAuthBearerTokenMaximalLifetime: FiniteDuration,
+  httpAuthBearerTokenSecret: Array[Byte],
+  httpAuthBearerTokenLifetime: FiniteDuration,
   passwordsValidationDelay: FiniteDuration,
   passwordsStorageDefaultAlgorithm: String,
   mongoDbServers: List[String],
@@ -23,20 +23,20 @@ case class Config(
 
 object Config {
   def load(): Config = {
-    val raw = ConfigFactory.load("application")
+    val raw = ConfigFactory.load("application").getConfig("gitgrid")
 
     Config(
-      httpInterface = raw.getString("gitgrid.http.interface"),
-      httpPort = raw.getInt("gitgrid.http.port"),
-      httpAuthRealm = raw.getString("gitgrid.http.auth.realm"),
-      httpAuthBearerTokenServerSecret = raw.getString("gitgrid.http.auth.bearerToken.serverSecret").getBytes("UTF-8"),
-      httpAuthBearerTokenMaximalLifetime = raw.getFiniteDuration("gitgrid.http.auth.bearerToken.maximalLifetime"),
-      passwordsValidationDelay = raw.getFiniteDuration("gitgrid.passwords.validation.delay"),
-      passwordsStorageDefaultAlgorithm = raw.getString("gitgrid.passwords.storage.defaultAlgorithm"),
-      mongoDbServers = List(raw.getString("gitgrid.mongodb.host") + ":" + raw.getInt("gitgrid.mongodb.port")),
-      mongoDbDatabaseName = raw.getString("gitgrid.mongodb.database"),
-      repositoriesDir = new File(raw.getString("gitgrid.repositoriesDir")),
-      webDir = raw.getOptionalString("gitgrid.webDir").map(new File(_))
+      httpInterface = raw.getString("http.interface"),
+      httpPort = raw.getInt("http.port"),
+      httpAuthRealm = raw.getString("http.auth.realm"),
+      httpAuthBearerTokenSecret = raw.getString("http.auth.bearer-token.secret").getBytes("UTF-8"),
+      httpAuthBearerTokenLifetime = raw.getFiniteDuration("http.auth.bearer-token.lifetime"),
+      passwordsValidationDelay = raw.getFiniteDuration("passwords.validation.delay"),
+      passwordsStorageDefaultAlgorithm = raw.getString("passwords.storage.default-algorithm"),
+      mongoDbServers = List(raw.getString("mongodb.host") + ":" + raw.getInt("mongodb.port")),
+      mongoDbDatabaseName = raw.getString("mongodb.database"),
+      repositoriesDir = new File(raw.getString("repositories-dir")),
+      webDir = raw.getOptionalString("web-dir").map(new File(_))
     )
   }
 

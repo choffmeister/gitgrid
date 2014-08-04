@@ -23,7 +23,7 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
         extract(ctx => ctx.request) { req =>
           authenticator.bearerTokenAuthenticator.extractToken(req) match {
             case Right((header, token, signature)) =>
-              if (!JsonWebToken.checkSignature(header, token, signature, cfg.httpAuthBearerTokenServerSecret))
+              if (!JsonWebToken.checkSignature(header, token, signature, cfg.httpAuthBearerTokenSecret))
                 reject(authenticator.bearerTokenAuthenticator.createRejection(TokenManipulated))
               else
                 completeWithToken(token)
@@ -47,10 +47,10 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
     )
     val token2 = token.copy(
       createdAt = new Date(now),
-      expiresAt = new Date(now + cfg.httpAuthBearerTokenMaximalLifetime.toMillis)
+      expiresAt = new Date(now + cfg.httpAuthBearerTokenLifetime.toMillis)
     )
-    val signature = JsonWebToken.createSignature(header, token2, cfg.httpAuthBearerTokenServerSecret)
-    complete(OAuth2AccessTokenResponse("bearer", JsonWebToken.write(header, token2, signature), cfg.httpAuthBearerTokenMaximalLifetime.toSeconds))
+    val signature = JsonWebToken.createSignature(header, token2, cfg.httpAuthBearerTokenSecret)
+    complete(OAuth2AccessTokenResponse("bearer", JsonWebToken.write(header, token2, signature), cfg.httpAuthBearerTokenLifetime.toSeconds))
   }
 
   private def completeWithToken(user: User): Route = {
