@@ -3,7 +3,7 @@ angular.module("app").controller("showUserController", ["$scope", "$data", ($sco
   $scope.projects = $data.projects.data
 ])
 
-angular.module("app").factory("showUserController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+angular.module("app").factory("showUserController$Data", ["restService", (restService) -> ($routeParams) ->
   user: restService.retrieveUser($routeParams.userName)
   projects: restService.listProjectsForOwner($routeParams.userName)
 ])

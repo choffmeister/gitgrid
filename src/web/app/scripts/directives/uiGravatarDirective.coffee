@@ -14,7 +14,7 @@ angular.module("app").directive("uiGravatar", () ->
           protocol = window.location.protocol
           density = window.devicePixelRatio or 1
           md5 = CryptoJS.MD5($scope.email)
-          $scope.imageUrl = "#{protocol}//www.gravatar.com/avatar/#{md5}.jpg?s=#{currentSize * density}&d=mm"
+          $scope.imageUrl = "#{protocol}//www.gravatar.com/avatar/#{md5}?s=#{currentSize * density}&d=mm"
     $(window).on "resize", () -> updateImageUrl()
     $scope.$watch "email", () -> updateImageUrl()
   templateUrl: "/scripts/directives/uiGravatarDirective.html"

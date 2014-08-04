@@ -7,7 +7,7 @@ import org.specs2.specification.Scope
 trait EmptyTestEnvironment extends Scope with AsyncUtils {
   val cfg = Config.load()
   val db = TestDatabase.create(cfg)
-  val um = new UserManager(db)
+  val um = new UserManager(cfg, db)
   val pm = new ProjectManager(cfg, db)
 }
 

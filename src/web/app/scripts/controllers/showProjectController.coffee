@@ -4,6 +4,6 @@ angular.module("app").controller("showProjectController", ["$scope", "$routePara
   $scope.project = $data.project.data
 ])
 
-angular.module("app").factory("showProjectController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+angular.module("app").factory("showProjectController$Data", ["restService", (restService) -> ($routeParams) ->
   project: restService.retrieveProject($routeParams.ownerName, $routeParams.projectName)
 ])

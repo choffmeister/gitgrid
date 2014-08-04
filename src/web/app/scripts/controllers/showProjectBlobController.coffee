@@ -1,10 +1,12 @@
-angular.module("app").controller("showProjectBlobController", ["$scope", "$routeParams", "$data", ($scope, $routeParams, $data) ->
+angular.module("app").controller("showProjectBlobController", ["$scope", "$routeParams", "$data", "hljsService", ($scope, $routeParams, $data, hljsService) ->
   $scope.ownerName = $routeParams.ownerName
   $scope.projectName = $routeParams.projectName
   $scope.ref = $routeParams.ref
   $scope.path = $routeParams.path or ""
   $scope.pathSegments = $scope.path.split("/")
   $scope.blobRaw = $data.blobRaw.data
+  $scope.extension = ($scope.path.match(/\.([^\.\/+]*)$/) or [null, null])[1]
+  $scope.language = if hljsService.getLanguage($scope.extension)? then $scope.extension else null
 
   $scope.combinePaths = (paths...) ->
     combineTwoPaths = (path1, path2) ->
@@ -29,6 +31,6 @@ angular.module("app").controller("showProjectBlobController", ["$scope", "$route
     .value()
 ])
 
-angular.module("app").factory("showProjectBlobController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+angular.module("app").factory("showProjectBlobController$Data", ["restService", (restService) -> ($routeParams) ->
   blobRaw: restService.retrieveGitBlobRaw($routeParams.ownerName, $routeParams.projectName, $routeParams.ref, $routeParams.path or "")
 ])

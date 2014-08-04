@@ -29,6 +29,6 @@ angular.module("app").controller("showProjectTreeController", ["$scope", "$route
     .value()
 ])
 
-angular.module("app").factory("showProjectTreeController$Data", ["$routeParams", "restService", ($routeParams, restService) ->
+angular.module("app").factory("showProjectTreeController$Data", ["restService", (restService) -> ($routeParams) ->
   tree: restService.retrieveGitTree($routeParams.ownerName, $routeParams.projectName, $routeParams.ref, $routeParams.path or "")
 ])

@@ -3,14 +3,19 @@ package com.gitgrid
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+import com.gitgrid.utils.HexStringConverter._
 import com.typesafe.config.{ConfigException, ConfigFactory, Config => RawConfig}
+
+import scala.concurrent.duration.FiniteDuration
 
 case class Config(
   httpInterface: String,
   httpPort: Int,
   httpAuthRealm: String,
-  httpAuthBearerTokenServerSecret: Seq[Byte],
-  httpAuthBearerTokenMaximalLifetime: Long,
+  httpAuthBearerTokenSecret: Array[Byte],
+  httpAuthBearerTokenLifetime: FiniteDuration,
+  passwordsValidationDelay: FiniteDuration,
+  passwordsStorageDefaultAlgorithm: String,
   mongoDbServers: List[String],
   mongoDbDatabaseName: String,
   repositoriesDir: File,
@@ -19,18 +24,20 @@ case class Config(
 
 object Config {
   def load(): Config = {
-    val raw = ConfigFactory.load("application")
+    val raw = ConfigFactory.load("application").getConfig("gitgrid")
 
     Config(
-      httpInterface = raw.getString("gitgrid.http.interface"),
-      httpPort = raw.getInt("gitgrid.http.port"),
-      httpAuthRealm = raw.getString("gitgrid.http.auth.realm"),
-      httpAuthBearerTokenServerSecret = raw.getString("gitgrid.http.auth.bearerToken.serverSecret").getBytes("UTF-8").toSeq,
-      httpAuthBearerTokenMaximalLifetime = raw.getDuration("gitgrid.http.auth.bearerToken.maximalLifetime", TimeUnit.MILLISECONDS),
-      mongoDbServers = List(raw.getString("gitgrid.mongodb.host") + ":" + raw.getInt("gitgrid.mongodb.port")),
-      mongoDbDatabaseName = raw.getString("gitgrid.mongodb.database"),
-      repositoriesDir = new File(raw.getString("gitgrid.repositoriesDir")),
-      webDir = raw.getOptionalString("gitgrid.webDir").map(new File(_))
+      httpInterface = raw.getString("http.interface"),
+      httpPort = raw.getInt("http.port"),
+      httpAuthRealm = raw.getString("http.auth.realm"),
+      httpAuthBearerTokenSecret = raw.getByteArray("http.auth.bearer-token.secret"),
+      httpAuthBearerTokenLifetime = raw.getFiniteDuration("http.auth.bearer-token.lifetime"),
+      passwordsValidationDelay = raw.getFiniteDuration("passwords.validation.delay"),
+      passwordsStorageDefaultAlgorithm = raw.getString("passwords.storage.default-algorithm"),
+      mongoDbServers = List(raw.getString("mongodb.host") + ":" + raw.getInt("mongodb.port")),
+      mongoDbDatabaseName = raw.getString("mongodb.database"),
+      repositoriesDir = new File(raw.getString("repositories-dir")),
+      webDir = raw.getOptionalString("web-dir").map(new File(_))
     )
   }
 
@@ -39,6 +46,15 @@ object Config {
        Some(underlying.getString(path))
     } catch {
        case e: ConfigException.Missing => None
+    }
+
+    def getFiniteDuration(path: String): FiniteDuration = {
+      val unit = TimeUnit.MICROSECONDS
+      FiniteDuration(underlying.getDuration(path, unit), unit)
+    }
+
+    def getByteArray(path: String): Array[Byte] = {
+      hex2bytes(underlying.getString(path))
     }
   }
 }

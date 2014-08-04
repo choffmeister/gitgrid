@@ -3,6 +3,7 @@ var argv = require('yargs').argv,
     coffee = require('gulp-coffee'),
     concat = require('gulp-concat'),
     connect = require('connect'),
+    exec = require('exec-sync'),
     gif = require('gulp-if'),
     gulp = require('gulp'),
     gutil = require('gulp-util'),
@@ -28,7 +29,8 @@ var config = {
   dest: function (p) {
     return path.join(argv.target || 'target', p || '');
   },
-  port: argv.port || 9000
+  port: argv.port || 9000,
+  version: argv.dist ? exec('git describe') : 'dev'
 };
 
 gulp.task('jade-index', function () {
@@ -39,6 +41,7 @@ gulp.task('jade-index', function () {
       gutil.beep();
       this.end();
     })
+    .pipe(replace('%%version%%', config.version))
     .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
@@ -51,7 +54,7 @@ gulp.task('jade-other', ['jade-index'], function () {
       gutil.beep();
       this.end();
     })
-    .pipe(templates('scripts/templates.js', { module: 'app', root: '/' }))
+    .pipe(templates('app/templates.js', { module: 'app', root: '/' }))
     .pipe(gif(!config.debug, uglify()))
     .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
@@ -67,20 +70,20 @@ gulp.task('less', function () {
       gutil.beep();
       this.end();
     })
-    .pipe(rename('styles/main.css'))
+    .pipe(rename('app/styles.css'))
     .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
 });
 
 gulp.task('coffee', function () {
-  return gulp.src(config.src('scripts/**/*.coffee'))
+  return gulp.src(config.src('**/*.coffee'))
     .pipe(coffee({ bare: false }))
     .on('error', function (err) {
       gutil.log(err);
       gutil.beep();
       this.end();
     })
-    .pipe(concat('scripts/app.js'))
+    .pipe(concat('app/app.js'))
     .pipe(gif(!config.debug, uglify()))
     .pipe(gulp.dest(config.dest()))
     .pipe(livereload({ auto: false }));
@@ -93,33 +96,36 @@ gulp.task('vendor-scripts', function () {
       config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
       config.src('../bower_components/angular/angular.js'),
       config.src('../bower_components/angular-animate/angular-animate.js'),
+      config.src('../bower_components/angular-highlightjs/angular-highlightjs.js'),
+      config.src('../bower_components/highlightjs/highlight.pack.js'),
       config.src('../bower_components/angular-loading-bar/build/loading-bar.js'),
       config.src('../bower_components/angular-route/angular-route.js'),
-      config.src('../bower_components/cryptojslib/rollups/md5.js')
+      config.src('../bower_components/cryptojslib/components/core.js'),
+      config.src('../bower_components/cryptojslib/components/md5.js')
     ])
-    .pipe(concat('scripts/vendor.js'))
+    .pipe(concat('app/vendor.js'))
     .pipe(gif(!config.debug, uglify({ preserveComments: 'some' })))
     .pipe(gulp.dest(config.dest()));
 });
 
 gulp.task('vendor-assets', function () {
   return gulp.src(bower(), { base: 'bower_components' })
-    .pipe(gulp.dest(config.dest('assets')));
+    .pipe(gulp.dest(config.dest('app/assets')));
 });
 
 gulp.task('vendor', ['vendor-scripts', 'vendor-assets']);
 
 gulp.task('watch', ['compile'], function () {
   livereload.listen({ auto: true });
-  gulp.watch(config.src('scripts/**/*.coffee'), ['coffee']);
-  gulp.watch(config.src('styles/**/*.less'), ['less']);
+  gulp.watch(config.src('**/*.coffee'), ['coffee']);
+  gulp.watch(config.src('**/*.less'), ['less']);
   gulp.watch(config.src('**/*.jade'), ['jade']);
 });
 
 gulp.task('connect', function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
-    .use(rewrite(['!(^/(assets|scripts|styles|views)/) /index.html [L]']))
+    .use(rewrite(['!(^/app/) /index.html [L]']))
     .use(connect.static(config.dest()))
     .listen(config.port, next)
 });

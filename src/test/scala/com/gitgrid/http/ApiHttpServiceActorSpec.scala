@@ -4,6 +4,7 @@ import java.util.Date
 
 import akka.testkit._
 import com.gitgrid._
+import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
 import com.gitgrid.models.{Project, User}
@@ -31,55 +32,31 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
   }
 
   "ApiHttpServiceActor authentication routes" should {
-    "POST /auth/login accept authentication request with valid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> sealedRoute ~> check {
+    "POST /auth/token/create accept authentication request with valid credentials" in new TestApiHttpService {
+      Get("/api/auth/token/create") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(user1)
+        val res = responseAs[OAuth2AccessTokenResponse]
+        JsonWebToken.read(res.accessToken).get._2.subject === user1.id.stringify
       }
 
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass2")) ~> sealedRoute ~> check {
+      Get("/api/auth/token/create") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
         status === OK
-        responseAs[AuthenticationResponse].user === Some(user2)
-      }
-    }
-
-    "POST /auth/login reject authentication request with invalid credentials" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass2")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-
-      Post("/api/auth/login", AuthenticationRequest("user2", "pass1")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
-      }
-
-      Post("/api/auth/login", AuthenticationRequest("user", "pass")) ~> sealedRoute ~> check {
-        status === OK
-        responseAs[AuthenticationResponse].user must beNone
+        val res = responseAs[OAuth2AccessTokenResponse]
+        JsonWebToken.read(res.accessToken).get._2.subject === user2.id.stringify
       }
     }
 
-    "POST /auth/register create a new user account" in new TestApiHttpService {
-      await(db.users.all) must haveSize(2)
-      Get("/api/auth/state") ~> auth("user3", "pass3") ~> sealedRoute ~> check { status === Unauthorized }
-
-      Post("/api/auth/register", RegistrationRequest("user3", "a3@b3.cd", "pass3")) ~> route ~> check {
-        status === OK
-        val res = responseAs[User]
-        res.id !== BSONObjectID("00" * 12)
-        res.userName === "user3"
-        res.createdAt.value must beGreaterThan(0L)
-        res.updatedAt.value must beGreaterThan(0L)
+    "POST /auth/token/create reject authentication request with invalid credentials" in new TestApiHttpService {
+      Get("/api/auth/token/create") ~> auth("user1", "pass2") ~> sealedRoute ~> check {
+        status === Unauthorized
       }
 
-      await(db.users.all) must haveSize(3)
-      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[User].userName === "user3" }
-    }
+      Get("/api/auth/token/create") ~> auth("user2", "pass1") ~> sealedRoute ~> check {
+        status === Unauthorized
+      }
 
-    "POST /auth/register fail on duplicate user name" in new TestApiHttpService {
-      Post("/api/auth/register", RegistrationRequest("user1","a1@b1.cd", "pass1")) ~> sealedRoute ~> check {
-        status === InternalServerError
+      Get("/api/auth/token/create") ~> auth("user", "pass") ~> sealedRoute ~> check {
+        status === Unauthorized
       }
     }
   }
@@ -92,6 +69,29 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     "GET /users/{userName} return specific user" in new TestApiHttpService {
       Get("/api/users/user1") ~> route ~> check { responseAs[User] === user1 }
       Get("/api/users/user0") ~> sealedRoute ~> check { status === NotFound }
+    }
+
+    "POST /users/register create a new user account" in new TestApiHttpService {
+      await(db.users.all) must haveSize(2)
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> sealedRoute ~> check { status === Unauthorized }
+
+      Post("/api/users/register", RegistrationRequest("user3", "a3@b3.cd", "pass3")) ~> route ~> check {
+        status === OK
+        val res = responseAs[User]
+        res.id !== BSONObjectID("00" * 12)
+        res.userName === "user3"
+        res.createdAt.value must beGreaterThan(0L)
+        res.updatedAt.value must beGreaterThan(0L)
+      }
+
+      await(db.users.all) must haveSize(3)
+      Get("/api/auth/state") ~> auth("user3", "pass3") ~> route ~> check { responseAs[User].userName === "user3" }
+    }
+
+    "POST /users/register fail on duplicate user name" in new TestApiHttpService {
+      Post("/api/users/register", RegistrationRequest("user1","a1@b1.cd", "pass1")) ~> sealedRoute ~> check {
+        status === InternalServerError
+      }
     }
   }
 
@@ -170,6 +170,12 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActor GIT routes" should {
     "GET /projects/{userName}/{projectName}/git/branches list branches" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/branches") ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val response = responseAs[List[GitRef]]
+        response must beEmpty
+      }
+
       Get("/api/projects/user2/project2/git/branches") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[List[GitRef]]
@@ -178,6 +184,12 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tags list tags" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/tags") ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val response = responseAs[List[GitRef]]
+        response must beEmpty
+      }
+
       Get("/api/projects/user2/project2/git/tags") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[List[GitRef]]
@@ -187,13 +199,21 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/commits list commits" in new TestApiHttpService {
-      Get("/api/projects/user2/project2/git/commits") ~> auth("user2", "pass2") ~> route ~> check {
+      Get("/api/projects/user1/project1/git/commits/master") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
+      Get("/api/projects/user2/project2/git/commits/master") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[List[GitCommit]]
       }
     }
 
     "GET /projects/{userName}/{projectName}/git/commit/{id} return specific commit" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/commit/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/commit/bf3c1e0ca32e74080b6378506827b9cbc28bbffb") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitCommit]
@@ -201,6 +221,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tree/{id} return specific tree" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/tree/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/tree/aae19ad8d143bbe2f70858e8cd641847822c9080") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
@@ -208,6 +232,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob/{id} return specific blob" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/blob/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob/bb228175807fabf88754bf44be67fc19aaaff686") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitBlob]
@@ -215,6 +243,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob-raw/{id} return specific blob content" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/blob-raw/0000000000000000000000000000000000000000") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob-raw/bb228175807fabf88754bf44be67fc19aaaff686") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         responseAs[String] must contain("Version 0.1")
@@ -222,6 +254,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tree/{ref}/ return specific tree" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/tree/unknownbranch/") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/tree/master/") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
@@ -229,6 +265,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/tree/{ref}/{path} return specific tree" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/tree/master/unknownfolder") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/tree/master/src") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitTree]
@@ -236,6 +276,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob/{ref}/{path} return specific blob" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/blob/master/unknownfile.txt") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob/master/README.md") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         val response = responseAs[GitBlob]
@@ -243,6 +287,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/blob-raw/{ref}/{path} return specific blob content" in new TestApiHttpService {
+      Get("/api/projects/user2/project2/git/blob-raw/master/unknownfile.txt") ~> auth("user2", "pass2") ~> sealedRoute ~> check {
+        status === NotFound
+      }
+
       Get("/api/projects/user2/project2/git/blob-raw/master/README.md") ~> auth("user2", "pass2") ~> route ~> check {
         status === OK
         responseAs[String] must contain("Version 0.1")
@@ -252,8 +300,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
 
   "ApiHttpServiceActor handle bearer tokens" should {
     "accept a valid bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1")) ~> route ~> check {
-        val tokenStr = responseAs[AuthenticationResponse].token.get
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val tokenStr = responseAs[OAuth2AccessTokenResponse].accessToken
 
         Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
           status === OK
@@ -263,8 +311,10 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "reject an expired bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
-        val tokenStr = responseAs[AuthenticationResponse].token.get
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val res = responseAs[OAuth2AccessTokenResponse]
+        val tokenStr = res.accessToken
+        Thread.sleep(res.expiresIn * 1000 + 500)
 
         Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> sealedRoute ~> check {
           status === Unauthorized
@@ -275,12 +325,29 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
       }
     }
 
-    "renew an expired bearer token" in new TestApiHttpService {
-      Post("/api/auth/login", AuthenticationRequest("user1", "pass1", Some(new Date(System.currentTimeMillis - 1)))) ~> route ~> check {
-        val tokenStr = responseAs[AuthenticationResponse].token.get
+    "reject manipulated bearer token" in new TestApiHttpService {
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val res = responseAs[OAuth2AccessTokenResponse]
+        val tokenStr = res.accessToken
+        val (header, token, signature) = JsonWebToken.read(tokenStr).get
+        val tokenStr2 = JsonWebToken.write(
+          header,
+          token.copy(expiresAt = new Date(token.expiresAt.getTime + 1)),
+          signature
+        )
 
-        Get("/api/auth/renew") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
-          val token2Str = responseAs[AuthenticationResponse].token.get
+        Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr2))) ~> sealedRoute ~> check { status === Unauthorized }
+      }
+    }
+
+    "renew an expired bearer token" in new TestApiHttpService {
+      Post("/api/auth/token/create") ~> auth("user1", "pass1") ~> route ~> check {
+        val res = responseAs[OAuth2AccessTokenResponse]
+        val tokenStr = res.accessToken
+        Thread.sleep(res.expiresIn * 1000 + 500)
+
+        Get("/api/auth/token/renew") ~> addHeader(`Authorization`(OAuth2BearerToken(tokenStr))) ~> route ~> check {
+          val token2Str = responseAs[OAuth2AccessTokenResponse].accessToken
 
           Get("/api/auth/state") ~> addHeader(`Authorization`(OAuth2BearerToken(token2Str))) ~> route ~> check {
             status === OK

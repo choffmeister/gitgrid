@@ -1,15 +1,13 @@
-angular.module("app").config(["$routeProvider", "$locationProvider", ($routeProvider, $locationProvider) ->
+angular.module("app").config(["$injector", "$routeProvider", "$locationProvider", ($injector, $routeProvider, $locationProvider) ->
   route = (url, templateUrl, controller, opts) ->
     options =
       templateUrl: templateUrl + ".html"
       controller: controller
       resolve:
         $data: ["$injector", "$q", "$route", ($injector, $q, $route) ->
-          angular.module("app").value("$routeParams", $route.current.params)
-          inj = angular.injector(["app"])
-
-          switch inj.has("#{controller}$Data")
-            when true then $q.all(inj.get("#{controller}$Data"))
+          $routeParams = $route.current.params
+          switch $injector.has("#{controller}$Data")
+            when true then $q.all($injector.get("#{controller}$Data")($routeParams))
             else undefined
         ]
     $routeProvider.when url, _.extend({}, options, opts)

@@ -8,7 +8,7 @@ import com.gitgrid.auth._
 import com.gitgrid.models._
 import org.eclipse.jgit.transport.{ReceivePack, UploadPack}
 import spray.can._
-import spray.http.CacheDirectives.{`max-age`, _}
+import spray.http.CacheDirectives._
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
 import spray.http._
