@@ -104,8 +104,8 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
   implicit object JsonWebTokenFormat extends RootJsonFormat[JsonWebToken] {
     def write(t: JsonWebToken) = {
       val baseValues = List[(String, JsValue)](
-        "ts" -> JsNumber(t.createdAt.getTime),
-        "exp" -> JsNumber(t.expiresAt.getTime),
+        "ts" -> JsNumber(t.createdAt.getTime / 1000L),
+        "exp" -> JsNumber(t.expiresAt.getTime / 1000L),
         "sub" -> JsString(t.subject),
         "name" -> JsString(t.name)
       )
@@ -115,8 +115,8 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
       val raw = v.asJsObject
       try {
         JsonWebToken(
-          createdAt = new Date(raw.fields("ts").asInstanceOf[JsNumber].value.toLong),
-          expiresAt = new Date(raw.fields("exp").asInstanceOf[JsNumber].value.toLong),
+          createdAt = new Date(raw.fields("ts").asInstanceOf[JsNumber].value.toLong * 1000),
+          expiresAt = new Date(raw.fields("exp").asInstanceOf[JsNumber].value.toLong * 1000),
           subject = raw.fields("sub").asInstanceOf[JsString].value,
           name = raw.fields("name").asInstanceOf[JsString].value,
           payload = raw.fields.filter(f => !knownClaimNames.contains(f._1))

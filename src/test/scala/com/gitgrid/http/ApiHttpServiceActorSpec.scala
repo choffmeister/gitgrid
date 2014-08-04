@@ -332,7 +332,7 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
         val (header, token, signature) = JsonWebToken.read(tokenStr).get
         val tokenStr2 = JsonWebToken.write(
           header,
-          token.copy(expiresAt = new Date(token.expiresAt.getTime + 1)),
+          token.copy(expiresAt = new Date(token.expiresAt.getTime + 10000)),
           signature
         )
 

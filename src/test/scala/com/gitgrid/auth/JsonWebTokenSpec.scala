@@ -7,14 +7,14 @@ import spray.json._
 
 class JsonWebTokenSpec extends Specification {
   def now = time(0)
-  def time(delta: Long = 0) = new Date(System.currentTimeMillis + delta)
+  def time(delta: Long = 0) = new Date(System.currentTimeMillis / 1000L * 1000L + delta * 1000L)
 
   "JsonWebToken" should {
     "work" in {
       val jh = JoseHeader(algorithm = "HS256")
       val t1 = JsonWebToken(
         createdAt = now,
-        expiresAt = time(60 * 1000),
+        expiresAt = time(60),
         subject = "jwayne",
         name = "John Wayne",
         Map(
