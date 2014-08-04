@@ -17,6 +17,7 @@ var argv = require('yargs').argv,
     rename = require('gulp-rename'),
     replace = require('gulp-replace'),
     rewrite = require('connect-modrewrite'),
+    svg2png = require('gulp-svg2png'),
     templates = require('gulp-angular-templatecache'),
     uglify = require('gulp-uglify'),
     url = require('url');
@@ -89,6 +90,19 @@ gulp.task('coffee', function () {
     .pipe(livereload({ auto: false }));
 });
 
+gulp.task('assets-webapp-icon', function () {
+  var sizes = [57, 72, 76, 114, 120, 144, 152, 196]
+
+  return gutil.combine(sizes.map(function (size) {
+    return gulp.src(config.src('assets/webapp-icon.svg'))
+      .pipe(svg2png(size / 1024.0))
+      .pipe(rename('app/assets/webapp-icon/' + size + '.png'))
+      .pipe(gulp.dest(config.dest()));
+  }));
+});
+
+gulp.task('assets', ['assets-webapp-icon']);
+
 gulp.task('vendor-scripts', function () {
   return gulp.src([
       config.src('../bower_components/jquery/dist/jquery.js'),
@@ -137,7 +151,7 @@ gulp.task('manifest-include', ['compile'], function () {
 });
 
 gulp.task('manifest-generate', ['manifest-include'], function () {
-  return gulp.src(config.dest('**/*'))
+  return gulp.src([config.dest('**/*'), '!../../**/webapp-icon/**/*.png'])
     .pipe(manifest({
       filename: 'cache.manifest',
       exclude: 'cache.manifest',
@@ -148,6 +162,6 @@ gulp.task('manifest-generate', ['manifest-include'], function () {
     .pipe(gulp.dest(config.dest()));
 });
 
-gulp.task('compile', ['coffee', 'less', 'jade', 'vendor']);
+gulp.task('compile', ['coffee', 'less', 'jade', 'assets', 'vendor']);
 gulp.task('build', ['compile', 'manifest-include', 'manifest-generate']);
 gulp.task('default', ['compile', 'connect', 'watch']);
