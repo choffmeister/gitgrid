@@ -1,5 +1,8 @@
 angular.module("app").service("authService", ["$http", "$rootScope", "storageService", "flashService", ($http, $rootScope, storageService, flashService) ->
-  parseBase64UrlSafe = (b64) -> atob(b64.replace("-", "+").replace("_", "/"))
+  parseBase64UrlSafe = (b64) ->
+    atob(b64.replace("-", "+").replace("_", "/"))
+  parseToken = (tokenStr) ->
+    JSON.parse(parseBase64UrlSafe(tokenStr.split(".")[1]))
 
   isAuthenticated: () ->
     storageService.get("session")?.isAuthenticated or false
@@ -21,10 +24,15 @@ angular.module("app").service("authService", ["$http", "$rootScope", "storageSer
     flashService.success("Goodbye!")
 
   initSession: () ->
-    if @isAuthenticated()
-      @setSession(@getBearerToken(), @getUser())
+    tokenStr = @getBearerToken()
+    if tokenStr?
+      try
+        @setSession(tokenStr)
+      catch
+        flashService.error("Your session token is invalid")
+        @unsetSession()
   setSession: (tokenStr) ->
-    token = JSON.parse(parseBase64UrlSafe(tokenStr.split(".")[1]))
+    token = parseToken(tokenStr)
     user =
       id: token.sub
       userName: token.name
