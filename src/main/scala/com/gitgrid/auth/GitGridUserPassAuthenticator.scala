@@ -8,6 +8,7 @@ import com.gitgrid.utils.SimpleScheduler
 import spray.routing.authentication._
 
 import scala.concurrent._
+import scala.util.{Success, Failure}
 
 class GitGridUserPassAuthenticator(cfg: Config, um: UserManager)(implicit ec: ExecutionContext) extends UserPassAuthenticator[User] {
   def apply(userPass: Option[UserPass]): Future[Option[User]] = {
@@ -19,6 +20,15 @@ class GitGridUserPassAuthenticator(cfg: Config, um: UserManager)(implicit ec: Ex
     }
     val delay = after[Option[User]](cfg.passwordsValidationDelay, SimpleScheduler.instance)(future(None))
     val delayedAuth = Future.sequence(auth :: delay :: Nil).map(_(0))
-    delayedAuth
+
+    val promise = Promise[Option[User]]()
+    auth.onSuccess {
+      case Some(userPass) => promise.success(Some(userPass))
+      case None => delayedAuth.onComplete {
+        case Success(s) => promise.success(s)
+        case Failure(f) => promise.failure(f)
+      }
+    }
+    promise.future
   }
 }
