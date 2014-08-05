@@ -6,6 +6,6 @@ nav-menu(id="nav-main", brand="GitGrid")
   ul.nav.navbar-nav.navbar-right
     nav-entry(label="'Login'", url="'/login'", ng-hide="user")
     nav-sub-menu(label="user.userName", ng-show="user")
-      nav-entry(label="'Profile'", url="'/'")
+      nav-entry(label="'Profile'", url="'/' + user.userName")
       nav-divider
       nav-entry(label="'Logout'", url="'/logout'")
