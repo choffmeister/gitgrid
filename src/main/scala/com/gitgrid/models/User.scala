@@ -35,6 +35,7 @@ class UserTable(database: Database, collection: BSONCollection)(implicit executo
   def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("userName" -> userName))
 
   collection.indexesManager.ensure(Index(List("userName" -> IndexType.Ascending), unique = true))
+  collection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true))
 }
 
 object UserBSONFormat {
