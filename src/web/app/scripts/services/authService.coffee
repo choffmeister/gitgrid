@@ -1,6 +1,6 @@
 angular.module("app").service("authService", ["$http", "$rootScope", "storageService", "flashService", ($http, $rootScope, storageService, flashService) ->
   parseBase64UrlSafe = (b64) ->
-    atob(b64.replace("-", "+").replace("_", "/"))
+    atob(b64.replace(/\-/g, "+").replace(/_/g, "/"))
   parseToken = (tokenStr) ->
     JSON.parse(parseBase64UrlSafe(tokenStr.split(".")[1]))
 
