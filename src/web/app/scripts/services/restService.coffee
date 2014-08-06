@@ -22,10 +22,12 @@ angular.module("app").service("restService", ["$http", "authService", ($http, au
       createdAt: 0,
       updatedAt: 0
     )
-  listGitCommits: (ownerName, projectName) ->
-    $http.get("/api/projects/#{ownerName}/#{projectName}/git/commits")
+  listGitCommits: (ownerName, projectName, ref) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/commits/#{ref}")
   listGitBranches: (ownerName, projectName) ->
     $http.get("/api/projects/#{ownerName}/#{projectName}/git/branches")
+  listGitTags: (ownerName, projectName) ->
+    $http.get("/api/projects/#{ownerName}/#{projectName}/git/tags")
   retrieveGitTree: (ownerName, projectName, ref, path) ->
     $http.get("/api/projects/#{ownerName}/#{projectName}/git/tree/#{ref}/#{path}")
   retrieveGitBlob: (ownerName, projectName, ref, path) ->
