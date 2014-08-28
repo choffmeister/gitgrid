@@ -148,34 +148,30 @@ object GitHttpServiceConstants {
   val noCacheHeaders = List(`Cache-Control`(`no-cache`, `max-age`(0), `must-revalidate`))
   val gitUploadPackHeader = "001e# service=git-upload-pack\n0000".getBytes("ASCII")
   val gitReceivePackHeader = "001f# service=git-receive-pack\n0000".getBytes("ASCII")
-  val gitUploadPackAdvertisement = spray.http.MediaTypes.register(
-    MediaType.custom(
-      mainType = "application",
-      subType = "x-git-upload-pack-advertisement",
-      compressible = false,
-      binary = true,
-      fileExtensions = Seq()))
-  val gitUploadPackResult = spray.http.MediaTypes.register(
-    MediaType.custom(
-      mainType = "application",
-      subType = "x-git-upload-pack-result",
-      compressible = false,
-      binary = true,
-      fileExtensions = Seq()))
-  val gitReceivePackAdvertisement = spray.http.MediaTypes.register(
-    MediaType.custom(
-      mainType = "application",
-      subType = "x-git-receive-pack-advertisement",
-      compressible = false,
-      binary = true,
-      fileExtensions = Seq()))
-  val gitReceivePackResult = spray.http.MediaTypes.register(
-    MediaType.custom(
-      mainType = "application",
-      subType = "x-git-receive-pack-result",
-      compressible = false,
-      binary = true,
-      fileExtensions = Seq()))
+  val gitUploadPackAdvertisement = MediaTypes.register(MediaType.custom(
+    mainType = "application",
+    subType = "x-git-upload-pack-advertisement",
+    compressible = false,
+    binary = true,
+    fileExtensions = Seq()))
+  val gitUploadPackResult = MediaTypes.register(MediaType.custom(
+    mainType = "application",
+    subType = "x-git-upload-pack-result",
+    compressible = false,
+    binary = true,
+    fileExtensions = Seq()))
+  val gitReceivePackAdvertisement = MediaTypes.register(MediaType.custom(
+    mainType = "application",
+    subType = "x-git-receive-pack-advertisement",
+    compressible = false,
+    binary = true,
+    fileExtensions = Seq()))
+  val gitReceivePackResult = MediaTypes.register(MediaType.custom(
+    mainType = "application",
+    subType = "x-git-receive-pack-result",
+    compressible = false,
+    binary = true,
+    fileExtensions = Seq()))
 
   abstract class GitAccessType
   case object GitReadAccess extends GitAccessType
