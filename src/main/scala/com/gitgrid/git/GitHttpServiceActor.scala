@@ -7,6 +7,7 @@ import akka.actor._
 import com.gitgrid.Config
 import com.gitgrid.auth._
 import com.gitgrid.models._
+import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.transport._
 import spray.can._
 import spray.http.CacheDirectives._
@@ -108,6 +109,7 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
   private def uploadPack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val up = new UploadPack(repo.jgit)
     up.setBiDirectionalPipe(biDirectionalPipe)
+    up.setPreUploadHook(preUploadHook)
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     up.upload(is, os, null)
@@ -123,6 +125,16 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
     val os = new ByteArrayOutputStream()
     rp.receive(is, os, null)
     os.toByteArray
+  }
+
+  private def preUploadHook = new PreUploadHook() {
+    override def onSendPack(p1: UploadPack, wants: Collection[_ <: ObjectId], haves: Collection[_ <: ObjectId]): Unit = {
+      // here one can create statistics on cloning and so on
+    }
+
+    override def onBeginNegotiateRound(p1: UploadPack, wants: Collection[_ <: ObjectId], cntOffered: Int): Unit = {}
+
+    override def onEndNegotiateRound(p1: UploadPack, wants: Collection[_ <: ObjectId], cntCommon: Int, cntNotFound: Int, ready: Boolean): Unit = {}
   }
 
   private def preReceiveHook = new PreReceiveHook() {
