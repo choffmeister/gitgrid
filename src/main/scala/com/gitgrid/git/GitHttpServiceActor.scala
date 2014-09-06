@@ -135,9 +135,20 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
   }
 
   private def postReceiveHook = new PostReceiveHook() {
+    import ReceiveCommand.Type._
+
     override def onPostReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
       for (c <- commands.toList) {
-        // here one can log the events
+        c.getType match {
+          case CREATE =>
+            log.info("Creating new branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+          case UPDATE =>
+            log.info("Updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+          case UPDATE_NONFASTFORWARD =>
+            log.info("Non-fastforward updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+          case DELETE =>
+            log.info("Deleting branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+        }
       }
     }
   }
