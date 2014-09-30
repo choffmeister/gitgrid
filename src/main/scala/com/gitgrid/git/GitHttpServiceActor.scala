@@ -23,9 +23,6 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
   val authenticator = new GitGridHttpAuthenticator(cfg, db)
 
   def receive = {
-    case _: Http.Connected =>
-      sender ! Http.Register(self)
-
     case req@GitHttpRequest(_, _, "info/refs", None) =>
       sender ! HttpResponse(status = NotImplemented, entity = "Git dump HTTP protocol is not supported")
 
