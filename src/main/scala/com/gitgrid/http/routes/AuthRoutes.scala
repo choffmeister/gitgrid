@@ -27,7 +27,7 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
                 reject(authenticator.bearerTokenAuthenticator.createRejection(TokenManipulated))
               else
                 completeWithToken(token)
-            case Left(rejection) => reject(rejection)
+            case Left(error) => reject(authenticator.bearerTokenAuthenticator.createRejection(error))
           }
         }
       }

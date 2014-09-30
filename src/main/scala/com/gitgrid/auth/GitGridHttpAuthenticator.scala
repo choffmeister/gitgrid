@@ -1,5 +1,6 @@
 package com.gitgrid.auth
 
+import com.gitgrid.auth.RichHttpAuthenticator._
 import com.gitgrid.Config
 import com.gitgrid.http.JsonProtocol
 import com.gitgrid.managers._
@@ -15,7 +16,7 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit executionCont
   val userPassAuthenticator =  new GitGridUserPassAuthenticator(cfg, userManager)
   val bearerTokenAuthenticator = new OAuth2BearerTokenAuthenticator[User](cfg.httpAuthRealm, cfg.httpAuthBearerTokenSecret, id => db.users.find(BSONObjectID(id)))
   val basicAuthenticator = new BasicHttpAuthenticator[User](cfg.httpAuthRealm, userPassAuthenticator)
-  val authenticator = bearerTokenAuthenticator.andThen(basicAuthenticator)
+  val authenticator = bearerTokenAuthenticator.withFallback(basicAuthenticator)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = authenticator(ctx)
 }
