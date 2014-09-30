@@ -9,7 +9,7 @@ import spray.util._
 
 import scala.concurrent._
 
-trait EnhancedHttpAuthenticator[U] extends ContextAuthenticator[U] {
+trait EnhancedHttpAuthenticator[U] extends ContextAuthenticator[U] { self =>
   type EnhancedAuthentication[U] = Future[Either[AuthRejection, U]]
   implicit val executionContext: ExecutionContext
 
@@ -23,27 +23,25 @@ trait EnhancedHttpAuthenticator[U] extends ContextAuthenticator[U] {
   }
 
   def authenticate(credentials: Option[HttpCredentials], ctx: RequestContext): EnhancedAuthentication[U]
-}
 
-object EnhancedHttpAuthenticator {
-  def map[U, V](a: EnhancedHttpAuthenticator[U], transform: U => V) = new EnhancedHttpAuthenticator[V] {
-    override implicit val executionContext: ExecutionContext = a.executionContext
+  def map[V](f: U => V) = new EnhancedHttpAuthenticator[V] {
+    override implicit val executionContext: ExecutionContext = self.executionContext
 
     override def authenticate(credentials: Option[HttpCredentials], ctx: RequestContext) = {
-      a.authenticate(credentials, ctx).map {
-        case Right(u) => Right(transform(u))
+      self.authenticate(credentials, ctx).map {
+        case Right(u) => Right(f(u))
         case Left(r) => Left(r)
       }
     }
   }
 
-  def combine[U](a1: EnhancedHttpAuthenticator[U], a2: EnhancedHttpAuthenticator[U]) = new EnhancedHttpAuthenticator[U] {
-    override implicit val executionContext: ExecutionContext = a1.executionContext
+  def andThen(other: EnhancedHttpAuthenticator[U]) = new EnhancedHttpAuthenticator[U] {
+    override implicit val executionContext: ExecutionContext = self.executionContext
 
     override def authenticate(credentials: Option[HttpCredentials], ctx: RequestContext) = {
-      a1.authenticate(credentials, ctx).flatMap {
+      self.authenticate(credentials, ctx).flatMap {
         case Right(u1) => future(Right(u1))
-        case Left(r1) => a2.authenticate(credentials, ctx).map {
+        case Left(r1) => other.authenticate(credentials, ctx).map {
           case Right(u2) => Right(u2)
           case Left(r2) =>
             (r1, r2) match {
@@ -57,20 +55,3 @@ object EnhancedHttpAuthenticator {
     }
   }
 }
-
-class EnhancedBasicHttpAuthenticator[U](val realm: String, val userPassAuthenticator: UserPassAuthenticator[U])(implicit val executionContext: ExecutionContext) extends EnhancedHttpAuthenticator[U] {
-  override def authenticate(credentials: Option[HttpCredentials], ctx: RequestContext): EnhancedAuthentication[U] = {
-    credentials match {
-      case Some(BasicHttpCredentials(u, p)) =>
-        userPassAuthenticator(Some(UserPass(u, p))).map {
-          case Some(user) => Right(user)
-          case _ => Left(AuthRejection(Rejected, challenges))
-        }
-      case _ =>
-        future(Left(AuthRejection(Missing, challenges)))
-    }
-  }
-
-  def challenges = `WWW-Authenticate`(HttpChallenge(scheme = "Basic", realm = realm, params = Map.empty)) :: Nil
-}
-

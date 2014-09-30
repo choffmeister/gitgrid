@@ -14,8 +14,8 @@ class GitGridHttpAuthenticator(cfg: Config, db: Database)(implicit executionCont
   val userManager = new UserManager(cfg, db)
   val userPassAuthenticator =  new GitGridUserPassAuthenticator(cfg, userManager)
   val bearerTokenAuthenticator = new OAuth2BearerTokenAuthenticator[User](cfg.httpAuthRealm, cfg.httpAuthBearerTokenSecret, id => db.users.find(BSONObjectID(id)))
-  val basicAuthenticator = new EnhancedBasicHttpAuthenticator[User](cfg.httpAuthRealm, userPassAuthenticator)
-  val authenticator = EnhancedHttpAuthenticator.combine(bearerTokenAuthenticator, basicAuthenticator)
+  val basicAuthenticator = new BasicHttpAuthenticator[User](cfg.httpAuthRealm, userPassAuthenticator)
+  val authenticator = bearerTokenAuthenticator.andThen(basicAuthenticator)
 
   def apply(ctx: RequestContext): Future[Authentication[User]] = authenticator(ctx)
 }
