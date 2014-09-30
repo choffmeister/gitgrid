@@ -26,6 +26,6 @@ class HttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLoggin
     case req@HttpRequest(GET, _, _, _, _) =>
       staticContentHttpActor.tell(req, sender)
     case req@HttpRequest(_, _, _, _, _) =>
-      sender ! HttpResponse(status = MethodNotAllowed)
+      sender ! HttpResponse(status = BadRequest)
   }
 }
