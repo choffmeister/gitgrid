@@ -1,13 +1,16 @@
 package com.gitgrid.http
 
 import java.io._
+import java.util.Collection
 
 import akka.actor._
 import com.gitgrid._
 import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.models._
-import org.eclipse.jgit.transport.{ReceivePack, UploadPack}
+import org.eclipse.jgit.lib.ObjectId
+import org.eclipse.jgit.transport._
+import spray.can._
 import spray.http.CacheDirectives._
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
@@ -15,6 +18,7 @@ import spray.http._
 import spray.httpx.encoding._
 import spray.routing.{AuthenticationFailedRejection, RequestContext}
 
+import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}
 
 class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Database) extends Actor with ActorLogging {
@@ -103,6 +107,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
   private def uploadPack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val up = new UploadPack(repo.jgit)
     up.setBiDirectionalPipe(biDirectionalPipe)
+    up.setPreUploadHook(preUploadHook)
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     up.upload(is, os, null)
@@ -112,10 +117,50 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
   private def receivePack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val rp = new ReceivePack(repo.jgit)
     rp.setBiDirectionalPipe(biDirectionalPipe)
+    rp.setPreReceiveHook(preReceiveHook)
+    rp.setPostReceiveHook(postReceiveHook)
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     rp.receive(is, os, null)
     os.toByteArray
+  }
+
+  private def preUploadHook = new PreUploadHook() {
+    override def onSendPack(p1: UploadPack, wants: Collection[_ <: ObjectId], haves: Collection[_ <: ObjectId]): Unit = {
+      // here one can create statistics on cloning and so on
+    }
+
+    override def onBeginNegotiateRound(p1: UploadPack, wants: Collection[_ <: ObjectId], cntOffered: Int): Unit = {}
+
+    override def onEndNegotiateRound(p1: UploadPack, wants: Collection[_ <: ObjectId], cntCommon: Int, cntNotFound: Int, ready: Boolean): Unit = {}
+  }
+
+  private def preReceiveHook = new PreReceiveHook() {
+    override def onPreReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
+      for (c <- commands.toList) {
+        // here one can reject the execution of an command
+        // c.setResult(ReceiveCommand.Result.REJECTED_OTHER_REASON)
+      }
+    }
+  }
+
+  private def postReceiveHook = new PostReceiveHook() {
+    import ReceiveCommand.Type._
+
+    override def onPostReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
+      for (c <- commands.toList) {
+        c.getType match {
+          case CREATE =>
+            log.info("Creating new branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+          case UPDATE =>
+            log.info("Updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+          case UPDATE_NONFASTFORWARD =>
+            log.info("Non-fastforward updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+          case DELETE =>
+            log.info("Deleting branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+        }
+      }
+    }
   }
 
   private def encodeResponse(res: HttpResponse, acceptedEncodingRanges: List[HttpEncodingRange]): HttpResponse = {
