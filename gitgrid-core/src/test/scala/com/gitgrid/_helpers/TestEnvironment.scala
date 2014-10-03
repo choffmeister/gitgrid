@@ -24,6 +24,6 @@ object TestEnvironment {
   def unzipRepository(projectManager: ProjectManager, project: Project, resourceName: String): Unit = {
     val dir = projectManager.getRepositoryDirectory(project.id)
     if (dir.exists) dir.delete()
-    ZipUtils.unzip(classOf[Application].getResourceAsStream(resourceName), dir)
+    ZipUtils.unzip(getClass.getResourceAsStream(resourceName), dir)
   }
 }

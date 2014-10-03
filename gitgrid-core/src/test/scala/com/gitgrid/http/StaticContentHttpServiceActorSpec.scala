@@ -9,7 +9,7 @@ import spray.http.StatusCodes._
 class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "StaticContentHttpServiceActor" should {
     "serve index.html" in new TestActorSystem with TestEnvironment {
-      ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
+      ZipUtils.unzip(getClass.getResourceAsStream("/web.zip"), cfg.webDir.get)
       implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
       req(GET, "/").entity.asString must contain("<title>GitGrid</title>")
@@ -17,7 +17,7 @@ class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils wi
     }
 
     "server index.html for GET requests to non-existent files" in new TestActorSystem with TestEnvironment {
-      ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
+      ZipUtils.unzip(getClass.getResourceAsStream("/web.zip"), cfg.webDir.get)
       implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
       req(GET, "/login").entity.asString must contain("<title>GitGrid</title>")
@@ -27,7 +27,7 @@ class StaticContentHttpServiceActorSpec extends Specification with AsyncUtils wi
     }
 
     "serve static content" in new TestActorSystem with TestEnvironment {
-      ZipUtils.unzip(classOf[Application].getResourceAsStream("/web.zip"), cfg.webDir.get)
+      ZipUtils.unzip(getClass.getResourceAsStream("/web.zip"), cfg.webDir.get)
       implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
 
       req(GET, "/app/app.js").entity.asString must contain("console.log('app')");
