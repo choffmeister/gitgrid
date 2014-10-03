@@ -1,23 +1,33 @@
 package com.gitgrid
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor._
+import com.gitgrid.workers._
 
+import scala.concurrent._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Worker extends Bootable {
   val system = ActorSystem("gitgrid-worker", CoreConfig.raw)
   val coreConf = CoreConfig.load()
 
   def startup() = {
-    val server = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
-    val client = system.actorOf(Props(new RemoteClientActor(server)), "worker-slave")
+    val workerMaster = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
+    val workerSlave = system.actorOf(Props(new WorkerSlave(workerMaster, work)), "worker-slave")
+
+    workerMaster ! WorkerProtocol.Work("Hello World")
   }
 
   def shutdown() = {
     system.shutdown()
     system.awaitTermination(1.seconds)
+  }
+
+  def work(item: Any): Future[Any] = Future {
+    println("STARTING WORK " + item)
+    Thread.sleep(2500L)
+    println("FINISHED WORK " + item)
+    "Work is done"
   }
 }
 
@@ -33,19 +43,4 @@ trait Bootable {
   def shutdown(): Unit
 
   sys.ShutdownHookThread(shutdown())
-}
-
-class RemoteClientActor(server: ActorSelection) extends Actor with ActorLogging {
-  server ! Identify
-  self ! Tick(0)
-
-  def receive = {
-    case Tick(n) =>
-      server ! "This is message " + n
-      context.system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS), self, Tick(n + 1))(context.dispatcher)
-
-    case x => log.info("{}", x)
-  }
-
-  case class Tick(n: Int)
 }

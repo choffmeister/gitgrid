@@ -4,6 +4,7 @@ import akka.actor._
 import akka.io.IO
 import com.gitgrid.http.HttpServiceActor
 import com.gitgrid.models.Database
+import com.gitgrid.workers.WorkerMaster
 import spray.can.Http
 
 import scala.concurrent.duration._
@@ -16,7 +17,7 @@ class Server extends Bootable {
   def startup() = {
     val db = Database.open(coreConf.mongoDbServers, coreConf.mongoDbDatabaseName)(system.dispatcher)
 
-    val workerMaster = system.actorOf(Props[RemoteServerActor], "worker-master")
+    val workerMaster = system.actorOf(Props[WorkerMaster], "worker-master")
 
     val httpServer = system.actorOf(Props(new HttpServiceActor(coreConf, httpConf, db)), "http-server")
     IO(Http)(system) ! Http.Bind(httpServer, interface = httpConf.interface, port = httpConf.port)
@@ -42,10 +43,3 @@ trait Bootable {
   sys.ShutdownHookThread(shutdown())
 }
 
-class RemoteServerActor extends Actor with ActorLogging {
-  def receive = {
-    case x =>
-      log.info("{}", x)
-      sender ! x
-  }
-}
