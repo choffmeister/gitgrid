@@ -103,7 +103,7 @@ trait JsonWebTokenProtocol extends DefaultJsonProtocol {
 
   implicit object JsonWebTokenFormat extends RootJsonFormat[JsonWebToken] {
     def write(t: JsonWebToken) = {
-      val baseValues = List[(String, JsValue)](
+      val baseValues = Map[String, JsValue](
         "ts" -> JsNumber(t.createdAt.getTime / 1000L),
         "exp" -> JsNumber(t.expiresAt.getTime / 1000L),
         "sub" -> JsString(t.subject),
