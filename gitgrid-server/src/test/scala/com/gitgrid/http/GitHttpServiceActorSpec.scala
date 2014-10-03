@@ -1,4 +1,4 @@
-package com.gitgrid.git
+package com.gitgrid.http
 
 import akka.testkit._
 import com.gitgrid._

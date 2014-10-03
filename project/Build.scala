@@ -23,7 +23,7 @@ object Build extends sbt.Build {
 
   lazy val server = (project in file("gitgrid-server"))
     .settings(commonProjectSettings: _*)
-    .dependsOn(core)
+    .dependsOn(core % "compile->compile;test->test")
 
   lazy val web = (project in file("gitgrid-web"))
     .settings(commonProjectSettings: _*)
