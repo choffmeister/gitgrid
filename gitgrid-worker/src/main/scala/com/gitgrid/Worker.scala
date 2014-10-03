@@ -6,13 +6,15 @@ import com.gitgrid.models.Database
 import scala.concurrent.duration._
 
 class Worker extends Bootable {
-  implicit val system = ActorSystem("gitgrid")
+  implicit val system = ActorSystem("gitgrid-worker")
   implicit val executor = system.dispatcher
   val coreConf = CoreConfig.load()
   val db = Database.open(coreConf.mongoDbServers, coreConf.mongoDbDatabaseName)
 
   def startup() = {
-    println("Hello World")
+    println("Sleeping...")
+    Thread.sleep(2500L)
+    val client = system.actorOf(Props(new RemoteClientActor(system.actorSelection("akka.tcp://gitgrid-worker@localhost:2552/user/worker-master"))))
   }
 
   def shutdown() = {
@@ -33,4 +35,12 @@ trait Bootable {
   def shutdown(): Unit
 
   sys.ShutdownHookThread(shutdown())
+}
+
+class RemoteClientActor(server: ActorSelection) extends Actor with ActorLogging {
+  server ! Identify
+
+  def receive = {
+    case x => log.warning("{}", x)
+  }
 }
