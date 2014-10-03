@@ -1,12 +1,8 @@
 package com.gitgrid
 
 import java.io.File
-import java.util.concurrent.TimeUnit
 
-import com.gitgrid.utils.HexStringConverter._
-import com.typesafe.config.{ConfigException, ConfigFactory, Config => RawConfig}
-
-import scala.concurrent.duration.FiniteDuration
+import com.typesafe.config.{ConfigFactory, Config => RawConfig}
 
 case class CoreConfig(
   passwordsStorageDefaultAlgorithm: String,

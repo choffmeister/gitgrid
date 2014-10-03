@@ -10,15 +10,11 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
     "commons-codec" % "commons-codec" % "1.9",
-    "io.spray" % "spray-can" % sprayVersion,
-    "io.spray" % "spray-routing" % sprayVersion,
-    "io.spray" %% "spray-json" % "1.2.5",
-    "org.eclipse.jgit" % "org.eclipse.jgit" % "3.2.0.201312181205-r",
+    "org.eclipse.jgit" % "org.eclipse.jgit" % "3.5.0.201409260305-r",
     "org.reactivemongo" %% "reactivemongo" % "0.10.0"
   )
   val testDependencies = Seq(
     "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-    "io.spray" % "spray-testkit" % sprayVersion,
     "org.specs2" %% "specs2" % "2.3.8"
   ).map(_ % "test")
   dependencies ++ testDependencies

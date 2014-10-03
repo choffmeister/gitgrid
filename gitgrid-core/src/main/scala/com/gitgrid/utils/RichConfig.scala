@@ -3,9 +3,10 @@ package com.gitgrid.utils
 import java.util.concurrent.TimeUnit
 
 import com.gitgrid.utils.HexStringConverter._
-import com.typesafe.config.{ConfigException, Config}
+import com.typesafe.config.{Config, ConfigException}
 
 import scala.concurrent.duration.FiniteDuration
+import scala.language.implicitConversions
 
 class RichConfig(val inner: Config) {
   def getOptionalString(path: String): Option[String] = try {
