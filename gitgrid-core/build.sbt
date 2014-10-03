@@ -1,17 +1,4 @@
-import de.johoop.jacoco4sbt._
-import JacocoPlugin._
-
-name := "gitgrid"
-
-version := "0.0.6-SNAPSHOT"
-
-organization := "com.gitgrid"
-
-scalaVersion := "2.10.4"
-
-scalacOptions := Seq("-encoding", "utf8")
-
-resolvers += "typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"
+name := "gitgrid-core"
 
 libraryDependencies ++= {
   val akkaVersion = "2.2.3"
@@ -37,21 +24,4 @@ libraryDependencies ++= {
   dependencies ++ testDependencies
 }
 
-webAppSettings
-
-packSettings
-
-packMain := Map("gitgrid" -> "com.gitgrid.Application")
-
-packExtraClasspath := Map("gitgrid" -> Seq("${PROG_HOME}/config"))
-
-packResourceDir += (target.value / "web" -> "web")
-
-pack <<= pack.dependsOn(webAppBuild)
-
-jacoco.settings
-
-jacoco.reportFormats in jacoco.Config := Seq(
-  XMLReport(encoding = "utf-8"),
-  ScalaHTMLReport(withBranchCoverage = true)
-)
+resolvers += "typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"

@@ -1,0 +1,3 @@
+name := "gitgrid-web"
+
+webAppSettings

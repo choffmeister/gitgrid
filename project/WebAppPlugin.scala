@@ -20,7 +20,7 @@ object WebAppPlugin extends Plugin {
   val webAppTargetDir = settingKey[File]("the path to the wep app target directory")
 
   lazy val webAppSettings = Seq[Def.Setting[_]](
-    webAppSourceDir := baseDirectory.value / "src/web",
+    webAppSourceDir := baseDirectory.value,
     webAppTargetDir := target.value / "web",
 
     webAppTest := {

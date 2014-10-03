@@ -8,7 +8,7 @@ import spray.can.Http
 
 import scala.concurrent.duration._
 
-class Application extends Bootable {
+class Server extends Bootable {
   implicit val system = ActorSystem("gitgrid")
   implicit val executor = system.dispatcher
   val cfg = Config.load()
@@ -26,9 +26,9 @@ class Application extends Bootable {
   }
 }
 
-object Application {
+object Server {
   def main(args: Array[String]) {
-    val app = new Application()
+    val app = new Server()
     app.startup()
   }
 }
