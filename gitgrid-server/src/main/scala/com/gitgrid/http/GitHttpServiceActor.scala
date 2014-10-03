@@ -3,7 +3,7 @@ package com.gitgrid.http
 import java.io._
 
 import akka.actor._
-import com.gitgrid.Config
+import com.gitgrid._
 import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.models._
@@ -18,10 +18,10 @@ import spray.routing.{AuthenticationFailedRejection, RequestContext}
 
 import scala.util.{Failure, Success}
 
-class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLogging {
+class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Database) extends Actor with ActorLogging {
   import GitHttpServiceConstants._
   implicit val executor = context.dispatcher
-  val authenticator = new GitGridHttpAuthenticator(cfg, db)
+  val authenticator = new GitGridHttpAuthenticator(coreConf, httpConf, db)
 
   def receive = {
     case req@GitHttpRequest(_, _, "info/refs", None) =>
@@ -90,7 +90,7 @@ class GitHttpServiceActor(cfg: Config, db: Database) extends Actor with ActorLog
 
   private def openRepository(userName: String, projectName: String, sender: ActorRef)(inner: GitRepository => HttpResponse) = {
     db.projects.findByFullQualifiedName(userName, projectName).map {
-      case Some(project) => GitRepository(new File(cfg.repositoriesDir, project.id.stringify))(inner)
+      case Some(project) => GitRepository(new File(coreConf.repositoriesDir, project.id.stringify))(inner)
       case _ => HttpResponse(NotFound)
     }.onComplete {
       case Success(res: HttpResponse) =>

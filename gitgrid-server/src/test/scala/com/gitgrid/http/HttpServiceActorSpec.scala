@@ -8,8 +8,8 @@ import spray.http.StatusCodes._
 
 class HttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "HttpServiceActor" should {
-    "return HTTP 400 Bad Request on non GET requests to non API- or GIT-route" in new TestActorSystem with TestEnvironment {
-      implicit val httpService = TestActorRef(new HttpServiceActor(cfg, db))
+    "return HTTP 400 Bad Request on non GET requests to non API- or GIT-route" in new TestActorSystem with HttpTestEnvironment {
+      implicit val httpService = TestActorRef(new HttpServiceActor(coreConf, httpConf, db))
 
       req(POST, "/index.html").status === BadRequest
     }

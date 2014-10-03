@@ -2,7 +2,7 @@ package com.gitgrid.http.routes
 
 import java.util.Date
 
-import com.gitgrid.Config
+import com.gitgrid._
 import com.gitgrid.auth.OAuth2BearerTokenAuthenticator.TokenManipulated
 import com.gitgrid.auth._
 import com.gitgrid.http.JsonProtocol
@@ -11,7 +11,7 @@ import spray.routing.Route
 
 import scala.concurrent._
 
-class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
+class AuthRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val db: Database)(implicit val executor: ExecutionContext) extends Routes with JsonProtocol {
   def route =
     pathPrefix("token") {
       path("create") {
@@ -23,7 +23,7 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
         extract(ctx => ctx.request) { req =>
           authenticator.bearerTokenAuthenticator.extractToken(req) match {
             case Right((header, token, signature)) =>
-              if (!JsonWebToken.checkSignature(header, token, signature, cfg.httpAuthBearerTokenSecret))
+              if (!JsonWebToken.checkSignature(header, token, signature, httpConf.authBearerTokenSecret))
                 reject(authenticator.bearerTokenAuthenticator.createRejection(TokenManipulated))
               else
                 completeWithToken(token)
@@ -47,10 +47,10 @@ class AuthRoutes(val cfg: Config, val db: Database)(implicit val executor: Execu
     )
     val token2 = token.copy(
       createdAt = new Date(now),
-      expiresAt = new Date(now + cfg.httpAuthBearerTokenLifetime.toMillis)
+      expiresAt = new Date(now + httpConf.authBearerTokenLifetime.toMillis)
     )
-    val signature = JsonWebToken.createSignature(header, token2, cfg.httpAuthBearerTokenSecret)
-    complete(OAuth2AccessTokenResponse("bearer", JsonWebToken.write(header, token2, signature), cfg.httpAuthBearerTokenLifetime.toSeconds))
+    val signature = JsonWebToken.createSignature(header, token2, httpConf.authBearerTokenSecret)
+    complete(OAuth2AccessTokenResponse("bearer", JsonWebToken.write(header, token2, signature), httpConf.authBearerTokenLifetime.toSeconds))
   }
 
   private def completeWithToken(user: User): Route = {

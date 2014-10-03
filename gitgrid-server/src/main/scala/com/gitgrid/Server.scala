@@ -11,13 +11,14 @@ import scala.concurrent.duration._
 class Server extends Bootable {
   implicit val system = ActorSystem("gitgrid")
   implicit val executor = system.dispatcher
-  val cfg = Config.load()
-  val db = Database.open(cfg.mongoDbServers, cfg.mongoDbDatabaseName)
+  val coreConf = CoreConfig.load()
+  val httpConf = HttpConfig.load()
+  val db = Database.open(coreConf.mongoDbServers, coreConf.mongoDbDatabaseName)
 
   def startup() = {
-    val httpServiceActor = system.actorOf(Props(new HttpServiceActor(cfg, db)), "httpservice")
+    val httpServiceActor = system.actorOf(Props(new HttpServiceActor(coreConf, httpConf, db)), "httpservice")
 
-    IO(Http) ! Http.Bind(httpServiceActor, interface = cfg.httpInterface, port = cfg.httpPort)
+    IO(Http) ! Http.Bind(httpServiceActor, interface = httpConf.interface, port = httpConf.port)
   }
 
   def shutdown() = {

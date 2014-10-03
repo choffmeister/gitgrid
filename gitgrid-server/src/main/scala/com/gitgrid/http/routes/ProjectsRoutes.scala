@@ -1,6 +1,6 @@
 package com.gitgrid.http.routes
 
-import com.gitgrid.Config
+import com.gitgrid._
 import com.gitgrid.managers._
 import com.gitgrid.models._
 import shapeless._
@@ -8,9 +8,9 @@ import spray.routing._
 
 import scala.concurrent._
 
-class ProjectsRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
-  val gitRoutes = new ProjectsGitRoutes(cfg, db)
-  val pm = new ProjectManager(cfg, db)
+class ProjectsRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
+  val gitRoutes = new ProjectsGitRoutes(coreConf, httpConf, db)
+  val pm = new ProjectManager(coreConf, db)
 
   def route =
     authorizeProject { (user, project) =>

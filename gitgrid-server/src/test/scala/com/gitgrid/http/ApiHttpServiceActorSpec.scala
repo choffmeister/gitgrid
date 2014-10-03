@@ -394,8 +394,8 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     addHeader(HttpHeaders.Authorization(BasicHttpCredentials(userName, password)))
 }
 
-trait TestApiHttpService extends TestActorSystem with TestEnvironment {
-  val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor(cfg, db))
+trait TestApiHttpService extends TestActorSystem with HttpTestEnvironment {
+  val apiHttpServiceRef = TestActorRef(new ApiHttpServiceActor(coreConf, httpConf, db))
   val apiHttpService = apiHttpServiceRef.underlyingActor
 
   def route = apiHttpService.route

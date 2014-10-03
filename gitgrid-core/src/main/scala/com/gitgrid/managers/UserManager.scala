@@ -3,7 +3,7 @@ package com.gitgrid.managers
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-import com.gitgrid.Config
+import com.gitgrid.CoreConfig
 import com.gitgrid.models._
 import com.gitgrid.utils.Base64StringConverter._
 import com.gitgrid.utils.NonceGenerator
@@ -11,11 +11,11 @@ import reactivemongo.bson._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
+class UserManager(coreConf: CoreConfig, db: Database)(implicit ec: ExecutionContext) {
   def createUser(user: User, password: String): Future[User] = {
     for {
       u <- db.users.insert(user)
-      p <- changeUserPassword(u, password, cfg.passwordsStorageDefaultAlgorithm)
+      p <- changeUserPassword(u, password, coreConf.passwordsStorageDefaultAlgorithm)
     } yield u
   }
 

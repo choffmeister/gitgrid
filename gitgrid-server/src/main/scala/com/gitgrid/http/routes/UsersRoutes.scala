@@ -1,6 +1,6 @@
 package com.gitgrid.http.routes
 
-import com.gitgrid.Config
+import com.gitgrid._
 import com.gitgrid.managers.UserManager
 import com.gitgrid.models._
 
@@ -8,8 +8,8 @@ import scala.concurrent._
 
 case class RegistrationRequest(userName: String, email: String, password: String)
 
-class UsersRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
-  val um = new UserManager(cfg, db)
+class UsersRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
+  val um = new UserManager(coreConf, db)
 
   def route =
     pathEnd {

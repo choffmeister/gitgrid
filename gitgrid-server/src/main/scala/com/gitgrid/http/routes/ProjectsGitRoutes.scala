@@ -1,6 +1,6 @@
 package com.gitgrid.http.routes
 
-import com.gitgrid.Config
+import com.gitgrid._
 import com.gitgrid.git._
 import com.gitgrid.managers._
 import com.gitgrid.models._
@@ -9,8 +9,8 @@ import spray.routing._
 
 import scala.concurrent._
 
-class ProjectsGitRoutes(val cfg: Config, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
-  val pm = new ProjectManager(cfg, db)
+class ProjectsGitRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val db: Database)(implicit val executor: ExecutionContext) extends Routes {
+  val pm = new ProjectManager(coreConf, db)
 
   def route(project: Project) =
     path("branches") {

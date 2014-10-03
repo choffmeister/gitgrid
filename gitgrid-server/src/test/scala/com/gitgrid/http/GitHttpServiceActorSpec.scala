@@ -8,13 +8,13 @@ import spray.http.StatusCodes._
 
 class GitHttpServiceActorSpec extends Specification with AsyncUtils with RequestUtils {
   "GitHttpServiceActor" should {
-    "mark access with dump HTTP protocol as not implemented" in new TestActorSystem with TestEnvironment {
-      implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
+    "mark access with dump HTTP protocol as not implemented" in new TestActorSystem with HttpTestEnvironment {
+      implicit val gitService = TestActorRef(new GitHttpServiceActor(coreConf, httpConf, db))
       req(GET, "/user1/project1.git/info/refs").status === NotImplemented
     }
 
-    "deny access to ungranted repository with correct HTTP return code" in new TestActorSystem with TestEnvironment {
-      implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
+    "deny access to ungranted repository with correct HTTP return code" in new TestActorSystem with HttpTestEnvironment {
+      implicit val gitService = TestActorRef(new GitHttpServiceActor(coreConf, httpConf, db))
 
       reqGitRead ("user0", "project0").status === NotFound
       reqGitWrite("user0", "project0").status === NotFound
@@ -53,8 +53,8 @@ class GitHttpServiceActorSpec extends Specification with AsyncUtils with Request
       reqGitWrite("user2", "project2", "user2", "pass2").status === OK
     }
 
-    "serve correct GIT repository to project" in new TestActorSystem with TestEnvironment {
-      implicit val gitService = TestActorRef(new GitHttpServiceActor(cfg, db))
+    "serve correct GIT repository to project" in new TestActorSystem with HttpTestEnvironment {
+      implicit val gitService = TestActorRef(new GitHttpServiceActor(coreConf, httpConf, db))
 
       val res1 = reqGitRead("user1", "project1", "user1", "pass1")
       res1.status === OK

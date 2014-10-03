@@ -5,10 +5,10 @@ import com.gitgrid.models._
 import org.specs2.specification.Scope
 
 trait EmptyTestEnvironment extends Scope with AsyncUtils {
-  val cfg = Config.load()
-  val db = TestDatabase.create(cfg)
-  val um = new UserManager(cfg, db)
-  val pm = new ProjectManager(cfg, db)
+  val coreConf = CoreConfig.load()
+  val db = TestDatabase.create(coreConf)
+  val um = new UserManager(coreConf, db)
+  val pm = new ProjectManager(coreConf, db)
 }
 
 trait TestEnvironment extends EmptyTestEnvironment {

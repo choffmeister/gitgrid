@@ -2,14 +2,14 @@ package com.gitgrid.managers
 
 import java.io.File
 
-import com.gitgrid.Config
+import com.gitgrid.CoreConfig
 import com.gitgrid.git.GitRepository
 import com.gitgrid.models._
 import reactivemongo.bson._
 
 import scala.concurrent._
 
-class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
+class ProjectManager(coreConf: CoreConfig, db: Database)(implicit ec: ExecutionContext) {
   def createProject(project: Project): Future[Project] = {
     for {
       project <- db.projects.insert(project)
@@ -31,5 +31,5 @@ class ProjectManager(cfg: Config, db: Database)(implicit ec: ExecutionContext) {
       db.projects.query(BSONDocument("$and" -> List(BSONDocument("ownerId" -> ownerId),  BSONDocument("public" -> true))))
   }
 
-  def getRepositoryDirectory(projectId: BSONObjectID): File = new File(cfg.repositoriesDir, projectId.stringify)
+  def getRepositoryDirectory(projectId: BSONObjectID): File = new File(coreConf.repositoriesDir, projectId.stringify)
 }
