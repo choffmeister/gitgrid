@@ -25,6 +25,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
   import com.gitgrid.http.GitHttpServiceConstants._
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(coreConf, httpConf, db)
+  val workerMaster = context.actorSelection("/user/worker-master")
 
   def receive = {
     case req@GitHttpRequest(_, _, "info/refs", None) =>
@@ -107,7 +108,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
   private def uploadPack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val up = new UploadPack(repo.jgit)
     up.setBiDirectionalPipe(biDirectionalPipe)
-    up.setPreUploadHook(preUploadHook)
+    up.setPreUploadHook(preUploadHook(repo))
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     up.upload(is, os, null)
@@ -117,15 +118,15 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
   private def receivePack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val rp = new ReceivePack(repo.jgit)
     rp.setBiDirectionalPipe(biDirectionalPipe)
-    rp.setPreReceiveHook(preReceiveHook)
-    rp.setPostReceiveHook(postReceiveHook)
+    rp.setPreReceiveHook(preReceiveHook(repo))
+    rp.setPostReceiveHook(postReceiveHook(repo))
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     rp.receive(is, os, null)
     os.toByteArray
   }
 
-  private def preUploadHook = new PreUploadHook() {
+  private def preUploadHook(repo: GitRepository) = new PreUploadHook() {
     override def onSendPack(p1: UploadPack, wants: Collection[_ <: ObjectId], haves: Collection[_ <: ObjectId]): Unit = {
       // here one can create statistics on cloning and so on
     }
@@ -135,7 +136,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
     override def onEndNegotiateRound(p1: UploadPack, wants: Collection[_ <: ObjectId], cntCommon: Int, cntNotFound: Int, ready: Boolean): Unit = {}
   }
 
-  private def preReceiveHook = new PreReceiveHook() {
+  private def preReceiveHook(repo: GitRepository) = new PreReceiveHook() {
     override def onPreReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
       for (c <- commands.toList) {
         // here one can reject the execution of an command
@@ -144,7 +145,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
     }
   }
 
-  private def postReceiveHook = new PostReceiveHook() {
+  private def postReceiveHook(repo: GitRepository) = new PostReceiveHook() {
     import ReceiveCommand.Type._
 
     override def onPostReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
@@ -152,10 +153,13 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
         c.getType match {
           case CREATE =>
             log.info("Creating new branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(repo.commit(c.getNewId.name)))
           case UPDATE =>
             log.info("Updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(repo.commit(c.getNewId.name)))
           case UPDATE_NONFASTFORWARD =>
             log.info("Non-fastforward updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
+            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(repo.commit(c.getNewId.name)))
           case DELETE =>
             log.info("Deleting branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
         }
