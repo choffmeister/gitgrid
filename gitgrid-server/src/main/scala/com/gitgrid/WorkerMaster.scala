@@ -36,7 +36,7 @@ class WorkerMaster extends Actor with ActorLogging {
       if (slaves.contains(slave)) {
         if (slaves(slave).nonEmpty) {
           val (work, requester) = slaves(slave).get
-          queue.enqueue(work -> requester)
+          self.tell(work, requester)
         }
         slaves -= slave
         context.unwatch(slave)
@@ -46,7 +46,7 @@ class WorkerMaster extends Actor with ActorLogging {
       if (slaves.contains(slave)) {
         if (slaves(slave).nonEmpty) {
           val (work, requester) = slaves(slave).get
-          queue.enqueue(work -> requester)
+          self.tell(work, requester)
         }
         slaves -= slave
         context.unwatch(slave)
@@ -73,7 +73,7 @@ class WorkerMaster extends Actor with ActorLogging {
       if (slaves.contains(slave) && slaves(slave).nonEmpty) {
         val (work, requester) = slaves(slave).get
         slaves += slave -> None
-        queue.enqueue(work -> requester)
+        self.tell(work, requester)
       }
 
     case w: Work =>
