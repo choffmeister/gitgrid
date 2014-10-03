@@ -1,20 +1,18 @@
 package com.gitgrid
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor._
-import com.gitgrid.models.Database
 
 import scala.concurrent.duration._
 
 class Worker extends Bootable {
-  implicit val system = ActorSystem("gitgrid-worker")
-  implicit val executor = system.dispatcher
+  val system = ActorSystem("gitgrid-worker", CoreConfig.raw)
   val coreConf = CoreConfig.load()
-  val db = Database.open(coreConf.mongoDbServers, coreConf.mongoDbDatabaseName)
 
   def startup() = {
-    println("Sleeping...")
-    Thread.sleep(2500L)
-    val client = system.actorOf(Props(new RemoteClientActor(system.actorSelection("akka.tcp://gitgrid-worker@localhost:2552/user/worker-master"))))
+    val server = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
+    val client = system.actorOf(Props(new RemoteClientActor(server)), "worker-slave")
   }
 
   def shutdown() = {
@@ -39,8 +37,15 @@ trait Bootable {
 
 class RemoteClientActor(server: ActorSelection) extends Actor with ActorLogging {
   server ! Identify
+  self ! Tick(0)
 
   def receive = {
-    case x => log.warning("{}", x)
+    case Tick(n) =>
+      server ! "This is message " + n
+      context.system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS), self, Tick(n + 1))(context.dispatcher)
+
+    case x => log.info("{}", x)
   }
+
+  case class Tick(n: Int)
 }

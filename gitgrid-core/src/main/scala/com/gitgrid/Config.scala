@@ -12,14 +12,12 @@ case class CoreConfig(
 )
 
 object CoreConfig {
-  def load(): CoreConfig = {
-    val raw = ConfigFactory.load().getConfig("gitgrid")
+  lazy val raw = ConfigFactory.load().getConfig("gitgrid")
 
-    CoreConfig(
-      passwordsStorageDefaultAlgorithm = raw.getString("passwords.storage.default-algorithm"),
-      mongoDbServers = List(raw.getString("mongodb.host") + ":" + raw.getInt("mongodb.port")),
-      mongoDbDatabaseName = raw.getString("mongodb.database"),
-      repositoriesDir = new File(raw.getString("repositories-dir"))
-    )
-  }
+  def load(): CoreConfig = CoreConfig(
+    passwordsStorageDefaultAlgorithm = raw.getString("passwords.storage.default-algorithm"),
+    mongoDbServers = List(raw.getString("mongodb.host") + ":" + raw.getInt("mongodb.port")),
+    mongoDbDatabaseName = raw.getString("mongodb.database"),
+    repositoriesDir = new File(raw.getString("repositories-dir"))
+  )
 }

@@ -9,17 +9,17 @@ import spray.can.Http
 import scala.concurrent.duration._
 
 class Server extends Bootable {
-  implicit val system = ActorSystem("gitgrid-server")
-  implicit val executor = system.dispatcher
+  val system = ActorSystem("gitgrid-server", CoreConfig.raw)
   val coreConf = CoreConfig.load()
   val httpConf = HttpConfig.load()
-  val db = Database.open(coreConf.mongoDbServers, coreConf.mongoDbDatabaseName)
 
   def startup() = {
-    val httpServiceActor = system.actorOf(Props(new HttpServiceActor(coreConf, httpConf, db)), "httpservice")
-    val remoteServer = system.actorOf(Props[RemoteServerActor], "worker-master")
+    val db = Database.open(coreConf.mongoDbServers, coreConf.mongoDbDatabaseName)(system.dispatcher)
 
-    IO(Http) ! Http.Bind(httpServiceActor, interface = httpConf.interface, port = httpConf.port)
+    val workerMaster = system.actorOf(Props[RemoteServerActor], "worker-master")
+
+    val httpServer = system.actorOf(Props(new HttpServiceActor(coreConf, httpConf, db)), "http-server")
+    IO(Http)(system) ! Http.Bind(httpServer, interface = httpConf.interface, port = httpConf.port)
   }
 
   def shutdown() = {
@@ -44,6 +44,8 @@ trait Bootable {
 
 class RemoteServerActor extends Actor with ActorLogging {
   def receive = {
-    case x => log.warning("{}", x)
+    case x =>
+      log.info("{}", x)
+      sender ! x
   }
 }
