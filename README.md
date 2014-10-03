@@ -4,10 +4,10 @@
 
 ~~~ bash
 # run this once to install NPM and bower packags
-$ sbt webAppInit
+$ sbt web/webAppInit
 
 # run this to start development server up
-$ sbt webAppStart run
+$ sbt web/webAppStart server/run
 ~~~
 
 ## Testing
@@ -20,9 +20,9 @@ $ sbt test
 $ sbt jacoco:cover
 ~~~
 
-## Packaging
+## Distributing
 
 ~~~ bash
 # run this to clean and then package the whole application
-$ sbt clean pack
+$ sbt clean dist
 ~~~
