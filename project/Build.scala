@@ -25,19 +25,31 @@ object Build extends sbt.Build {
     .settings(commonProjectSettings: _*)
     .dependsOn(core % "compile->compile;test->test")
 
+  lazy val worker = (project in file("gitgrid-worker"))
+    .settings(commonProjectSettings: _*)
+    .dependsOn(core % "compile->compile;test->test")
+
   lazy val web = (project in file("gitgrid-web"))
     .settings(commonProjectSettings: _*)
 
   lazy val root = (project in file("."))
     .settings(commonSettings: _*)
     .settings(name := "gitgrid")
-    .settings(dist <<= (streams, target, pack in server, webAppBuild in web) map { (s, target, server, web) =>
-      val dist = target / "dist"
-      val bin = dist / "bin"
-      s.log(s"Composing all parts to $dist" )
-      IO.copyDirectory(server, dist)
-      IO.copyDirectory(web, dist / "web")
-      bin.listFiles.foreach(_.setExecutable(true, false))
+    .settings(dist <<= (streams, target, pack in server, pack in worker, webAppBuild in web) map { (s, target, server, worker, web) =>
+      val distDir = target / "dist"
+      s.log(s"Composing all parts to $distDir" )
+
+      val serverDir = distDir / "server"
+      val serverBinDir = serverDir / "bin"
+      val serverWebDir = serverDir / "web"
+      IO.copyDirectory(server, serverDir)
+      IO.copyDirectory(web, serverWebDir)
+      serverBinDir.listFiles.foreach(_.setExecutable(true, false))
+
+      val workerDir = distDir / "worker"
+      val workerBinDir = workerDir / "bin"
+      IO.copyDirectory(worker, workerDir)
+      workerBinDir.listFiles.foreach(_.setExecutable(true, false))
     })
-    .aggregate(core, server, web)
+    .aggregate(core, server, worker, web)
 }
