@@ -1,11 +1,11 @@
 package com.gitgrid
 
 import akka.actor._
-import com.gitgrid.workers._
+import com.gitgrid.WorkerProtocol._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class Worker extends Bootable {
   val system = ActorSystem("gitgrid-worker", CoreConfig.raw)
@@ -15,7 +15,7 @@ class Worker extends Bootable {
     val workerMaster = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
     val workerSlave = system.actorOf(Props(new WorkerSlave(workerMaster, work)), "worker-slave")
 
-    workerMaster ! WorkerProtocol.Work("Hello World")
+    workerMaster ! Work("Hello World")
   }
 
   def shutdown() = {

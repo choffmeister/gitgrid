@@ -1,10 +1,9 @@
-package com.gitgrid.workers
+package com.gitgrid
 
 import java.util.concurrent.TimeUnit
 
 import akka.actor._
 import akka.testkit._
-
 import org.specs2.mutable._
 
 import scala.concurrent._
@@ -15,7 +14,7 @@ class TestActorSystem extends TestKit(ActorSystem()) with ImplicitSender with Af
 }
 
 class WorkerSpec extends Specification {
-  import WorkerProtocol._
+  import com.gitgrid.WorkerProtocol._
 
   def square(item: Any) = Future.successful(item.asInstanceOf[Int] * item.asInstanceOf[Int])
   def double(item: Any) = Future.successful(item.asInstanceOf[Int] * 2)

@@ -1,12 +1,9 @@
-package com.gitgrid.workers
+package com.gitgrid
 
-import akka.actor._
+import akka.actor.{Actor, ActorLogging, ActorRef, Terminated}
+import com.gitgrid.WorkerProtocol._
 
-import scala.util._
-import scala.collection.mutable.{ Queue => MutableQueue, Map => MutableMap }
-
-import scala.concurrent._
-import WorkerProtocol._
+import scala.collection.mutable.{Map => MutableMap, Queue => MutableQueue}
 
 object WorkerProtocol {
   case object NoWorkAvailable
@@ -83,39 +80,4 @@ class WorkerMaster extends Actor with ActorLogging {
       queue.enqueue(w -> sender())
       slaves.filter(_._2.isEmpty).foreach(_._1 ! WorkAvailable)
   }
-}
-
-class WorkerSlave(master: ActorSelection, body: Any => Future[Any]) extends Actor with ActorLogging {
-  import ExecutionContext.Implicits.global
-
-  master ! Register
-  master ! AskForWork
-
-  def receive = waiting
-
-  def idle: Receive = {
-    case WorkAvailable =>
-      master ! AskForWork
-      context.become(waiting)
-  }
-
-  def waiting: Receive = {
-    case NoWorkAvailable =>
-      context.become(idle)
-
-    case Work(item) =>
-      context.become(busy(item))
-      body(item).onComplete {
-        case Success(res) =>
-          master ! WorkDone(res)
-          master ! AskForWork
-          context.become(waiting)
-        case Failure(err) =>
-          master ! WorkFailed(err)
-          master ! AskForWork
-          context.become(waiting)
-      }
-  }
-
-  def busy(item: Any) = PartialFunction.empty[Any, Unit]
 }
