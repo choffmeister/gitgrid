@@ -6,6 +6,7 @@ import com.gitgrid.utils.HexStringConverter._
 import com.typesafe.config.{Config, ConfigException}
 
 import scala.concurrent.duration.FiniteDuration
+import scala.language.implicitConversions
 
 class RichConfig(val inner: Config) {
   def getOptionalString(path: String): Option[String] = try {
