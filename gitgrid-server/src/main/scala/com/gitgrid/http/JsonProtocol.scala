@@ -2,6 +2,7 @@ package com.gitgrid.http
 
 import java.util.Date
 
+import com.gitgrid.WorkerProtocol.QueryResult
 import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.http.routes._
@@ -85,11 +86,23 @@ trait AuthJsonProtocol extends DefaultJsonProtocol {
   }
 }
 
+trait WorkersJsonProtocol extends DefaultJsonProtocol with GitJsonProtocol {
+  implicit object WorkerMasterQueryResultFormat extends RootJsonWriter[QueryResult] {
+    override def write(obj: QueryResult): JsValue = {
+      JsObject(Map(
+        "queued" -> JsArray(obj.queued.map(wi => JsString(wi.toString))),
+        "running" -> JsArray(obj.running.map(wi => JsString(wi.toString)))
+      ))
+    }
+  }
+}
+
 trait JsonProtocol extends DefaultJsonProtocol
   with DateJsonProtocol
   with BSONJsonProtocol
   with AuthJsonProtocol
   with GitJsonProtocol
+  with WorkersJsonProtocol
   with SprayJsonSupport
 {
   implicit val userFormat = jsonFormat5(User)

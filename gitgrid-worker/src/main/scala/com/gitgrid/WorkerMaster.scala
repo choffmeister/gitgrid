@@ -1,6 +1,6 @@
 package com.gitgrid
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Terminated}
+import akka.actor._
 import com.gitgrid.WorkerProtocol._
 
 import scala.collection.mutable.{Map => MutableMap, Queue => MutableQueue}
@@ -17,6 +17,9 @@ object WorkerProtocol {
 
   case class Work(item: Any)
   case class WorkResult(item: Any, result: Any)
+
+  case object Query
+  case class QueryResult(queued: List[Any], running: List[Any])
 }
 
 class WorkerMaster extends Actor with ActorLogging {
@@ -75,6 +78,9 @@ class WorkerMaster extends Actor with ActorLogging {
         slaves += slave -> None
         self.tell(work, requester)
       }
+
+    case Query =>
+      sender ! QueryResult(queue.map(_._1.item).toList, slaves.filter(_._2.nonEmpty).map(_._2.get._1.item).toList)
 
     case w: Work =>
       queue.enqueue(w -> sender())

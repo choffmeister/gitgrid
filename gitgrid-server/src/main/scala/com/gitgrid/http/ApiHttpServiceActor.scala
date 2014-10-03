@@ -14,13 +14,15 @@ class ApiHttpServiceActor(val coreConf: CoreConfig, val httpConf: HttpConfig, va
   val authRoutes = new AuthRoutes(coreConf, httpConf, db)
   val usersRoutes = new UsersRoutes(coreConf, httpConf, db)
   val projectsRoutes = new ProjectsRoutes(coreConf, httpConf, db)
+  val workersRoutes = new WorkersRoutes(coreConf, httpConf, db, context)
 
   def receive = runRoute(route)
   def route = pathPrefix("api") {
     filterHttpChallengesByExtensionHeader {
       pathPrefix("auth")(authRoutes.route) ~
       pathPrefix("users")(usersRoutes.route) ~
-      pathPrefix("projects")(projectsRoutes.route)
+      pathPrefix("projects")(projectsRoutes.route) ~
+      path("workers")(workersRoutes.route)
     } ~
     path("ping")(complete("pong"))
   }
