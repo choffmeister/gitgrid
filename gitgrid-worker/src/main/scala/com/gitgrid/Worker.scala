@@ -1,7 +1,7 @@
 package com.gitgrid
 
 import akka.actor._
-import com.gitgrid.WorkerProtocol._
+import com.gitgrid.Tasks._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -14,8 +14,6 @@ class Worker extends Bootable {
   def startup() = {
     val workerMaster = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
     val workerSlave = system.actorOf(Props(new WorkerSlave(workerMaster, work)), "worker-slave")
-
-    workerMaster ! Work("Hello World")
   }
 
   def shutdown() = {
@@ -23,11 +21,18 @@ class Worker extends Bootable {
     system.awaitTermination(1.seconds)
   }
 
-  def work(item: Any): Future[Any] = Future {
-    println("STARTING WORK " + item)
-    Thread.sleep(2500L)
-    println("FINISHED WORK " + item)
-    "Work is done"
+  def work(item: Any): Future[Any] = Future.successful[Any](item).map {
+    case BuildFromCommit(commit) =>
+      println(commit)
+      for (i <- 1 to 100) {
+        println(">>> step " + i)
+        Thread.sleep(1000L)
+      }
+      true
+
+    case x =>
+      println(x)
+      throw new Exception(s"Unknown task type $x")
   }
 }
 
