@@ -15,11 +15,11 @@ case class Config(
   httpAuthBearerTokenSecret: Array[Byte],
   httpAuthBearerTokenLifetime: FiniteDuration,
   httpAuthPasswordValidationDelay: FiniteDuration,
+  httpWebDir: Option[File],
   passwordsStorageDefaultAlgorithm: String,
   mongoDbServers: List[String],
   mongoDbDatabaseName: String,
-  repositoriesDir: File,
-  webDir: Option[File]
+  repositoriesDir: File
 )
 
 object Config {
@@ -33,11 +33,11 @@ object Config {
       httpAuthBearerTokenSecret = raw.getByteArray("http.auth.bearer-token.secret"),
       httpAuthBearerTokenLifetime = raw.getFiniteDuration("http.auth.bearer-token.lifetime"),
       httpAuthPasswordValidationDelay = raw.getFiniteDuration("http.auth.passwords-validation.delay"),
+      httpWebDir = raw.getOptionalString("http.web-dir").map(new File(_)),
       passwordsStorageDefaultAlgorithm = raw.getString("passwords.storage.default-algorithm"),
       mongoDbServers = List(raw.getString("mongodb.host") + ":" + raw.getInt("mongodb.port")),
       mongoDbDatabaseName = raw.getString("mongodb.database"),
-      repositoriesDir = new File(raw.getString("repositories-dir")),
-      webDir = raw.getOptionalString("web-dir").map(new File(_))
+      repositoriesDir = new File(raw.getString("repositories-dir"))
     )
   }
 

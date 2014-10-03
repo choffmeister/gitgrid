@@ -10,7 +10,7 @@ class StaticContentHttpServiceActor(cfg: Config) extends Actor with HttpService 
   implicit val timeout = akka.util.Timeout(1000)
 
   def receive = runRoute(route)
-  def route = cfg.webDir.map(_.toString) match {
+  def route = cfg.httpWebDir.map(_.toString) match {
     case Some(webDir) =>
       val index = getFromFile(s"${webDir}/index.html")
       val cache = getFromFile(s"${webDir}/cache.manifest")
