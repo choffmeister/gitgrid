@@ -1,7 +1,7 @@
 package com.gitgrid.auth
 
-import com.gitgrid.auth.RichHttpAuthenticator._
 import com.gitgrid._
+import com.gitgrid.auth.RichHttpAuthenticator._
 import com.gitgrid.http.JsonProtocol
 import com.gitgrid.managers._
 import com.gitgrid.models._

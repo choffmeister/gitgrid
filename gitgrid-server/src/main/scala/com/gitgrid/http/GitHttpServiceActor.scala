@@ -8,7 +8,6 @@ import com.gitgrid.auth._
 import com.gitgrid.git._
 import com.gitgrid.models._
 import org.eclipse.jgit.transport.{ReceivePack, UploadPack}
-import spray.can._
 import spray.http.CacheDirectives._
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
@@ -19,7 +18,7 @@ import spray.routing.{AuthenticationFailedRejection, RequestContext}
 import scala.util.{Failure, Success}
 
 class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Database) extends Actor with ActorLogging {
-  import GitHttpServiceConstants._
+  import com.gitgrid.http.GitHttpServiceConstants._
   implicit val executor = context.dispatcher
   val authenticator = new GitGridHttpAuthenticator(coreConf, httpConf, db)
 

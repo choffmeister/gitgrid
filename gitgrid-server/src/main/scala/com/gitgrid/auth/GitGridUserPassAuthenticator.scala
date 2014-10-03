@@ -8,7 +8,7 @@ import com.gitgrid.utils.SimpleScheduler
 import spray.routing.authentication._
 
 import scala.concurrent._
-import scala.util.{Success, Failure}
+import scala.util._
 
 class GitGridUserPassAuthenticator(httpConf: HttpConfig, um: UserManager)(implicit ec: ExecutionContext) extends UserPassAuthenticator[User] {
   def apply(userPass: Option[UserPass]): Future[Option[User]] = {
