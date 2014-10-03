@@ -9,7 +9,7 @@ object Build extends sbt.Build {
   lazy val commonSettings = Defaults.defaultSettings ++ Seq(
     organization := "com.gitgrid",
     version := "0.0.6-SNAPSHOT",
-    scalaVersion := "2.10.4",
+    scalaVersion := "2.11.2",
     scalacOptions <<= baseDirectory.map(bd =>
       Seq("-encoding", "utf8") ++
       Seq("-sourcepath", bd.getAbsolutePath)),
@@ -35,6 +35,10 @@ object Build extends sbt.Build {
   lazy val root = (project in file("."))
     .settings(commonSettings: _*)
     .settings(name := "gitgrid")
+    .settings(resolvers in ThisBuild ++= Seq(
+      "sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
+      "typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"
+    ))
     .settings(dist <<= (streams, target, pack in server, pack in worker, webAppBuild in web) map { (s, target, server, worker, web) =>
       val distDir = target / "dist"
       s.log(s"Composing all parts to $distDir" )
