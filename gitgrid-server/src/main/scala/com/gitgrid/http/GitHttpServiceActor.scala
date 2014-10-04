@@ -10,7 +10,6 @@ import com.gitgrid.git._
 import com.gitgrid.models._
 import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.transport._
-import spray.can._
 import spray.http.CacheDirectives._
 import spray.http.HttpHeaders._
 import spray.http.StatusCodes._
@@ -32,37 +31,37 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
       sender ! HttpResponse(status = NotImplemented, entity = "Git dump HTTP protocol is not supported")
 
     case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-upload-pack")) =>
-      authorize(sender, req, GitReadAccess, ownerName, projectName) { (sender, user, project) =>
+      authorize(sender(), req, GitReadAccess, ownerName, projectName) { (sender, user, project) =>
         openRepository(ownerName, projectName, sender) { repo =>
           val in = decodeRequest(req).entity.data.toByteArray
-          val out = uploadPack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
+          val out = uploadPack(project, repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
           encodeResponse(HttpResponse(entity = HttpEntity(gitUploadPackAdvertisement, gitUploadPackHeader ++ out), headers = noCacheHeaders), req.acceptedEncodingRanges)
         }
       }
 
     case req@GitHttpRequest(ownerName, projectName, "info/refs", Some("git-receive-pack")) =>
-      authorize(sender, req, GitWriteAccess, ownerName, projectName) { (sender, user, project) =>
+      authorize(sender(), req, GitWriteAccess, ownerName, projectName) { (sender, user, project) =>
         openRepository(ownerName, projectName, sender) { repo =>
           val in = decodeRequest(req).entity.data.toByteArray
-          val out = receivePack(repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
+          val out = receivePack(project, repo, in, biDirectionalPipe = true) // must be true, since else sendAdvertisedRefs is not invoked
           encodeResponse(HttpResponse(entity = HttpEntity(gitReceivePackAdvertisement, gitReceivePackHeader ++ out), headers = noCacheHeaders), req.acceptedEncodingRanges)
         }
       }
 
     case req@GitHttpRequest(ownerName, projectName, "git-upload-pack", None) =>
-      authorize(sender, req, GitReadAccess, ownerName, projectName) { (sender, user, project) =>
+      authorize(sender(), req, GitReadAccess, ownerName, projectName) { (sender, user, project) =>
         openRepository(ownerName, projectName, sender) { repo =>
           val in = decodeRequest(req).entity.data.toByteArray
-          val out = uploadPack(repo, in, biDirectionalPipe = false)
+          val out = uploadPack(project, repo, in, biDirectionalPipe = false)
           encodeResponse(HttpResponse(entity = HttpEntity(gitUploadPackResult, out), headers = noCacheHeaders), req.acceptedEncodingRanges)
         }
       }
 
     case req@GitHttpRequest(ownerName, projectName, "git-receive-pack", None) =>
-      authorize(sender, req, GitWriteAccess, ownerName, projectName) { (sender, user, project) =>
+      authorize(sender(), req, GitWriteAccess, ownerName, projectName) { (sender, user, project) =>
         openRepository(ownerName, projectName, sender) { repo =>
           val in = decodeRequest(req).entity.data.toByteArray
-          val out = receivePack(repo, in, biDirectionalPipe = false)
+          val out = receivePack(project, repo, in, biDirectionalPipe = false)
           encodeResponse(HttpResponse(entity = HttpEntity(gitReceivePackResult, out), headers = noCacheHeaders), req.acceptedEncodingRanges)
         }
       }
@@ -105,28 +104,28 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
     }
   }
 
-  private def uploadPack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
+  private def uploadPack(project: Project, repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val up = new UploadPack(repo.jgit)
     up.setBiDirectionalPipe(biDirectionalPipe)
-    up.setPreUploadHook(preUploadHook(repo))
+    up.setPreUploadHook(preUploadHook(project, repo))
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     up.upload(is, os, null)
     os.toByteArray
   }
 
-  private def receivePack(repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
+  private def receivePack(project: Project, repo: GitRepository, in: Array[Byte], biDirectionalPipe: Boolean): Array[Byte] = {
     val rp = new ReceivePack(repo.jgit)
     rp.setBiDirectionalPipe(biDirectionalPipe)
-    rp.setPreReceiveHook(preReceiveHook(repo))
-    rp.setPostReceiveHook(postReceiveHook(repo))
+    rp.setPreReceiveHook(preReceiveHook(project, repo))
+    rp.setPostReceiveHook(postReceiveHook(project, repo))
     val is = new ByteArrayInputStream(in)
     val os = new ByteArrayOutputStream()
     rp.receive(is, os, null)
     os.toByteArray
   }
 
-  private def preUploadHook(repo: GitRepository) = new PreUploadHook() {
+  private def preUploadHook(project: Project, repo: GitRepository) = new PreUploadHook() {
     override def onSendPack(p1: UploadPack, wants: Collection[_ <: ObjectId], haves: Collection[_ <: ObjectId]): Unit = {
       // here one can create statistics on cloning and so on
     }
@@ -136,7 +135,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
     override def onEndNegotiateRound(p1: UploadPack, wants: Collection[_ <: ObjectId], cntCommon: Int, cntNotFound: Int, ready: Boolean): Unit = {}
   }
 
-  private def preReceiveHook(repo: GitRepository) = new PreReceiveHook() {
+  private def preReceiveHook(project: Project, repo: GitRepository) = new PreReceiveHook() {
     override def onPreReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
       for (c <- commands.toList) {
         // here one can reject the execution of an command
@@ -145,7 +144,7 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
     }
   }
 
-  private def postReceiveHook(repo: GitRepository) = new PostReceiveHook() {
+  private def postReceiveHook(project: Project, repo: GitRepository) = new PostReceiveHook() {
     import ReceiveCommand.Type._
 
     override def onPostReceive(rp: ReceivePack, commands: Collection[ReceiveCommand]): Unit = {
@@ -153,13 +152,13 @@ class GitHttpServiceActor(coreConf: CoreConfig, httpConf: HttpConfig, db: Databa
         c.getType match {
           case CREATE =>
             log.info("Creating new branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
-            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(repo.commit(c.getNewId.name)))
+            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(project.id.stringify, repo.commit(c.getNewId.name), project.ownerName, project.name))
           case UPDATE =>
             log.info("Updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
-            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(repo.commit(c.getNewId.name)))
+            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(project.id.stringify, repo.commit(c.getNewId.name), project.ownerName, project.name))
           case UPDATE_NONFASTFORWARD =>
             log.info("Non-fastforward updating branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
-            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(repo.commit(c.getNewId.name)))
+            workerMaster ! WorkerProtocol.Work(Tasks.BuildFromCommit(project.id.stringify, repo.commit(c.getNewId.name), project.ownerName, project.name))
           case DELETE =>
             log.info("Deleting branch {} ({}..{})", c.getRefName, c.getOldId.name, c.getNewId.name)
         }
