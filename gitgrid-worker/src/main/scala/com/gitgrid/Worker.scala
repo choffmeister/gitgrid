@@ -1,6 +1,8 @@
 package com.gitgrid
 
+import akka.actor.SupervisorStrategy.Restart
 import akka.actor._
+import akka.routing.{RoundRobinPool, RoundRobinRouter}
 import com.gitgrid.Tasks._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,7 +15,9 @@ class Worker extends Bootable {
 
   def startup() = {
     val workerMaster = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
-    val workerSlave = system.actorOf(Props(new WorkerSlave(workerMaster, work)), "worker-slave")
+    val workerSlave = system.actorOf(RoundRobinPool(1, supervisorStrategy = OneForOneStrategy() {
+      case _ => Restart
+    }).props(Props(new WorkerSlave(workerMaster, work))), "worker-slaves")
   }
 
   def shutdown() = {
