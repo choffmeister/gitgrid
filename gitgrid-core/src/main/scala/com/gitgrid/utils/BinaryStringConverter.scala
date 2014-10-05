@@ -1,14 +1,15 @@
 package com.gitgrid.utils
 
+import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.binary.Base64
 
 object HexStringConverter {
   def hex2bytes(hex: String): Array[Byte] = {
-    hex.sliding(2, 2).toArray.map(Integer.parseInt(_, 16).toByte)
+    Hex.decodeHex(hex.toCharArray)
   }
 
   def bytes2hex(bytes: Array[Byte]): String = {
-    bytes.map("%02x".format(_)).mkString
+    Hex.encodeHex(bytes).mkString("")
   }
 }
 
