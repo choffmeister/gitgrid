@@ -16,10 +16,11 @@ import scala.concurrent.duration._
 class Worker extends Bootable {
   val system = ActorSystem("gitgrid-worker", CoreConfig.raw)
   val coreConf = CoreConfig.load()
+  val workerConf = WorkerConfig.load()
 
   def startup() = {
-    val workerMaster = system.actorSelection("akka.tcp://gitgrid-server@localhost:7915/user/worker-master")
-    val workerSlave = system.actorOf(RoundRobinPool(10, supervisorStrategy = OneForOneStrategy() {
+    val workerMaster = system.actorSelection("akka.tcp://gitgrid-server@%s:%d/user/worker-master".format(workerConf.masterHostname, workerConf.masterPort))
+    val workerSlave = system.actorOf(RoundRobinPool(workerConf.concurrency, supervisorStrategy = OneForOneStrategy() {
       case _ => Restart
     }).props(Props(new WorkerSlave(workerMaster, work))), "worker-slaves")
   }
