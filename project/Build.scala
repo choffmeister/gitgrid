@@ -4,7 +4,7 @@ import xerial.sbt.Pack._
 import WebAppPlugin._
 
 object Build extends sbt.Build {
-  lazy val dist = TaskKey[Unit]("dist", "Builds the distribution packages")
+  lazy val dist = TaskKey[File]("dist", "Builds the distribution packages")
 
   lazy val commonSettings = Defaults.defaultSettings ++ Seq(
     organization := "com.gitgrid",
@@ -55,6 +55,8 @@ object Build extends sbt.Build {
       val workerBinDir = workerDir / "bin"
       IO.copyDirectory(worker, workerDir)
       workerBinDir.listFiles.foreach(_.setExecutable(true, false))
+
+      distDir
     })
     .aggregate(core, server, worker, web)
 }
