@@ -1,5 +1,5 @@
 import sbt._
-import Keys._
+import sbt.Keys._
 
 case class WebAppToolsVersions(
   nodeVersion: Option[VersionString],

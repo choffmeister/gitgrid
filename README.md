@@ -3,7 +3,7 @@
 ## Development
 
 ~~~ bash
-# run this once to install NPM and bower packags
+# run this once to install NPM and bower packages
 $ sbt web/webAppInit
 
 # run this to start development server up
