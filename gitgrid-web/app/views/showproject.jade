@@ -5,4 +5,7 @@ h1 {{ownerName}}/{{projectName}}
 ul.list-group(infinite-scroll="loadCommits()")
   li.list-group-item(ng-repeat="commit in commits")
     ui-gravatar(email="commit.author.email", width="32", height="32")
-    | {{commit.author.name}} committed {{commit.id | limitTo: 7}} at {{commit.author.when | date:'yyyy-MM-dd HH:mm:ss':'UTC'}}
+    | <code>{{commit.id | limitTo: 7}}</code>
+    | <strong>{{commit.shortMessage}}</strong>
+    | {{commit.author.name}}
+    | <date>{{commit.author.when | date:'yyyy-MM-dd HH:mm:ss'}}</date>
