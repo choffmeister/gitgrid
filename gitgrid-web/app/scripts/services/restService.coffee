@@ -23,7 +23,10 @@ angular.module("app").service("restService", ["$http", "authService", ($http, au
       updatedAt: 0
     )
   listGitCommits: (ownerName, projectName, ref) ->
-    $http.get("/api/projects/#{ownerName}/#{projectName}/git/commits/#{ref}")
+    if not ref?
+      $http.get("/api/projects/#{ownerName}/#{projectName}/git/commits")
+    else
+      $http.get("/api/projects/#{ownerName}/#{projectName}/git/commits/#{ref}")
   listGitBranches: (ownerName, projectName) ->
     $http.get("/api/projects/#{ownerName}/#{projectName}/git/branches")
   listGitTags: (ownerName, projectName) ->
