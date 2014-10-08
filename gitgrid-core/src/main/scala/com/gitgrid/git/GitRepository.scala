@@ -50,9 +50,12 @@ class GitRepository(val dir: File) {
     page(new Git(jgit).tagList().call(), drop, take).map(ref => GitRef(ref.getName, ref.getObjectId.getName)).toList
   }
 
-  def commits(id: String, drop: Option[Int] = None, take: Option[Int] = None): List[GitCommit] = {
+  def commits(refOrSha: Option[String] = None, drop: Option[Int] = None, take: Option[Int] = None): List[GitCommit] = {
     val git = new Git(jgit)
-    val cmd = git.log().add(ObjectId.fromString(id))
+    val cmd = refOrSha match {
+      case Some(refOrSha) => git.log().add(ObjectId.fromString(resolve(refOrSha)))
+      case None => git.log().all()
+    }
     val cmd2 = (drop, take) match {
       case (Some(d), Some(t)) => cmd.setSkip(d).setMaxCount(t)
       case (Some(d), None) => cmd.setSkip(d)

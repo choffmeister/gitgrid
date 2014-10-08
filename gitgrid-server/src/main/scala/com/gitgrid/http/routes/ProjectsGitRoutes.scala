@@ -19,9 +19,14 @@ class ProjectsGitRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val 
     path("tags") {
       complete(gitRepository(project)(repo => repo.tags()))
     } ~
+    path("commits") {
+      handleExceptions(handleEmptyRepo) {
+        complete(gitRepository(project)(repo => repo.commits(None)))
+      }
+    } ~
     path("commits" / Segment) { refOrSha =>
       handleExceptions(handleNotFound) {
-        complete(gitRepository(project)(repo => repo.commits(repo.resolve(refOrSha))))
+        complete(gitRepository(project)(repo => repo.commits(Some(refOrSha))))
       }
     } ~
     path("commit" / Segment) { refOrSha =>
@@ -83,6 +88,10 @@ class ProjectsGitRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val 
 
   def gitRepository[T](project: Project)(inner: GitRepository => T): T =
     GitRepository(pm.getRepositoryDirectory(project.id))(inner)
+
+  def handleEmptyRepo = ExceptionHandler({
+    case _ => complete(List.empty[GitCommit])
+  })
 
   def handleNotFound = ExceptionHandler({
     case _: MissingObjectException => reject()

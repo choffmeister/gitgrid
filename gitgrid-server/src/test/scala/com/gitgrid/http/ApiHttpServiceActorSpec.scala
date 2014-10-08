@@ -199,6 +199,19 @@ class ApiHttpServiceActorSpec extends Specification with Specs2RouteTest with As
     }
 
     "GET /projects/{userName}/{projectName}/git/commits list commits" in new TestApiHttpService {
+      Get("/api/projects/user1/project1/git/commits") ~> auth("user1", "pass1") ~> route ~> check {
+        status === OK
+        val response = responseAs[List[GitCommit]]
+        response === Nil
+      }
+
+      Get("/api/projects/user2/project2/git/commits") ~> auth("user2", "pass2") ~> route ~> check {
+        status === OK
+        val response = responseAs[List[GitCommit]]
+      }
+    }
+
+    "GET /projects/{userName}/{projectName}/git/commits/{ref} list commits" in new TestApiHttpService {
       Get("/api/projects/user1/project1/git/commits/master") ~> auth("user1", "pass1") ~> sealedRoute ~> check {
         status === NotFound
       }
