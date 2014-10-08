@@ -1,4 +1,4 @@
-angular.module("app", ["ngRoute", "angular-loading-bar", "hljs"])
+angular.module("app", ["ngRoute", "angular-loading-bar", "infinite-scroll", "hljs"])
 
 angular.module("app").config(["$httpProvider", ($httpProvider) ->
   $httpProvider.interceptors.push("httpErrorLogger")

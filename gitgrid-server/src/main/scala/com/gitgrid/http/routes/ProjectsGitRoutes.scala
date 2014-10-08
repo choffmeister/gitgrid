@@ -21,12 +21,16 @@ class ProjectsGitRoutes(val coreConf: CoreConfig, val httpConf: HttpConfig, val 
     } ~
     path("commits") {
       handleExceptions(handleEmptyRepo) {
-        complete(gitRepository(project)(repo => repo.commits(None)))
+        pageable(25) { (drop, take) =>
+          complete(gitRepository(project)(repo => repo.commits(None, drop, take)))
+        }
       }
     } ~
     path("commits" / Segment) { refOrSha =>
       handleExceptions(handleNotFound) {
-        complete(gitRepository(project)(repo => repo.commits(Some(refOrSha))))
+        pageable(25) { (drop, take) =>
+          complete(gitRepository(project)(repo => repo.commits(Some(refOrSha), drop, take)))
+        }
       }
     } ~
     path("commit" / Segment) { refOrSha =>

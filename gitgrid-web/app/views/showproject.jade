@@ -1,4 +1,11 @@
-div.btn-group.btn-group-lg.pull-right
+div.btn-group.btn-group.pull-right
   a.btn.btn-default(ng-href="/{{ownerName}}/{{projectName}}/tree/master") Files
-h1 {{ownerName}}/{{projectName}}
-pre {{project | json}}
+h4 {{projectName}}
+h6 {{ownerName}}
+
+ul.list-group(infinite-scroll="loadCommits()", infinite-scroll-disabled="loadingCommits || hasAllCommits", infinite-scroll-distance="2")
+  li.list-group-item.clearfix(ng-repeat="commit in commits")
+    ui-gravatar.pull-left.hidden-xs(email="commit.author.email", width="38", height="38")
+    kbd.pull-right.hidden-xs {{commit.id | limitTo: 7}}
+    div.ellipsed: strong {{commit.shortMessage}}
+    div.ellipsed: small {{commit.author.name}} authored {{commit.author.when | date:'yyyy-MM-dd HH:mm:ss'}}
