@@ -2,7 +2,7 @@ div.btn-group.btn-group-lg.pull-right
   a.btn.btn-default(ng-href="/{{ownerName}}/{{projectName}}/tree/master") Files
 h1 {{ownerName}}/{{projectName}}
 
-ul.list-group
+ul.list-group(infinite-scroll="loadCommits()")
   li.list-group-item(ng-repeat="commit in commits")
     ui-gravatar(email="commit.author.email", width="32", height="32")
     | {{commit.author.name}} committed {{commit.id | limitTo: 7}} at {{commit.author.when | date:'yyyy-MM-dd HH:mm:ss':'UTC'}}
