@@ -1,7 +1,8 @@
 package com.gitgrid.http.directives
 
 import com.gitgrid.models._
-import spray.routing.Directive1
+import shapeless._
+import spray.routing._
 import spray.routing.Directives._
 
 import scala.concurrent.ExecutionContext
@@ -29,5 +30,12 @@ trait ExtractionDirectives {
     option match {
       case Some(value) => provide(value)
       case _ => reject
+    }
+
+  def pageable(takeMax: Int): Directive[::[Option[Int],::[Option[Int],HNil]]] =
+    parameters('drop.as[Int].?, 'take.as[Int].?).hmap {
+      case drop :: None :: HNil => drop :: Some(takeMax) :: HNil
+      case drop :: Some(take) :: HNil if take > takeMax => drop :: Some(takeMax) :: HNil
+      case drop :: take :: HNil => drop :: take :: HNil
     }
 }
